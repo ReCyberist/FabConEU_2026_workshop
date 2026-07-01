@@ -1,0 +1,2 @@
+# Attendee site toolchain (MkDocs Material). Pin versions before the event.
+mkdocs-material

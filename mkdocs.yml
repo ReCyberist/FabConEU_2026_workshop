@@ -1,0 +1,49 @@
+site_name: Azure SQL or Fabric SQL — Infra & Databases as Code
+site_description: FabCon Europe 2026 full-day workshop — Jess Pomfret & Rob Sewell
+site_author: Jess Pomfret & Rob Sewell
+# Update site_url / repo_url when the Pages URL and repo are confirmed.
+repo_url: https://github.com/JessAndRob/FabConEU_2026_workshop
+repo_name: JessAndRob/FabConEU_2026_workshop
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link   # keep Azure SQL / Fabric SQL tabs in sync across pages
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+# Navigation — expand as content is written under docs/.
+nav:
+  - Home: index.md
+  # - Getting started:
+  #     - Prerequisites: setup/prerequisites.md
+  # - Infrastructure as code:
+  #     - Azure SQL (Terraform): infra/azure-sql.md
+  #     - Fabric SQL (Terraform): infra/fabric-sql.md
+  # - Database as code:
+  #     - SQL projects: database/sql-projects.md
+  # - CI/CD:
+  #     - GitHub Actions: cicd/github-actions.md

@@ -1,0 +1,22 @@
+# Contributing / Working in this repo
+
+This is the workshop's source of truth. **Read [`CLAUDE.md`](CLAUDE.md) first** — it's the
+canonical working guide for both humans and AI agents.
+
+## Quick start
+1. Skim [`CLAUDE.md`](CLAUDE.md) (how we work, the key decisions, the repo map).
+2. Check [`planning/tasks.md`](planning/tasks.md) for what needs doing.
+3. Make small, runnable changes. No secrets. No "click here" instructions.
+4. **Before you stop:** add a line to [`notes/LEARNINGS.md`](notes/LEARNINGS.md). This is
+   not optional — it's how the workshop gets better each pass.
+
+## Preview the attendee site
+```bash
+pip install -r requirements.txt
+mkdocs serve
+```
+
+## Where things go
+- Planning/prep → `agenda/`, `notes/`, `planning/`
+- Infra code → `infra/` · Database code → `database/`
+- Attendee prose → `docs/` (code stays in `infra/`/`database/`, shipped as downloads)

@@ -1,0 +1,43 @@
+# MkDocs build output
+site/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+.terraform.lock.hcl
+
+# Azure / secrets — never commit
+*.publishsettings
+*.azureauth
+.env
+*.pem
+*.key
+
+# SQL project build output
+bin/
+obj/
+*.dacpac
+
+# Packaged attendee downloads (produced by pipeline)
+dist/
+*.zip
+
+# Local Claude Code settings (personal, not shared)
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vs/
+.idea/
