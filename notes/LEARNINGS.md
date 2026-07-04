@@ -49,6 +49,18 @@ TDE/Always Encrypted/ledger/in-memory, no spaces in column names, PKs can't be
 **Action:** Documented in [`fabric-sql-notes.md`](fabric-sql-notes.md); referenced from the
 `.sqlproj`. Grounded against Microsoft Learn.
 
+## 2026-07-04 — Pin the .NET SDK, or CI grabs the wrong one
+**Context:** First CI run on the PR failed even though the SQL project built fine locally.
+**Learning:** The `ubuntu-latest` runner had a **preinstalled .NET 10 SDK**, and
+`dotnet build` used it despite `setup-dotnet` installing 8.0.x — `setup-dotnet` installs a
+version but doesn't *force* selection. The `Microsoft.Build.Sql/0.2.0-preview` SDK can't
+build under .NET 10 (missing NuGet.Build.Tasks.Pack import). Fix: a repo-root
+`global.json` pinning `sdk.version` to 8.0 (`rollForward: latestMinor`), so local and CI
+resolve the same SDK. Also note: the pinned `actions/*@v4` now emit a Node 20-deprecation
+warning (auto-forced to Node 24) — harmless for now; bump action majors when convenient.
+**Action:** Added [`../global.json`](../global.json); CI green. Any `dotnet`-based job we
+add later inherits the same pin.
+
 ## 2026-07-04 — CI to validate our own code; SQL static analysis keeps it clean
 **Context:** Rob asked for a GitHub Action that checks all our code, growing as we go.
 Jess flagged that moderator **Cláudio Silva** (perf expert) will notice smells.
