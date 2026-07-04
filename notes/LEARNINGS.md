@@ -68,8 +68,10 @@ change — the SQL-only PRs don't pay for it, and vice-versa.
 version but doesn't *force* selection. The `Microsoft.Build.Sql/0.2.0-preview` SDK can't
 build under .NET 10 (missing NuGet.Build.Tasks.Pack import). Fix: a repo-root
 `global.json` pinning `sdk.version` to 8.0 (`rollForward: latestMinor`), so local and CI
-resolve the same SDK. Also note: the pinned `actions/*@v4` now emit a Node 20-deprecation
-warning (auto-forced to Node 24) — harmless for now; bump action majors when convenient.
+resolve the same SDK. Separately, the CI actions were bumped off the deprecated Node 20
+runtime to current majors — `actions/checkout@v7`, `actions/setup-dotnet@v5`,
+`actions/upload-artifact@v7` (all Node 24). Keep the workflow on these majors, not the old
+`@v4`.
 **Action:** Added [`../global.json`](../global.json); CI green. Any `dotnet`-based job we
 add later inherits the same pin.
 

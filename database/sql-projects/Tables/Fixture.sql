@@ -16,6 +16,14 @@ CREATE TABLE [football].[Fixture]
     CONSTRAINT [PK_Fixture] PRIMARY KEY CLUSTERED ([FixtureId] ASC),
     CONSTRAINT [CK_Fixture_Status] CHECK ([Status] IN (N'Scheduled', N'Played', N'Postponed', N'Cancelled')),
     CONSTRAINT [CK_Fixture_DifferentTeams] CHECK ([HomeTeamId] <> [AwayTeamId]),
+    -- Scores exist if and only if the match has been played. This keeps the standings
+    -- and top-scorer views honest -- a 'Played' fixture always has both scores, and a
+    -- Scheduled/Postponed/Cancelled fixture never carries a score.
+    CONSTRAINT [CK_Fixture_ScoreConsistency] CHECK
+    (
+        ([Status] =  N'Played' AND [HomeScore] IS NOT NULL AND [AwayScore] IS NOT NULL)
+     OR ([Status] <> N'Played' AND [HomeScore] IS NULL     AND [AwayScore] IS NULL)
+    ),
     CONSTRAINT [FK_Fixture_Season] FOREIGN KEY ([SeasonId]) REFERENCES [football].[Season] ([SeasonId]),
     CONSTRAINT [FK_Fixture_Competition] FOREIGN KEY ([CompetitionId]) REFERENCES [football].[Competition] ([CompetitionId]),
     CONSTRAINT [FK_Fixture_HomeTeam] FOREIGN KEY ([HomeTeamId]) REFERENCES [football].[Team] ([TeamId]),
