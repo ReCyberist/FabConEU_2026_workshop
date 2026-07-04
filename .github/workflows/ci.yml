@@ -5,9 +5,9 @@ name: CI
 #
 # Planned jobs (add as each lands — see planning/tasks.md):
 #   - database      ✅  build the SQL project + T-SQL static code analysis
+#   - docs          ✅  mkdocs build --strict (only when docs change)
 #   - terraform         fmt check + validate (infra/**/terraform)
 #   - bicep             az bicep build (infra/**/bicep)
-#   - docs              mkdocs build --strict
 #   - markdown          link / lint check
 
 on:
@@ -53,3 +53,38 @@ jobs:
           name: sql-code-analysis-results
           path: database/sql-projects/bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
           if-no-files-found: ignore
+
+  docs:
+    name: Build docs site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # paths-filter needs history to diff against the base
+
+      # Only build the site when the docs (or their config) actually change.
+      - name: Detect docs changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - 'mkdocs.yml'
+              - 'requirements.txt'
+
+      - name: Set up Python
+        if: steps.filter.outputs.docs == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install MkDocs Material
+        if: steps.filter.outputs.docs == 'true'
+        run: pip install -r requirements.txt
+
+      # --strict fails on broken links, missing nav entries, and config warnings.
+      - name: Build site (strict)
+        if: steps.filter.outputs.docs == 'true'
+        run: mkdocs build --strict

@@ -49,6 +49,18 @@ TDE/Always Encrypted/ledger/in-memory, no spaces in column names, PKs can't be
 **Action:** Documented in [`fabric-sql-notes.md`](fabric-sql-notes.md); referenced from the
 `.sqlproj`. Grounded against Microsoft Learn.
 
+## 2026-07-04 — Sample DB documented with a Mermaid ER diagram; CI builds docs on change
+**Context:** Wanted an attendee page describing the sample database, with an entity diagram.
+**Learning:** Material for MkDocs renders ```mermaid fences once you add the `custom_fences`
+mapping (class `mermaid`) under `pymdownx.superfences` — no extra JS needed. `erDiagram`
+gives a clean crow's-foot ER diagram from the schema. Verified with `mkdocs build --strict`
+(catches broken nav/links) and confirmed the rendered HTML carries a `class="mermaid"`
+block. Extended `ci.yml` with a **docs** job that runs `mkdocs build --strict`, gated by
+`dorny/paths-filter` so it only runs when `docs/**`, `mkdocs.yml` or `requirements.txt`
+change — the SQL-only PRs don't pay for it, and vice-versa.
+**Action:** New page [`../docs/database/sample-database.md`](../docs/database/sample-database.md);
+`mkdocs.yml` nav + mermaid config; docs job in [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+
 ## 2026-07-04 — Pin the .NET SDK, or CI grabs the wrong one
 **Context:** First CI run on the PR failed even though the SQL project built fine locally.
 **Learning:** The `ubuntu-latest` runner had a **preinstalled .NET 10 SDK**, and
