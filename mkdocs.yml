@@ -27,7 +27,12 @@ theme:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        # Render ```mermaid blocks as diagrams (Material bundles Mermaid.js).
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - attr_list
@@ -38,6 +43,8 @@ markdown_extensions:
 # Navigation — expand as content is written under docs/.
 nav:
   - Home: index.md
+  - Database as code:
+      - The sample database: database/sample-database.md
   # - Getting started:
   #     - Prerequisites: setup/prerequisites.md
   # - Infrastructure as code:

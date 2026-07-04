@@ -86,6 +86,15 @@ and for our own credibility.
 - **Naming.** Prefix workshop resources so they're easy to find and tear down, e.g.
   `fabcon26-*`. Never commit secrets, connection strings, or subscription IDs — use
   variables and document them.
+- **Code quality — clean enough for the front row.** Our moderator is **Cláudio Silva**,
+  a performance-tuning expert. Ship no code smells and no obvious performance traps.
+  For SQL specifically: SARGable predicates (no functions wrapping filtered columns),
+  explicit column lists (never `SELECT *`), set-based over row-by-row (no cursors), and
+  **no `MERGE`** (known correctness/locking gotchas — use `INSERT … WHERE NOT EXISTS`).
+  T-SQL static code analysis runs on every SQL-project build (`RunSqlCodeAnalysis`) and in
+  CI with `-warnaserror`; keep it at **zero findings**.
+- **CI checks our code.** `.github/workflows/ci.yml` validates the repo on every push/PR.
+  It starts with the SQL project build + analysis; add a job per area as we build it out.
 
 ## 5. Editing the attendee site (MkDocs Material)
 

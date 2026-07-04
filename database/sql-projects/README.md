@@ -1,12 +1,62 @@
 # SQL Projects — `.sqlproj` / DACPAC (content focus)
 
-The **taught path** for database-as-code. An SDK-style SQL project defines the canonical
-sample schema; the pipeline builds a DACPAC and deploys it with SqlPackage.
+The **taught path** for database-as-code, and the **canonical source of the sample
+schema**. An SDK-style SQL project (`Microsoft.Build.Sql`) defines the football schema;
+the build produces a DACPAC that the pipeline publishes with SqlPackage to **Azure SQL
+Database** and **Fabric SQL database**.
 
-To build here:
-- `.sqlproj` (Microsoft.Build.Sql SDK-style) with the sample schema objects.
-- Build → DACPAC in CI (see [`../../infra/pipelines/github-actions/`](../../infra/pipelines/github-actions/)).
-- Publish profiles for Azure SQL and Fabric SQL targets.
+## The sample: football, men's *and* women's
 
-Note any schema object that Fabric SQL treats differently so the attendee content can
-explain it.
+A `football` schema modelling both the men's and women's game from one shared set of clubs.
+
+| Object | Purpose |
+|--------|---------|
+| `Stadium`, `Club`, `Competition`, `Season` | Reference data. A `Club` fields multiple `Team`s. |
+| `Team` | One row per club per **category** (Men / Women), linked to the `Competition` it plays in. |
+| `Player`, `Referee` | People. |
+| `Fixture` | A match; scores are NULL until played. |
+| `Goal` | One row per goal (penalties / own goals flagged). |
+| `vw_LeagueTable`, `vw_TopScorers`, `vw_UpcomingFixtures` | Views over the above. |
+| `usp_GetLeagueTable`, `usp_RecordFixtureResult`, `usp_TransferPlayer` | Stored procedures. |
+
+Seed data lives in `Scripts/PostDeployment/Seed.sql` (idempotent, set-based) and covers
+the Premier League + Women's Super League (played fixtures with goals) plus upcoming
+El Clásico fixtures.
+
+## Layout
+
+```
+sql-projects/
+├── FabConFootball.sqlproj          SDK-style project (RunSqlCodeAnalysis enabled)
+├── Security/football.sql           CREATE SCHEMA
+├── Tables/*.sql                    one object per file
+├── Views/*.sql
+├── Programmability/*.sql           stored procedures
+└── Scripts/PostDeployment/Seed.sql post-deploy seed (excluded from the build model)
+```
+
+## Build locally
+
+```bash
+dotnet build database/sql-projects/FabConFootball.sqlproj -warnaserror
+```
+
+This compiles the schema to `bin/<config>/FabConFootball.dacpac` **and** runs T-SQL static
+code analysis (`RunSqlCodeAnalysis` is on in the project). `-warnaserror` makes any smell
+or model warning fail — the same check CI runs (`.github/workflows/ci.yml`).
+
+## Publish (manual authoring only — the pipeline is the source of truth for "deployed")
+
+```bash
+sqlpackage /Action:Publish /SourceFile:bin/Debug/FabConFootball.dacpac \
+  /TargetConnectionString:"<connection string>"
+```
+
+Publish profiles for the Azure SQL and Fabric SQL targets are TODO (see
+`planning/tasks.md`). Fabric SQL surface-area caveats: [`../../notes/fabric-sql-notes.md`](../../notes/fabric-sql-notes.md).
+
+## Keep it clean
+
+The schema is written to pass static code analysis with **zero** findings and no obvious
+performance smells (SARGable predicates, explicit column lists, set-based seed, no `MERGE`,
+no cursors). Keep it that way — see the code-quality bar in [`../../CLAUDE.md`](../../CLAUDE.md) §4.
