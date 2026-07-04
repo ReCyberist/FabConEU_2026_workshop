@@ -25,4 +25,40 @@ Material** → GitHub Pages.
 **Action:** Recorded in [`decisions.md`](decisions.md) and [`../CLAUDE.md`](../CLAUDE.md).
 Scaffold created; content still to be written (see [`../planning/tasks.md`](../planning/tasks.md)).
 
+## 2026-07-04 — Canonical football schema built (men's + women's) as a SQL project
+**Context:** First real code — building the canonical sample database (task #3) as the
+content-focus SQL project.
+**Learning:** Modelling **both the men's and women's game** cleanly falls out of a shared
+`Club` that fields multiple `Team`s tagged by `Category` (Men/Women), with `Competition`
+also carrying a category. One schema, both games, no duplication. Landed 9 tables, 3 views,
+3 stored procedures + an idempotent, set-based post-deploy seed (PL + WSL played fixtures
+with goals; El Clásico fixtures upcoming). Builds clean to a DACPAC with
+`Microsoft.Build.Sql` (SDK-style) on `dotnet build`.
+**Action:** Schema in [`../database/sql-projects/`](../database/sql-projects/); README
+updated. Task #3 → DONE, #7 advanced. Runtime deploy not yet tested (no local SQL engine) —
+see task #14.
+
+## 2026-07-04 — Fabric SQL database ≠ Fabric Warehouse for T-SQL surface area
+**Context:** Making sure the canonical schema deploys to both Azure SQL and Fabric SQL.
+**Learning:** Our target is **SQL database in Fabric** (transactional, Azure SQL-compatible)
+— IDENTITY, enforced constraints, indexes, views, procs all work. This is *not* the Fabric
+**Data Warehouse**, whose T-SQL surface is far smaller (no enforced constraints, no
+triggers, no indexes, IDENTITY behaves differently). Real watch-items for our target: no
+TDE/Always Encrypted/ledger/in-memory, no spaces in column names, PKs can't be
+`hierarchyid`/`sql_variant`/`timestamp`, no CDC.
+**Action:** Documented in [`fabric-sql-notes.md`](fabric-sql-notes.md); referenced from the
+`.sqlproj`. Grounded against Microsoft Learn.
+
+## 2026-07-04 — CI to validate our own code; SQL static analysis keeps it clean
+**Context:** Rob asked for a GitHub Action that checks all our code, growing as we go.
+Jess flagged that moderator **Cláudio Silva** (perf expert) will notice smells.
+**Learning:** SDK-style SQL projects run **T-SQL static code analysis** in-build via
+`-p:RunSqlCodeAnalysis=true` (baked into the `.sqlproj` so it's always on). Combined with
+`dotnet build -warnaserror`, any smell or model warning fails CI. Current schema: **0
+findings**. Gotcha: from Git Bash the MSBuild `/p:` switch gets path-translated — use
+`-p:` (or run under PowerShell).
+**Action:** Added [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) (database
+build + analysis job today; terraform/bicep/docs jobs to follow). Code-quality bar added to
+[`../CLAUDE.md`](../CLAUDE.md) §4. Task #8 advanced.
+
 <!-- Add new entries above this line -->

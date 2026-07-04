@@ -1,0 +1,55 @@
+name: CI
+
+# Validates the code in this repo on every push and pull request.
+# Start small, grow with the repo: add a job per area as we build it out.
+#
+# Planned jobs (add as each lands — see planning/tasks.md):
+#   - database      ✅  build the SQL project + T-SQL static code analysis
+#   - terraform         fmt check + validate (infra/**/terraform)
+#   - bicep             az bicep build (infra/**/bicep)
+#   - docs              mkdocs build --strict
+#   - markdown          link / lint check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    name: Build SQL project + code analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # RunSqlCodeAnalysis is enabled in the .sqlproj, so this both compiles the schema
+      # to a DACPAC and runs T-SQL static code analysis. -warnaserror makes any smell or
+      # model warning fail the build.
+      - name: Build & analyse
+        run: dotnet build database/sql-projects/FabConFootball.sqlproj --configuration Release -warnaserror
+
+      - name: Upload DACPAC
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FabConFootball-dacpac
+          path: database/sql-projects/bin/Release/FabConFootball.dacpac
+          if-no-files-found: error
+
+      - name: Upload code analysis results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-code-analysis-results
+          path: database/sql-projects/bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
+          if-no-files-found: ignore
