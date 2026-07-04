@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
@@ -40,7 +40,7 @@ jobs:
 
       - name: Upload DACPAC
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FabConFootball-dacpac
           path: database/sql-projects/bin/Release/FabConFootball.dacpac
@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload code analysis results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sql-code-analysis-results
           path: database/sql-projects/bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
