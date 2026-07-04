@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read   # dorny/paths-filter reads a PR's changed files via the API
 
 jobs:
   database:
