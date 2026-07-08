@@ -7,7 +7,7 @@ Status: `TODO` · `DOING` · `BLOCKED` · `DONE`. Owner: **J** (Jess) / **R** (R
 | 1 | Decide attendee sandbox strategy (own sub / shared / lab provider) | — | TODO | — | Gates prerequisites. See [`ordering.md`](ordering.md). |
 | 2 | Write attendee prerequisites page in `docs/` | — | TODO | — | Depends on #1. |
 | 3 | Build canonical sample DB schema (football theme) | J | DONE | 2026-07-04 | Men's + women's. 9 tables, 3 views, 3 sps + seed. Builds to DACPAC. In `database/sql-projects`. |
-| 4 | Terraform: Azure SQL module | — | TODO | — | Content focus. |
+| 4 | Terraform: Azure SQL module | J | DONE | 2026-07-08 | `infra/azure-sql/terraform`: RG + server + DB + firewall. CAF naming, Entra-only (passwordless), serverless DB. `fmt`/`validate`/`plan` clean (5 to add). Live `apply` untested → #14. |
 | 5 | Terraform: Fabric SQL module | — | TODO | — | Side by side with #4. |
 | 6 | Bicep equivalents (reference) | — | TODO | — | Bonus/reference. |
 | 7 | SQL project (`.sqlproj`) for sample DB | J | DOING | — | Schema + seed build clean. TODO: publish profiles for Azure SQL + Fabric SQL targets. |
