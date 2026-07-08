@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Publish profile: Azure SQL Database target.
+
+  Publishes the FabConFootball DACPAC into an *already-provisioned* Azure SQL database
+  (the database itself is created by the Terraform/Bicep infra code, not by SqlPackage).
+
+  Secrets stay out of source control: this profile deliberately carries NO connection
+  string. Supply the target at publish time, e.g.
+
+    sqlpackage /Action:Publish `
+      /SourceFile:bin/Release/FabConFootball.dacpac `
+      /Profile:PublishProfiles/AzureSql.publish.xml `
+      /TargetServerName:fabcon26-sql.database.windows.net `
+      /TargetDatabaseName:fabcon26-football `
+      /AccessToken:$token                 # Microsoft Entra token; or use /ua:True for interactive
+
+  In CI, prefer Microsoft Entra (token or federated credential) over SQL auth.
+-->
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Default target DB name (overridable with /TargetDatabaseName). Workshop prefix. -->
+    <TargetDatabaseName>fabcon26-football</TargetDatabaseName>
+    <DeployScriptFileName>FabConFootball.sql</DeployScriptFileName>
+
+    <!-- Refuse the deploy if any step could lose data (dropped/altered columns, etc.).
+         For a workshop we want the safe default; a real drift would fail loudly. -->
+    <BlockOnPossibleDataLoss>True</BlockOnPossibleDataLoss>
+
+    <!-- The database is provisioned by the infra pipeline; SqlPackage only lands schema. -->
+    <CreateNewDatabase>False</CreateNewDatabase>
+
+    <!-- Don't drop objects that aren't in the DACPAC. Attendees may create their own
+         objects during the lab; we deploy the sample schema without wiping their work. -->
+    <DropObjectsNotInSource>False</DropObjectsNotInSource>
+
+    <!-- Include the post-deploy seed and other composite/referenced objects. -->
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+
+    <!-- Let the platform own database-level options. Azure SQL Database manages most
+         ALTER DATABASE settings itself; scripting them just produces no-op/blocked stmts. -->
+    <ScriptDatabaseOptions>False</ScriptDatabaseOptions>
+
+    <!-- Verify the generated plan before applying it. -->
+    <VerifyDeployment>True</VerifyDeployment>
+  </PropertyGroup>
+</Project>

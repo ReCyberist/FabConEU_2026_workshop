@@ -10,7 +10,7 @@ Status: `TODO` · `DOING` · `BLOCKED` · `DONE`. Owner: **J** (Jess) / **R** (R
 | 4 | Terraform: Azure SQL module | — | TODO | — | Content focus. |
 | 5 | Terraform: Fabric SQL module | — | TODO | — | Side by side with #4. |
 | 6 | Bicep equivalents (reference) | — | TODO | — | Bonus/reference. |
-| 7 | SQL project (`.sqlproj`) for sample DB | J | DOING | — | Schema + seed build clean. TODO: publish profiles for Azure SQL + Fabric SQL targets. |
+| 7 | SQL project (`.sqlproj`) for sample DB | J | DONE | 2026-07-08 | Schema + seed build clean. Publish profiles for Azure SQL + Fabric SQL in `PublishProfiles/`; validated by SqlPackage (no live target — see #14). |
 | 8 | GitHub Actions: build/validate pipeline | J + R | DOING | — | `ci.yml` builds SQL project + T-SQL static analysis (`-warnaserror`), runs on push + PR. Add terraform/bicep/docs jobs next. |
 | 9 | GitHub Actions: deploy infra + DB pipeline | — | TODO | — | Content focus. |
 | 10 | Azure DevOps pipeline equivalents (reference) | — | TODO | — | Bonus/reference. |

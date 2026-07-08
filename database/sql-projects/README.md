@@ -47,13 +47,35 @@ or model warning fail — the same check CI runs (`.github/workflows/ci.yml`).
 
 ## Publish (manual authoring only — the pipeline is the source of truth for "deployed")
 
-```bash
-sqlpackage /Action:Publish /SourceFile:bin/Debug/FabConFootball.dacpac \
-  /TargetConnectionString:"<connection string>"
+Two publish profiles live in [`PublishProfiles/`](PublishProfiles/), one per target. They
+carry the deploy **options** (safe defaults: block on data loss, don't drop attendee
+objects, let the platform own DB-level options) but **no connection string** — supply the
+target and Microsoft Entra auth at publish time.
+
+**Azure SQL Database:**
+
+```powershell
+sqlpackage /Action:Publish `
+  /SourceFile:bin/Release/FabConFootball.dacpac `
+  /Profile:PublishProfiles/AzureSql.publish.xml `
+  /TargetServerName:fabcon26-sql.database.windows.net `
+  /TargetDatabaseName:fabcon26-football `
+  /AccessToken:$token
 ```
 
-Publish profiles for the Azure SQL and Fabric SQL targets are TODO (see
-`planning/tasks.md`). Fabric SQL surface-area caveats: [`../../notes/fabric-sql-notes.md`](../../notes/fabric-sql-notes.md).
+**SQL database in Fabric** (server + DB name come from the database's *Settings → Connection
+strings* page):
+
+```powershell
+sqlpackage /Action:Publish `
+  /SourceFile:bin/Release/FabConFootball.dacpac `
+  /Profile:PublishProfiles/FabricSql.publish.xml `
+  /TargetServerName:"<guid>.database.fabric.microsoft.com,1433" `
+  /TargetDatabaseName:"fabcon26-football-<guid>" `
+  /AccessToken:$token
+```
+
+Fabric SQL surface-area caveats: [`../../notes/fabric-sql-notes.md`](../../notes/fabric-sql-notes.md).
 
 ## Keep it clean
 
