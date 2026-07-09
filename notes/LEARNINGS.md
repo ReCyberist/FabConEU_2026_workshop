@@ -87,6 +87,26 @@ findings**. Gotcha: from Git Bash the MSBuild `/p:` switch gets path-translated 
 build + analysis job today; terraform/bicep/docs jobs to follow). Code-quality bar added to
 [`../CLAUDE.md`](../CLAUDE.md) §4. Task #8 advanced.
 
+## 2026-07-08 — Publish profiles carry options, not secrets; SqlPackage validates them offline
+**Context:** Finishing task #7 — publish profiles for the SQL project's two targets
+(Azure SQL Database + SQL database in Fabric), with no live engine to deploy against.
+**Learning:** A `.publish.xml` profile can hold the DACPAC deploy *options* while keeping
+**no connection string**, so nothing secret is committed — the target server/DB and the
+Microsoft Entra token are passed on the SqlPackage command line at publish time. Safe
+defaults we bake in for both: `BlockOnPossibleDataLoss=True`, `DropObjectsNotInSource=False`
+(don't wipe attendee-created objects), `CreateNewDatabase=False` (infra provisions the DB),
+and — required for Fabric, harmless for Azure SQL — `ScriptDatabaseOptions=False` (the
+platform owns DB-level options and rejects most `ALTER DATABASE`). You can validate a profile
+**without a live DB**: `sqlpackage /Action:Script /SourceFile:<dacpac> /Profile:<xml>
+/OutputPath:... /TargetConnectionString:"...Connect Timeout=2"` — SqlPackage loads and
+validates every option name *before* it connects, so an unrecognised option fails at load
+while a good profile fails only at the connection stage. Gotcha: don't point the probe at
+`(localdb)\...` — it hangs trying to start an instance; use a fast-failing TCP host with a
+short `Connect Timeout`.
+**Action:** Added [`../database/sql-projects/PublishProfiles/`](../database/sql-projects/PublishProfiles/)
+(`AzureSql.publish.xml`, `FabricSql.publish.xml`); README publish section rewritten with
+per-target commands. Task #7 → DONE; live-target verify still tracked by #14.
+
 ## 2026-07-08 — Azure SQL Terraform module: CAF naming + passwordless, validates & plans clean
 **Context:** Task #4 — the Azure SQL infra module (content-focus IaC), the thing that
 provisions the server + database the DACPAC publishes into.

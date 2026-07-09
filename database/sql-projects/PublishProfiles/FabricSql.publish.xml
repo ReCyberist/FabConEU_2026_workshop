@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Publish profile: SQL database in Microsoft Fabric target.
+
+  Publishes the FabConFootball DACPAC into a *SQL database in Fabric* (the transactional,
+  Azure SQL-compatible database — NOT the Fabric Data Warehouse). The database is created
+  in the Fabric workspace by the infra code; SqlPackage only lands schema into it.
+
+  Fabric uses Microsoft Entra auth only (no SQL logins) and a Fabric-hosted endpoint.
+  This profile carries NO connection string; supply the target at publish time, e.g.
+
+    sqlpackage /Action:Publish `
+      /SourceFile:bin/Release/FabConFootball.dacpac `
+      /Profile:PublishProfiles/FabricSql.publish.xml `
+      /TargetServerName:"<guid>.database.fabric.microsoft.com,1433" `
+      /TargetDatabaseName:"fabcon26-football-<guid>" `
+      /AccessToken:$token                 # Microsoft Entra token (audience: database.windows.net)
+
+  Find the server (SQL connection string) and database name on the Fabric SQL database's
+  Settings > Connection strings page. Surface-area caveats for keeping the schema portable:
+  notes/fabric-sql-notes.md.
+-->
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Fabric appends a workspace/item GUID to the DB name; override with
+         /TargetDatabaseName at publish time using the value from the connection page. -->
+    <TargetDatabaseName>fabcon26-football</TargetDatabaseName>
+    <DeployScriptFileName>FabConFootball.sql</DeployScriptFileName>
+
+    <!-- Safe default: refuse the deploy if a step could lose data. -->
+    <BlockOnPossibleDataLoss>True</BlockOnPossibleDataLoss>
+
+    <!-- The Fabric SQL database is provisioned in the workspace by the infra code. -->
+    <CreateNewDatabase>False</CreateNewDatabase>
+
+    <!-- Don't drop objects that aren't in the DACPAC (leave attendee objects alone). -->
+    <DropObjectsNotInSource>False</DropObjectsNotInSource>
+
+    <!-- Include the post-deploy seed and other composite/referenced objects. -->
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+
+    <!-- Required for Fabric: the platform owns all database-level options and rejects
+         most ALTER DATABASE statements, so never script them from the DACPAC model. -->
+    <ScriptDatabaseOptions>False</ScriptDatabaseOptions>
+
+    <!-- Verify the generated plan before applying it. -->
+    <VerifyDeployment>True</VerifyDeployment>
+  </PropertyGroup>
+</Project>
