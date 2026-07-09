@@ -37,17 +37,21 @@ admin identity (a **group** is recommended) via `entra_admin_login` +
 
 ## Run it
 
-```bash
-cp terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
-export ARM_SUBSCRIPTION_ID=<your-subscription-id>
+```powershell
+Copy-Item terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
+$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 
 terraform init
 terraform plan
 terraform apply
 ```
 
-State is **local** for the workshop (documented as such). For anything shared or
-production, configure a remote backend (e.g. `azurerm`) and commit the provider lock file.
+**State.** The decided direction is a **remote `azurerm` backend (Azure Storage)** for both
+the CI pipeline and attendees — local state can't survive GitHub Actions' ephemeral runners
+(see [`notes/decisions.md`](../../../notes/decisions.md) **D5**). This initial module still
+uses **local state** until the state-backend work lands (task #17), which is gated on the
+attendee sandbox decision (#1). HashiCorp also recommends **committing `.terraform.lock.hcl`**
+once the backend is in place, so CI and teammates resolve identical provider versions.
 
 > **Status:** `fmt`, `init`, `validate`, and `plan` all run clean (plan: 5 to add). Not yet
 > `apply`-ed against a live subscription — tracked with the runtime deploy in

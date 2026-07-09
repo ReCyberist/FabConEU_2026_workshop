@@ -4,7 +4,7 @@ Status: `TODO` · `DOING` · `BLOCKED` · `DONE`. Owner: **J** (Jess) / **R** (R
 
 | # | Task | Owner | Status | Due | Notes |
 |---|------|-------|--------|-----|-------|
-| 1 | Decide attendee sandbox strategy (own sub / shared / lab provider) | — | TODO | — | Gates prerequisites. See [`ordering.md`](ordering.md). |
+| 1 | Decide attendee sandbox strategy (own sub / shared / lab provider) | — | TODO | — | Gates prerequisites **and** the tf state backend owner (#17). See [`ordering.md`](ordering.md). |
 | 2 | Write attendee prerequisites page in `docs/` | — | TODO | — | Depends on #1. |
 | 3 | Build canonical sample DB schema (football theme) | J | DONE | 2026-07-04 | Men's + women's. 9 tables, 3 views, 3 sps + seed. Builds to DACPAC. In `database/sql-projects`. |
 | 4 | Terraform: Azure SQL module | J | DONE | 2026-07-08 | `infra/azure-sql/terraform`: RG + server + DB + firewall. CAF naming, Entra-only (passwordless), serverless DB. `fmt`/`validate`/`plan` clean (5 to add). Live `apply` untested → #14. |
@@ -20,5 +20,6 @@ Status: `TODO` · `DOING` · `BLOCKED` · `DONE`. Owner: **J** (Jess) / **R** (R
 | 13 | Full dry run + timing pass | J + R | TODO | — | Feed results into agenda + learnings. |
 | 14 | Runtime-test schema: publish DACPAC + seed to a real DB | — | TODO | — | Verify views/procs/seed against Azure SQL & Fabric SQL. No local engine in dev today. |
 | 15 | Design the "ship changes as code" increments | — | TODO | — | Baseline exists; plan the PR-driven schema changes for the 15:30 agenda module. |
+| 17 | Terraform remote state backend (Azure Storage) + bootstrap | — | TODO | — | Decided **D5**: `azurerm` backend, OIDC + Entra auth, per-module state keys, `az` bootstrap script. **Blocked on #1** (who owns the state account). Retrofit #4/#5 once landed. |
 
 Add tasks as they arise; close them when done and note anything learned.

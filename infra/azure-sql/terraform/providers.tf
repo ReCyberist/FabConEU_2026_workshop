@@ -12,8 +12,9 @@ terraform {
     }
   }
 
-  # For the workshop we use local state (documented as such). For anything shared or
-  # production, switch to a remote backend (e.g. azurerm) — see README.
+  # Local state for now. Decided direction is a remote azurerm backend (Azure Storage) for
+  # both CI and attendees — see notes/decisions.md D5 and task #17 (gated on #1). Local
+  # state can't survive GitHub Actions' ephemeral runners.
 }
 
 provider "azurerm" {
