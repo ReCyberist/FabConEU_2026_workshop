@@ -107,4 +107,37 @@ short `Connect Timeout`.
 (`AzureSql.publish.xml`, `FabricSql.publish.xml`); README publish section rewritten with
 per-target commands. Task #7 → DONE; live-target verify still tracked by #14.
 
+## 2026-07-08 — Azure SQL Terraform module: CAF naming + passwordless, validates & plans clean
+**Context:** Task #4 — the Azure SQL infra module (content-focus IaC), the thing that
+provisions the server + database the DACPAC publishes into.
+**Learning:** Reconciled two naming rules that pull in different directions: **CAF** wants
+the resource-type abbreviation first (`rg-`, `sql-`, `sqldb-`), while CLAUDE.md wants a
+`fabcon26-*` teardown prefix. Solution — keep the CAF type-abbreviation leading and use
+`fabcon26` as the *workload token* inside the name (`rg-fabcon26-dev-weu`,
+`sql-fabcon26-dev-weu-<rnd>`, `sqldb-football-dev`), so `*fabcon26*` still filters
+everything. The **logical SQL server name is globally unique**, so a `random_string` suffix
+is appended. Went **passwordless**: `azuread_authentication_only = true` lets you omit the
+SQL admin login/password entirely (azurerm accepts no `administrator_login` when Entra-only)
+— no secret to commit. `min_capacity`/`auto_pause_delay_in_minutes` only apply to serverless
+SKUs, so they're set conditionally via `can(regex("_S_", sku))` — flipping to a provisioned
+SKU won't error. Verified offline: `terraform fmt/validate` clean and `plan` produces a
+coherent **5-to-add** plan (picked up cached az-CLI auth; no live apply — that's #14).
+Best-practice flag: this repo **gitignores `.terraform.lock.hcl`**; HashiCorp recommends
+**committing** it so CI/teammates resolve identical provider versions — worth revisiting.
+**Action:** New module [`../infra/azure-sql/terraform/`](../infra/azure-sql/terraform/)
+(`providers/variables/main/outputs.tf` + `terraform.tfvars.example`); README rewritten with
+the naming + passwordless rationale. Task #4 → DONE; unblocks the deploy pipeline (#9). The
+Fabric mirror (#5) and Bicep reference (#6) should follow the same naming.
+
+## 2026-07-09 — Command examples are PowerShell, not bash
+**Context:** Jess asked that every shell example in the repo use PowerShell.
+**Learning:** The presenters run Windows and demo in PowerShell, so bash-fenced examples
+(`cp`, `export`, `\` line-continuations) don't match what they'll type on stage. Standardised
+on **PowerShell for all command examples** in docs, READMEs, and planning — cmdlets +
+`$env:VAR` syntax, fenced ` ```powershell `. Cross-platform tools (dotnet, terraform,
+sqlpackage, mkdocs, pip) run the same; only the shell glue changes.
+**Action:** Added the rule to [`../CLAUDE.md`](../CLAUDE.md) §4; converted the bash fence in
+`CONTRIBUTING.md`. The SQL-project and Terraform module READMEs are converted on their own
+open PRs (they own those files).
+
 <!-- Add new entries above this line -->

@@ -11,7 +11,7 @@ canonical working guide for both humans and AI agents.
    not optional — it's how the workshop gets better each pass.
 
 ## Preview the attendee site
-```bash
+```powershell
 pip install -r requirements.txt
 mkdocs serve
 ```

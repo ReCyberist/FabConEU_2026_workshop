@@ -95,6 +95,14 @@ and for our own credibility.
   CI with `-warnaserror`; keep it at **zero findings**.
 - **CI checks our code.** `.github/workflows/ci.yml` validates the repo on every push/PR.
   It starts with the SQL project build + analysis; add a job per area as we build it out.
+- **Shell examples in PowerShell.** Every command example — in `docs/`, READMEs, and
+  planning — uses **PowerShell**. The presenters run Windows and demo in PowerShell, so
+  examples must match what they'll type: PowerShell cmdlets and syntax (`Copy-Item`,
+  `$env:VAR = '…'`), not bash (`cp`, `export`, `\` line-continuations). Fence them
+  ` ```powershell `. Cross-platform tools (dotnet, terraform, sqlpackage, mkdocs, pip) run
+  the same — only the shell glue changes. Where a command genuinely differs across shells and
+  both matter to attendees, add a tabbed bash alternative, but PowerShell is the default and
+  the one we test.
 
 ## 5. Editing the attendee site (MkDocs Material)
 
