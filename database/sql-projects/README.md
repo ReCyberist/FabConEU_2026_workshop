@@ -37,7 +37,7 @@ sql-projects/
 
 ## Build locally
 
-```bash
+```powershell
 dotnet build database/sql-projects/FabConFootball.sqlproj -warnaserror
 ```
 
