@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored — never commit it.
+#
+# The only required inputs are the Microsoft Entra admin identity. Everything else has a
+# sensible, cost-aware default. Prefer a security GROUP as the admin over an individual.
+
+entra_admin_login     = "fabcon26-sql-admins"                    # display name of the Entra user/group/SP
+entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (principal) id
+
+# Optional overrides:
+# workload              = "fabcon26"
+# environment           = "dev"
+# location              = "westeurope"
+# location_abbreviation = "weu"
+# database_name         = "football"
+
+# Let a specific machine connect (name = ip). The pipeline runner is covered by
+# allow_azure_services = true (on by default).
+# allowed_client_ips = {
+#   "my-laptop" = "203.0.113.7"
+# }
