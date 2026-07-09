@@ -109,4 +109,15 @@ Best-practice flag: this repo **gitignores `.terraform.lock.hcl`**; HashiCorp re
 the naming + passwordless rationale. Task #4 → DONE; unblocks the deploy pipeline (#9). The
 Fabric mirror (#5) and Bicep reference (#6) should follow the same naming.
 
+## 2026-07-09 — Command examples are PowerShell, not bash
+**Context:** Jess asked that every shell example in the repo use PowerShell.
+**Learning:** The presenters run Windows and demo in PowerShell, so bash-fenced examples
+(`cp`, `export`, `\` line-continuations) don't match what they'll type on stage. Standardised
+on **PowerShell for all command examples** in docs, READMEs, and planning — cmdlets +
+`$env:VAR` syntax, fenced ` ```powershell `. Cross-platform tools (dotnet, terraform,
+sqlpackage, mkdocs, pip) run the same; only the shell glue changes.
+**Action:** Added the rule to [`../CLAUDE.md`](../CLAUDE.md) §4; converted the bash fence in
+`CONTRIBUTING.md`. The SQL-project and Terraform module READMEs are converted on their own
+open PRs (they own those files).
+
 <!-- Add new entries above this line -->
