@@ -41,3 +41,23 @@ schema.
 **Why:** Low-friction, excellent for technical docs (nav, admonitions, tabs, code blocks),
 Python toolchain the presenters are comfortable with. Prose as pages, code as downloads.
 **Consequence:** Need `mkdocs.yml`, `requirements.txt`, and a Pages deploy workflow.
+
+## D5 — Terraform state: remote azurerm backend (Azure Storage) for both CI and attendees
+**Date:** 2026-07-09
+**Decision:** Store Terraform state in an **Azure Storage Account** via the `azurerm`
+backend for **both** the CI/CD pipeline and attendees running the lab — not local state.
+Passwordless auth throughout: **OIDC** federated credentials from GitHub Actions, and
+**Entra** auth to the blob (`use_azuread_auth`, not storage account keys). One state key per
+module/environment (e.g. `azure-sql/dev.tfstate`). A one-time idempotent **bootstrap**
+(`az` CLI script) provisions the state resource group + storage account (globally-unique
+name, blob versioning + soft-delete on, public access off), sidestepping the chicken-and-egg
+of a backend that doesn't exist yet.
+**Why:** Local state can't survive GitHub Actions' ephemeral runners — no persistence, no
+locking, nothing shared between the plan and apply jobs. The workshop's whole thesis is
+CI/CD that provisions infrastructure, so remote state with locking is the honest taught
+path, not a deferral.
+**Consequence:** Need the bootstrap script + `-backend-config` wiring (backend blocks can't
+take variables). **Who** creates and owns the state storage account depends on the attendee
+sandbox model, so this is gated on **task #1**. Tracked as **task #17**; the initial
+`infra/azure-sql/terraform` module ships with local state until #17 lands. Also revisit the
+repo's gitignore of `.terraform.lock.hcl` (HashiCorp recommends committing it).

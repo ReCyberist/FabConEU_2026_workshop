@@ -87,6 +87,28 @@ findings**. Gotcha: from Git Bash the MSBuild `/p:` switch gets path-translated 
 build + analysis job today; terraform/bicep/docs jobs to follow). Code-quality bar added to
 [`../CLAUDE.md`](../CLAUDE.md) §4. Task #8 advanced.
 
+## 2026-07-08 — Azure SQL Terraform module: CAF naming + passwordless, validates & plans clean
+**Context:** Task #4 — the Azure SQL infra module (content-focus IaC), the thing that
+provisions the server + database the DACPAC publishes into.
+**Learning:** Reconciled two naming rules that pull in different directions: **CAF** wants
+the resource-type abbreviation first (`rg-`, `sql-`, `sqldb-`), while CLAUDE.md wants a
+`fabcon26-*` teardown prefix. Solution — keep the CAF type-abbreviation leading and use
+`fabcon26` as the *workload token* inside the name (`rg-fabcon26-dev-weu`,
+`sql-fabcon26-dev-weu-<rnd>`, `sqldb-football-dev`), so `*fabcon26*` still filters
+everything. The **logical SQL server name is globally unique**, so a `random_string` suffix
+is appended. Went **passwordless**: `azuread_authentication_only = true` lets you omit the
+SQL admin login/password entirely (azurerm accepts no `administrator_login` when Entra-only)
+— no secret to commit. `min_capacity`/`auto_pause_delay_in_minutes` only apply to serverless
+SKUs, so they're set conditionally via `can(regex("_S_", sku))` — flipping to a provisioned
+SKU won't error. Verified offline: `terraform fmt/validate` clean and `plan` produces a
+coherent **5-to-add** plan (picked up cached az-CLI auth; no live apply — that's #14).
+Best-practice flag: this repo **gitignores `.terraform.lock.hcl`**; HashiCorp recommends
+**committing** it so CI/teammates resolve identical provider versions — worth revisiting.
+**Action:** New module [`../infra/azure-sql/terraform/`](../infra/azure-sql/terraform/)
+(`providers/variables/main/outputs.tf` + `terraform.tfvars.example`); README rewritten with
+the naming + passwordless rationale. Task #4 → DONE; unblocks the deploy pipeline (#9). The
+Fabric mirror (#5) and Bicep reference (#6) should follow the same naming.
+
 ## 2026-07-09 — Command examples are PowerShell, not bash
 **Context:** Jess asked that every shell example in the repo use PowerShell.
 **Learning:** The presenters run Windows and demo in PowerShell, so bash-fenced examples
