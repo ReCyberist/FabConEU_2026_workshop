@@ -87,4 +87,15 @@ findings**. Gotcha: from Git Bash the MSBuild `/p:` switch gets path-translated 
 build + analysis job today; terraform/bicep/docs jobs to follow). Code-quality bar added to
 [`../CLAUDE.md`](../CLAUDE.md) §4. Task #8 advanced.
 
+## 2026-07-09 — Command examples are PowerShell, not bash
+**Context:** Jess asked that every shell example in the repo use PowerShell.
+**Learning:** The presenters run Windows and demo in PowerShell, so bash-fenced examples
+(`cp`, `export`, `\` line-continuations) don't match what they'll type on stage. Standardised
+on **PowerShell for all command examples** in docs, READMEs, and planning — cmdlets +
+`$env:VAR` syntax, fenced ` ```powershell `. Cross-platform tools (dotnet, terraform,
+sqlpackage, mkdocs, pip) run the same; only the shell glue changes.
+**Action:** Added the rule to [`../CLAUDE.md`](../CLAUDE.md) §4; converted the bash fence in
+`CONTRIBUTING.md`. The SQL-project and Terraform module READMEs are converted on their own
+open PRs (they own those files).
+
 <!-- Add new entries above this line -->
