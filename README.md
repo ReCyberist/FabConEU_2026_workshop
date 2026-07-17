@@ -10,6 +10,10 @@ Managing Azure SQL or Fabric SQL by hand doesn't scale. In this workshop, Jess P
 
 ## 👉 Start here
 
+## First up Lets talk about the hardest part of IT
+
+Wee can show you the tech part, hell most of you will prolly copilot it anyways but heres the bits copilot doesnt know - its the blood balloons with egos............ and feelings - This is what we have learnt
+
 **Contributors (Jess, Rob, and AI agents): read [`CLAUDE.md`](CLAUDE.md) first** — it's the
 canonical working guide (how we work, the decisions that shape the repo, and the
 🔁 _keep learnings updated_ loop). Quick human on-ramp: [`CONTRIBUTING.md`](CONTRIBUTING.md).
