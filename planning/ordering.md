@@ -5,9 +5,24 @@ Track everything that must be arranged **before** the event. Tick items as confi
 ## Cloud / subscriptions
 - [ ] Azure subscription(s) for demos — with quota for Azure SQL in the demo region.
 - [ ] Microsoft Fabric capacity / trial for Fabric SQL demos.
-- [ ] Attendee sandbox strategy — do attendees use their own subscription, a shared one,
-      or a lab provider? **Decide early — it gates the prerequisites we publish.**
-- [ ] Cost estimate + spending caps / auto-teardown for demo resources.
+- [x] **Attendee sandbox strategy — DECIDED (D6, 2026-07-18): bring-your-own.** Attendees use
+      whatever they already have. Two independent lab parts: **IaC** needs their own Azure sub;
+      **DB deploy** needs a target SQL. We provide **one shared SQL endpoint on the day,
+      explicitly unsupported.** See [`../notes/decisions.md`](../notes/decisions.md) **D6**.
+- [ ] **The shared unsupported endpoint** — a **SQL Server on a VM** attendees push to via
+      pipeline (per-attendee database on one instance). Provision + teardown = **task #18**.
+- [ ] Cost estimate + spending caps / auto-teardown for **our** demo resources.
+
+## Attendee prerequisites (from D6 — feeds the `docs/` prereqs page, task #2)
+- [ ] **Everyone:** GitHub account; ability to fork/clone the template repo; a local toolchain
+      (git, and for the DB part SqlPackage/`dotnet` — confirm the minimal set).
+- [ ] **To do the IaC part (optional):** own **Azure subscription** with Contributor rights to
+      create resources. **Fabric path also needs a Fabric capacity** — creating an F-SKU bills
+      real money and a trial capacity can't be Terraform-created, so the prereq/cost story here
+      needs nailing (open Q on task #1).
+- [ ] **To do the DB-deploy part (optional):** a reachable **target SQL** (their own Azure SQL
+      or Fabric SQL), **or** use our shared unsupported endpoint on the day.
+- [ ] Cost + **teardown** guidance for attendees who deploy into their own subscription.
 
 ## Lab environment
 - [ ] Confirm what attendees need locally vs. in-cloud (see attendee prerequisites in `docs/`).

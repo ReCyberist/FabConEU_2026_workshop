@@ -202,4 +202,24 @@ but we keep the SqlPackage path for symmetry with Azure SQL.
 the fast-moving preview Fabric provider (still gitignored today; revisit with #17). Next: a
 terraform `fmt`/`validate` CI job (#8) now covers both #4 and #5.
 
+## 2026-07-18 — Attendee sandbox decided: bring-your-own (unblocks the prerequisites)
+**Context:** Task #1 — the sandbox strategy that gates the prerequisites page (#2) and the tf
+state backend owner (#17). Settled in a Jess + Rob chat.
+**Learning:** We go **bring-your-own** — no per-attendee sandboxes. The hands-on is **two
+independent parts**: IaC (needs the attendee's own Azure sub) and DB-deploy (needs a target
+SQL), each optional depending on what they bring, plus **one shared SQL endpoint on the day
+that we explicitly won't support**. The driver was support cost: "we can't spend a lot of time
+troubleshooting labs, and if we provide something they'll expect that." Knock-on effects: it
+**unblocks #2**, and it **defuses most of #17** — there's no shared attendee state account to
+own (attendees use local state); only *our* CI/demo state backend still needs an owner.
+**Shared endpoint resolved:** it's a **SQL Server on a VM** attendees push to via pipeline —
+a database per attendee on one instance, so no DACPAC name collisions (task #18). **Deferred
+("decide later"):** the Fabric IaC path's capacity cost (an F-SKU bills; a trial capacity
+can't be TF-created), and *our* CI/demo state owner (#17) — both open caveats, neither blocks
+the prereqs page.
+**Action:** Recorded as [`decisions.md`](decisions.md) **D6**; prereq checklist + shared-endpoint
+TODO in [`../planning/ordering.md`](../planning/ordering.md); tasks #1 → DONE, #2 unblocked,
+#17 note updated, new #18 (shared VM target). CLAUDE.md §2 unchanged (D6 is an operational
+decision, not a scope change).
+
 <!-- Add new entries above this line -->
