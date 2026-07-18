@@ -1,7 +1,7 @@
 site_name: Azure SQL or Fabric SQL — Infra & Databases as Code
 site_description: FabCon Europe 2026 full-day workshop — Jess Pomfret & Rob Sewell
 site_author: Jess Pomfret & Rob Sewell
-# Update site_url / repo_url when the Pages URL and repo are confirmed.
+site_url: https://jessandrob.github.io/FabConEU_2026_workshop/
 repo_url: https://github.com/JessAndRob/FabConEU_2026_workshop
 repo_name: JessAndRob/FabConEU_2026_workshop
 
@@ -40,11 +40,24 @@ markdown_extensions:
   - toc:
       permalink: true
 
+# ── TEASER MODE ───────────────────────────────────────────────────────────────
+# The site is public (Pages sites are public even from a private repo), so until the
+# reveal we publish ONLY the teaser home page. Real content stays in the repo on main —
+# versioned and building locally — but is held out of the published site via exclude_docs
+# below. `mkdocs build --strict` stays happy because excluded pages aren't in the nav.
+#
+#   👉 TO REVEAL THE FULL SITE: delete the `exclude_docs` block below AND un-comment the
+#      real nav entries. That one PR is the reveal.
+exclude_docs: |
+  database/sample-database.md
+# ────────────────────────────────────────────────────────────────────────────────
+
 # Navigation — expand as content is written under docs/.
 nav:
   - Home: index.md
-  - Database as code:
-      - The sample database: database/sample-database.md
+  # --- Held until reveal (see exclude_docs above) ---
+  # - Database as code:
+  #     - The sample database: database/sample-database.md
   # - Getting started:
   #     - Prerequisites: setup/prerequisites.md
   # - Infrastructure as code:

@@ -140,4 +140,41 @@ sqlpackage, mkdocs, pip) run the same; only the shell glue changes.
 `CONTRIBUTING.md`. The SQL-project and Terraform module READMEs are converted on their own
 open PRs (they own those files).
 
+## 2026-07-18 — GitHub Pages deploy: artifact deployment, not the gh-pages branch
+**Context:** Task #11 — the workflow that publishes the MkDocs Material site so attendees
+can read it. `ci.yml` already builds the docs `--strict`; this adds the actual deploy.
+**Learning:** Used the **modern GitHub Pages artifact deployment** (`actions/configure-pages`
++ `actions/upload-pages-artifact` + `actions/deploy-pages`) rather than the older
+`mkdocs gh-deploy` that force-pushes a `gh-pages` branch. The artifact path gives a proper
+`github-pages` deployment environment with the live URL surfaced on the run, needs no branch
+juggling, and keeps history clean. It requires `permissions: pages:write` **and**
+`id-token: write` (OIDC) — miss the id-token and the deploy step fails. Kept it a **separate
+workflow** from `ci.yml` (validation vs. deploy are different concerns) and gated it to
+`main` pushes touching `docs/**`, `mkdocs.yml`, `requirements.txt`, or the workflow itself.
+Gotcha, still "nothing is clicked": the Pages **source** must be set to *GitHub Actions*
+once — but that's doable in code via `gh api -X POST repos/<owner>/<repo>/pages -f
+build_type=workflow`, documented in the workflow header. Verified `mkdocs build --strict`
+exits 0 locally (the scary "MkDocs 2.0" banner from the Material team is informational, not a
+build failure).
+**Action:** Added [`../.github/workflows/pages.yml`](../.github/workflows/pages.yml).
+Task #11 → DONE. Next docs step: fill in `site_url` in `mkdocs.yml` once the Pages URL is
+live, and expand the `nav`.
+
+## 2026-07-18 — Pages sites are public even from a private repo; teaser via exclude_docs
+**Context:** Wanted a public **teaser** page live now but to hold the real workshop content
+until a reveal date. Repo is private.
+**Learning:** A **GitHub Pages site is public even when the repo is private** — on standard
+plans, enabling Pages publishes to a public URL anyone can reach (only GitHub Enterprise
+Cloud can access-control a Pages site). So you can't password-hide it; the best is an
+*unlisted* URL. You **can** control *what content* ships, in code: MkDocs 1.6's top-level
+`exclude_docs:` (gitignore-style globs) omits pages from the built site while leaving them in
+the repo on `main` — and, crucially, `mkdocs build --strict` stays green because excluded
+pages don't trip the "exists but not in nav" check (they must also be removed/commented from
+`nav`, or nav errors on the missing file). Verified: with `database/sample-database.md`
+excluded, `mkdocs build --strict` publishes only `index.html` (+ auto `404.html`).
+**Reveal = a one-PR diff:** delete the `exclude_docs` block and un-comment the nav entries.
+**Action:** "Teaser mode" wired in [`../mkdocs.yml`](../mkdocs.yml) (documented block) with
+[`../docs/index.md`](../docs/index.md) reworked into a teaser. Content pages stay on `main`,
+held back until reveal.
+
 <!-- Add new entries above this line -->
