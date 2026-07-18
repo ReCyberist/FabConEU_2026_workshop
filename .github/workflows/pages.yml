@@ -1,0 +1,73 @@
+name: Deploy docs to GitHub Pages
+
+# Publishes the MkDocs Material site to GitHub Pages on every push to main.
+# Validation lives in ci.yml (mkdocs build --strict); this workflow owns the deploy.
+#
+# One-time repo setup (code, not clicks — run once with the gh CLI):
+#   gh api -X POST repos/JessAndRob/FabConEU_2026_workshop/pages `
+#     -f build_type=workflow
+# This sets the Pages source to "GitHub Actions". After that, this workflow
+# builds the site and deploys it to https://<owner>.github.io/<repo>/.
+
+on:
+  push:
+    branches: [main]
+    # Only rebuild/redeploy when the site or its toolchain actually changes.
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements.txt'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# GITHUB_TOKEN needs pages:write + id-token:write for the artifact deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let an in-progress run finish so a live deploy isn't cancelled.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install MkDocs Material
+        run: pip install -r requirements.txt
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # --strict here too: never publish a build that ci.yml would have failed.
+      - name: Build site (strict)
+        run: mkdocs build --strict
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
