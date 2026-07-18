@@ -177,4 +177,29 @@ excluded, `mkdocs build --strict` publishes only `index.html` (+ auto `404.html`
 [`../docs/index.md`](../docs/index.md) reworked into a teaser. Content pages stay on `main`,
 held back until reveal.
 
+## 2026-07-18 — Fabric SQL Terraform module: two providers, capacity→workspace→database
+**Context:** Task #5 — the Fabric SQL infra module, the "side by side" partner to the Azure
+SQL module (#4).
+**Learning:** Fabric SQL needs **two providers**, not one. The **capacity** is an *Azure*
+resource — `azurerm_fabric_capacity` (`Microsoft.Fabric/capacities`, added to azurerm in
+**v4.14**, so pin `~> 4.14` not `~> 4.0`) — while the **workspace** and **SQL database** are
+Fabric items managed by the **`microsoft/fabric`** provider (~> 1.12, needs Terraform
+>= 1.8) over the Fabric REST APIs. So the shape is **capacity → workspace → database**, where
+Azure SQL is **server → database**. Gotchas that cost a validate cycle: (1) a Fabric capacity
+name is **lowercase-alphanumeric only** (`^[a-z][a-z0-9]*$`, no hyphens), so it can't take the
+hyphenated CAF form — build it from the tokens minus separators. (2) On `fabric_sql_database`
+the connection details are **nested under a computed `properties` object**
+(`properties.database_name` / `.server_fqdn` / `.connection_string`), *not* top-level
+attributes — the registry docs page implied top-level and `validate` caught it; confirm
+against `terraform providers schema -json`. Both providers are **passwordless** (reuse
+`az login`; OIDC/SP in CI). `fmt`/`init`/`validate` are clean against the real schemas; no
+live `plan`/`apply` (needs a real capacity — #14). The `fabric_sql_database` resource can also
+deploy a `.sqlproj`/DACPAC directly via `definition`/`format` — noted as a future alternative,
+but we keep the SqlPackage path for symmetry with Azure SQL.
+**Action:** New module [`../infra/fabric-sql/terraform/`](../infra/fabric-sql/terraform/)
+(`providers/variables/main/outputs.tf` + `terraform.tfvars.example`, README rewritten). Task
+#5 → DONE. Reinforces the earlier flag to **commit `.terraform.lock.hcl`** — doubly true for
+the fast-moving preview Fabric provider (still gitignored today; revisit with #17). Next: a
+terraform `fmt`/`validate` CI job (#8) now covers both #4 and #5.
+
 <!-- Add new entries above this line -->
