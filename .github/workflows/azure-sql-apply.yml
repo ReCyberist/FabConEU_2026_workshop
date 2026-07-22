@@ -1,0 +1,59 @@
+name: Azure SQL — Terraform apply
+
+# Manually provisions the Azure SQL infra module (infra/azure-sql/terraform) into the
+# personal sandbox subscription. Deliberately workflow_dispatch-only — this creates real,
+# billed resources, so it's never triggered automatically by a push.
+#
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. State: remote azurerm backend in
+# the persistent rg-fabcon26-state-weu resource group (kept separate from the workload RG
+# so the nightly destroy workflow never touches the state store itself).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required to mint the OIDC token for azure/login-free ARM auth
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+
+concurrency:
+  group: azure-sql-terraform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: terraform apply
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/azure-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+      - name: Terraform plan
+        run: |
+          terraform plan -out=tfplan \
+            -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
+            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan

@@ -12,14 +12,20 @@ terraform {
     }
   }
 
-  # Local state for now. Decided direction is a remote azurerm backend (Azure Storage) for
-  # both CI and attendees — see notes/decisions.md D5 and task #17 (gated on #1). Local
-  # state can't survive GitHub Actions' ephemeral runners.
+  # Remote azurerm backend (Azure Storage) — see notes/decisions.md D5. AAD auth (no
+  # storage account keys), matching the passwordless design used everywhere else. The
+  # storage account/container/key are supplied via -backend-config at `terraform init`
+  # (see infra/pipelines/github-actions), since they're environment-specific.
+  backend "azurerm" {
+    use_oidc         = true
+    use_azuread_auth = true
+  }
 }
 
 provider "azurerm" {
   features {}
 
-  # azurerm v4 requires the subscription to be set explicitly. Supply it out-of-band via
-  # the ARM_SUBSCRIPTION_ID environment variable so no subscription id is committed.
+  # Passwordless OIDC auth throughout (notes/decisions.md D5). Supply ARM_CLIENT_ID,
+  # ARM_TENANT_ID, ARM_SUBSCRIPTION_ID and ARM_USE_OIDC=true as environment variables
+  # (e.g. from the CI workflow) rather than committing any of them here.
 }

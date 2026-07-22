@@ -177,4 +177,38 @@ excluded, `mkdocs build --strict` publishes only `index.html` (+ auto `404.html`
 [`../docs/index.md`](../docs/index.md) reworked into a teaser. Content pages stay on `main`,
 held back until reveal.
 
+## 2026-07-22 — Azure SQL apply/destroy workflows: personal-sandbox state backend + Git Bash gotcha
+**Context:** Task #9/#17 — wanted GitHub Actions workflows to `terraform apply` the Azure
+SQL module into Jess's personal sub, plus a nightly `terraform destroy` (21:00 UK, "we like
+to go to bed then") so nothing bills overnight. Needed remote state so apply and destroy —
+separate ephemeral runners — see the same state.
+**Learning 1 — keep the state storage account out of the workload RG.** The state backend
+(`stfabcon26tf4766a4`) lives in its own persistent `rg-fabcon26-state-weu`, never in the
+`rg-fabcon26-dev-weu` that `terraform destroy` tears down nightly. Obvious in hindsight, but
+worth stating: if the destroy target and the state store shared a resource group, the first
+nightly run would delete its own backend.
+**Learning 2 — two cron entries means two runs a day, not one.** First tried covering DST
+by registering **two** cron triggers (20:00 and 21:00 UTC, one per UK offset) with a gate
+step that skipped whichever one didn't land at 21:00 `Europe/London`. That does work, but
+it means the workflow **fires twice every day** — one run always a no-op — which is more
+confusing in the Actions history than it's worth for a personal sandbox. Settled on a
+single fixed **21:00 UTC** cron instead: one run a day, genuinely 9pm in winter (GMT) and
+10pm in summer (BST). Worth remembering for anything less forgiving of the drift.
+**Learning 3 — Git Bash mangles leading-slash args.** `az role assignment create --scope
+"/subscriptions/<id>"` failed with a cryptic `MissingSubscription` error — MSYS/Git Bash's
+path conversion was rewriting the `/subscriptions/...` argument as if it were a Windows path
+before `az` ever saw it. Fix: prefix the command with `MSYS_NO_PATHCONV=1`. Applies to any
+`az`/`gh`/CLI argument that starts with `/` when run from this repo's Bash tool.
+**Learning 4 — OIDC federated credential subject matching.** The federated credential
+subject `repo:<owner>/<repo>:ref:refs/heads/main` covers both `schedule` events and
+`workflow_dispatch` runs launched from `main` (both evaluate to that ref) — no separate
+`environment:` subject needed for this simple case.
+**Action:** Added [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+and [`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
+Backend + OIDC wired into `infra/azure-sql/terraform/providers.tf`; `.terraform.lock.hcl`
+un-ignored and committed. Repo variables set (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+`AZURE_SUBSCRIPTION_ID`, `TF_STATE_*`, `SQL_ENTRA_ADMIN_*`) — all non-secret with OIDC, so
+`vars` not `secrets`. Recorded in `notes/decisions.md` D5 (update) and `planning/tasks.md`
+#9/#17. First live `apply` still to be run — task #14.
+
 <!-- Add new entries above this line -->

@@ -15,7 +15,6 @@ crash.log
 !*.tfvars.example
 override.tf
 override.tf.json
-.terraform.lock.hcl
 
 # Azure / secrets — never commit
 *.publishsettings
