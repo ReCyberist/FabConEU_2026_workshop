@@ -61,3 +61,12 @@ take variables). **Who** creates and owns the state storage account depends on t
 sandbox model, so this is gated on **task #1**. Tracked as **task #17**; the initial
 `infra/azure-sql/terraform` module ships with local state until #17 lands. Also revisit the
 repo's gitignore of `.terraform.lock.hcl` (HashiCorp recommends committing it).
+
+**Update 2026-07-22:** Landed for J's **personal sandbox** subscription — storage account
+`stfabcon26tf4766a4` in its own persistent `rg-fabcon26-state-weu` (deliberately outside the
+workload resource group, so the nightly destroy workflow can never delete the state store
+itself), OIDC app registration + federated credential scoped to `ref:refs/heads/main`,
+`Contributor` at subscription scope + `Storage Blob Data Contributor` on the state account.
+`.terraform.lock.hcl` un-ignored and committed per the note above. This resolves D5 for
+personal/demo use only — the *attendee-facing* bootstrap script and state-account ownership
+are still open, gated on #1 as originally decided.

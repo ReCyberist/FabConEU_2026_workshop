@@ -37,25 +37,34 @@ admin identity (a **group** is recommended) via `entra_admin_login` +
 
 ## Run it
 
+Locally (local state, for iterating on the module itself):
+
 ```powershell
 Copy-Item terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 
-terraform init
+terraform init -backend=false
 terraform plan
 terraform apply
 ```
 
-**State.** The decided direction is a **remote `azurerm` backend (Azure Storage)** for both
-the CI pipeline and attendees — local state can't survive GitHub Actions' ephemeral runners
-(see [`notes/decisions.md`](../../../notes/decisions.md) **D5**). This initial module still
-uses **local state** until the state-backend work lands (task #17), which is gated on the
-attendee sandbox decision (#1). HashiCorp also recommends **committing `.terraform.lock.hcl`**
-once the backend is in place, so CI and teammates resolve identical provider versions.
+Via GitHub Actions, against the shared remote state (see **State** below):
+[`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) (manual) and
+[`azure-sql-destroy.yml`](../../../.github/workflows/azure-sql-destroy.yml) (nightly at
+21:00 UK time + manual).
 
-> **Status:** `fmt`, `init`, `validate`, and `plan` all run clean (plan: 5 to add). Not yet
-> `apply`-ed against a live subscription — tracked with the runtime deploy in
-> [`planning/tasks.md`](../../../planning/tasks.md) #14.
+**State.** Uses a **remote `azurerm` backend** (Azure Storage, AAD/OIDC auth — no storage
+keys), per [`notes/decisions.md`](../../../notes/decisions.md) **D5**. The state account
+(`stfabcon26tf4766a4`) lives in its own persistent resource group
+(`rg-fabcon26-state-weu`), kept separate from the workload resource group so the nightly
+destroy workflow never touches the state store. This is the presenter's **personal sandbox**
+backend (task #17's personal-use resolution); the *attendee-facing* backend/sandbox
+strategy is still open (#1). `.terraform.lock.hcl` is committed so CI and teammates resolve
+identical provider versions.
+
+> **Status:** `fmt`, `init`, `validate` all run clean. Remote backend + OIDC auth wired up
+> and GitHub Actions apply/destroy workflows added — first live `apply` still to be run;
+> tracked with the runtime deploy in [`planning/tasks.md`](../../../planning/tasks.md) #14.
 
 ## Inputs
 
