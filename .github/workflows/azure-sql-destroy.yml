@@ -1,21 +1,20 @@
 name: Azure SQL — Terraform destroy
 
 # Tears down the Azure SQL infra module (infra/azure-sql/terraform) in the personal
-# sandbox subscription. Runs nightly at 21:00 UK local time (we like to go to bed then) and
-# can also be triggered manually.
+# sandbox subscription. Runs nightly at 21:00 UTC (we like to go to bed then) and can also
+# be triggered manually.
 #
-# GitHub Actions cron is UTC-only, so two schedules are registered — one for BST (UTC+1)
-# and one for GMT (UTC+0) — and a gate step skips whichever one doesn't actually land at
-# 21:00 in Europe/London right now. A manual workflow_dispatch always runs regardless of
-# the time gate.
+# Fixed UTC time, not UK-local — GitHub Actions cron has no timezone support, and running
+# two cron entries (one per DST offset) means two workflow runs a day with one always a
+# no-op, which is more confusing than it's worth for a personal sandbox. 21:00 UTC is 9pm
+# GMT in winter and 10pm BST in summer.
 #
 # Auth: OIDC (no secrets) — see notes/decisions.md D5. Uses the same remote state as
 # azure-sql-apply.yml so destroy knows exactly what apply created.
 
 on:
   schedule:
-    - cron: '0 20 * * *'   # 21:00 BST (UTC+1) — summer
-    - cron: '0 21 * * *'   # 21:00 GMT (UTC+0) — winter
+    - cron: '0 21 * * *'   # 21:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -40,29 +39,15 @@ jobs:
       run:
         working-directory: infra/azure-sql/terraform
     steps:
-      - name: Gate on 21:00 Europe/London (schedule only)
-        id: gate
-        run: |
-          current_hour=$(TZ='Europe/London' date +%H)
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$current_hour" != "21" ]; then
-            echo "It's ${current_hour}:00 in Europe/London, not 21:00 — this is the other DST cron slot. Skipping."
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "proceed=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout
-        if: steps.gate.outputs.proceed == 'true'
         uses: actions/checkout@v7
 
       - name: Set up Terraform
-        if: steps.gate.outputs.proceed == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: '~1.12.0'
 
       - name: Terraform init (remote state)
-        if: steps.gate.outputs.proceed == 'true'
         run: |
           terraform init \
             -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
@@ -71,7 +56,6 @@ jobs:
             -backend-config="key=azure-sql/dev.terraform.tfstate"
 
       - name: Terraform destroy
-        if: steps.gate.outputs.proceed == 'true'
         run: |
           terraform destroy -auto-approve \
             -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \

@@ -12,7 +12,7 @@ Status: `TODO` · `DOING` · `BLOCKED` · `DONE`. Owner: **J** (Jess) / **R** (R
 | 6 | Bicep equivalents (reference) | — | TODO | — | Bonus/reference. |
 | 7 | SQL project (`.sqlproj`) for sample DB | J | DONE | 2026-07-08 | Schema + seed build clean. Publish profiles for Azure SQL + Fabric SQL in `PublishProfiles/`; validated by SqlPackage (no live target — see #14). |
 | 8 | GitHub Actions: build/validate pipeline | J + R | DOING | — | `ci.yml` builds SQL project + T-SQL static analysis (`-warnaserror`), runs on push + PR. Add terraform/bicep/docs jobs next. |
-| 9 | GitHub Actions: deploy infra + DB pipeline | J | DOING | 2026-07-22 | `azure-sql-apply.yml` (manual) + `azure-sql-destroy.yml` (nightly 21:00 UK + manual) landed for the Azure SQL module against J's personal sandbox sub. OIDC auth, no secrets. DB-deploy job still to add. |
+| 9 | GitHub Actions: deploy infra + DB pipeline | J | DOING | 2026-07-22 | `azure-sql-apply.yml` (manual) + `azure-sql-destroy.yml` (nightly 21:00 UTC + manual) landed for the Azure SQL module against J's personal sandbox sub. OIDC auth, no secrets. DB-deploy job still to add. |
 | 10 | Azure DevOps pipeline equivalents (reference) | — | TODO | — | Bonus/reference. |
 | 11 | MkDocs site skeleton + Pages deploy workflow | J | DONE | 2026-07-18 | `pages.yml` deploys to GitHub Pages on push to `main` (artifact deploy, `github-pages` env). Verified `mkdocs build --strict` clean. **One-time:** set Pages source to "GitHub Actions" (`gh api` cmd in workflow header). |
 | 12 | Code-bundle packaging pipeline (zip per module) | — | TODO | — | Prose=pages, code=downloads. |

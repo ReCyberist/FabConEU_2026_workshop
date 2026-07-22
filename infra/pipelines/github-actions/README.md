@@ -8,7 +8,7 @@ Landed workflows:
   manual (`workflow_dispatch`): `terraform apply` for `infra/azure-sql/terraform` against
   the personal sandbox subscription. OIDC auth, remote `azurerm` state.
 - **[`azure-sql-destroy.yml`](../../../.github/workflows/azure-sql-destroy.yml)** —
-  nightly at 21:00 UK time (DST-aware) + manual: `terraform destroy` for the same module,
+  nightly at 21:00 UTC + manual: `terraform destroy` for the same module,
   so nothing is left running (and billing) overnight.
 - **`pages.yml`** — deploy MkDocs to GitHub Pages on push to `main`.
 

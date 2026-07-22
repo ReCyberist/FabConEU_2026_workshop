@@ -51,7 +51,7 @@ terraform apply
 Via GitHub Actions, against the shared remote state (see **State** below):
 [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) (manual) and
 [`azure-sql-destroy.yml`](../../../.github/workflows/azure-sql-destroy.yml) (nightly at
-21:00 UK time + manual).
+21:00 UTC + manual).
 
 **State.** Uses a **remote `azurerm` backend** (Azure Storage, AAD/OIDC auth — no storage
 keys), per [`notes/decisions.md`](../../../notes/decisions.md) **D5**. The state account

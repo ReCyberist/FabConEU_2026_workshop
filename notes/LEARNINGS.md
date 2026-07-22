@@ -187,10 +187,13 @@ separate ephemeral runners — see the same state.
 `rg-fabcon26-dev-weu` that `terraform destroy` tears down nightly. Obvious in hindsight, but
 worth stating: if the destroy target and the state store shared a resource group, the first
 nightly run would delete its own backend.
-**Learning 2 — DST breaks single-cron "9pm".** GitHub Actions `schedule` cron is UTC-only
-and can't reference a timezone. Fixed with **two cron entries** (20:00 and 21:00 UTC,
-covering BST and GMT) plus a gate step that checks `TZ='Europe/London' date +%H` and skips
-the run if it isn't actually 21:00 there right now. `workflow_dispatch` bypasses the gate.
+**Learning 2 — two cron entries means two runs a day, not one.** First tried covering DST
+by registering **two** cron triggers (20:00 and 21:00 UTC, one per UK offset) with a gate
+step that skipped whichever one didn't land at 21:00 `Europe/London`. That does work, but
+it means the workflow **fires twice every day** — one run always a no-op — which is more
+confusing in the Actions history than it's worth for a personal sandbox. Settled on a
+single fixed **21:00 UTC** cron instead: one run a day, genuinely 9pm in winter (GMT) and
+10pm in summer (BST). Worth remembering for anything less forgiving of the drift.
 **Learning 3 — Git Bash mangles leading-slash args.** `az role assignment create --scope
 "/subscriptions/<id>"` failed with a cryptic `MissingSubscription` error — MSYS/Git Bash's
 path conversion was rewriting the `/subscriptions/...` argument as if it were a Windows path
