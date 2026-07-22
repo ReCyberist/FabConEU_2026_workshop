@@ -10,7 +10,8 @@ name: Azure SQL — Terraform destroy
 # GMT in winter and 10pm BST in summer.
 #
 # Auth: OIDC (no secrets) — see notes/decisions.md D5. Uses the same remote state as
-# azure-sql-apply.yml so destroy knows exactly what apply created.
+# azure-sql-apply.yml so destroy knows exactly what apply created, including the
+# AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION region override (see azure-sql-apply.yml).
 
 on:
   schedule:
@@ -59,4 +60,6 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
-            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}"
+            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

@@ -211,4 +211,25 @@ un-ignored and committed. Repo variables set (`AZURE_CLIENT_ID`, `AZURE_TENANT_I
 `vars` not `secrets`. Recorded in `notes/decisions.md` D5 (update) and `planning/tasks.md`
 #9/#17. First live `apply` still to be run — task #14.
 
+## 2026-07-22 — Azure Sponsorship subs can be region-restricted below what the RP advertises
+**Context:** First real `azure-sql-apply.yml` run (task #14). Resource group created fine
+in West Europe, then `azurerm_mssql_server` failed: `ProvisioningDisabled — Subscriptions
+are restricted from provisioning in this region`.
+**Learning:** `az provider show --namespace Microsoft.Sql` lists West Europe as a perfectly
+valid region for `Microsoft.Sql/servers` — that list is the **resource provider's**
+supported regions, not a promise that *your subscription* can provision there. This
+particular subscription is `quotaId: Sponsored_2016-01-01` (Azure Sponsorship), and new/
+sponsorship subscriptions are commonly region-restricted (often exactly the popular EU
+regions) independent of RP or quota. There's no clean CLI query for "which regions can
+*this* subscription actually provision in" — the practical check is just: try, read the
+error. No resources were actually created in Azure before the error (confirmed via `az
+resource list` on the resource group — empty), so nothing needed cleaning up beyond the
+now-pointless empty resource group.
+**Action:** Added `AZURE_LOCATION`/`AZURE_LOCATION_ABBREVIATION` repo variables (`uksouth`/
+`uks`) and wired them as `-var` overrides into both `azure-sql-apply.yml` and
+`azure-sql-destroy.yml`, rather than changing the module's own default (`westeurope` stays
+the documented/taught default — this restriction is specific to this one sandbox
+subscription, not the module). Ran `azure-sql-destroy.yml` once to clear the empty
+West Europe resource group before switching regions.
+
 <!-- Add new entries above this line -->
