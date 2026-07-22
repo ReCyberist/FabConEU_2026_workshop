@@ -15,11 +15,11 @@ Status: `TODO` · `DOING` · `BLOCKED` · `DONE`. Owner: **J** (Jess) / **R** (R
 | 9 | GitHub Actions: deploy infra + DB pipeline | — | TODO | — | Content focus. |
 | 10 | Azure DevOps pipeline equivalents (reference) | — | TODO | — | Bonus/reference. |
 | 11 | MkDocs site skeleton + Pages deploy workflow | J | DONE | 2026-07-18 | `pages.yml` deploys to GitHub Pages on push to `main` (artifact deploy, `github-pages` env). Verified `mkdocs build --strict` clean. **One-time:** set Pages source to "GitHub Actions" (`gh api` cmd in workflow header). |
-| 16 | Attendee page: sample database (ER diagram) | J | DONE | 2026-07-04 | `docs/database/sample-database.md`, Mermaid `erDiagram`. |
 | 12 | Code-bundle packaging pipeline (zip per module) | — | TODO | — | Prose=pages, code=downloads. |
 | 13 | Full dry run + timing pass | J + R | TODO | — | Feed results into agenda + learnings. |
 | 14 | Runtime-test schema: publish DACPAC + seed to a real DB | — | TODO | — | Verify views/procs/seed against Azure SQL & Fabric SQL. No local engine in dev today. |
 | 15 | Design the "ship changes as code" increments | — | TODO | — | Baseline exists; plan the PR-driven schema changes for the 15:30 agenda module. Demo idea captured in [`Ideas.md`](../notes/Ideas.md): Dev/Test Fabric SQL pipeline, add view + drop populated column, show blind-deploy data loss vs. schema-compare-then-apply. |
+| 16 | Attendee page: sample database (ER diagram) | J | DONE | 2026-07-04 | `docs/database/sample-database.md`, Mermaid `erDiagram`. |
 | 17 | Terraform remote state backend (Azure Storage) + bootstrap | — | TODO | — | Decided **D5**: `azurerm` backend, OIDC + Entra auth, per-module state keys, `az` bootstrap script. **Gate partly cleared by D6:** no shared *attendee* state (BYO → local state per attendee); this is only for **our** CI/demo state — owner deferred ("decide later"). Retrofit #4/#5 once landed. |
 | 18 | Shared unsupported DB-deploy target: SQL Server on a VM + push pipeline | — | TODO | — | From **D6**. One SQL Server VM as the best-effort, **unsupported** target for attendees without their own SQL; each attendee gets their own DB (no DACPAC name collisions); deploy via pipeline. Provision + teardown as code. |
 
