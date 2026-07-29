@@ -1,0 +1,68 @@
+# Azure SQL — Terraform plan on PR (Azure DevOps reference)
+#
+# Mirrors .github/workflows/azure-sql-plan.yml: a read-only fmt/validate/plan on pull requests
+# touching the Azure SQL Terraform module. NEVER applies — provisioning is the deliberate,
+# manual azure-sql-apply.yml. plan uses -lock=false so it never contends for the state lock
+# with a running apply/destroy.
+#
+# Auth: a **workload-identity-federation** Azure Resource Manager service connection — the
+# Azure DevOps equivalent of GitHub Actions OIDC (passwordless, no secrets). AzureCLI@2 logs
+# in with it; `addSpnToEnvironment: true` exposes the SPN + OIDC id-token to the script, which
+# hands them to Terraform via the ARM_* environment variables.
+#
+# Prereqs (see README): a variable group `fabcon26-azure-sql` providing `azureServiceConnection`,
+# `AZURE_SUBSCRIPTION_ID`, `TF_STATE_*`, `SQL_ENTRA_ADMIN_*`, `AZURE_LOCATION[_ABBREVIATION]`.
+# Terraform is preinstalled on the Microsoft-hosted ubuntu image (add TerraformInstaller@1 from
+# the Terraform extension if you want to pin the version).
+
+trigger: none
+
+pr:
+  branches:
+    include: [ '*' ]
+  paths:
+    include:
+      - infra/azure-sql/terraform/**
+      - infra/pipelines/azure-devops/azure-sql-plan.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: fabcon26-azure-sql
+
+steps:
+  - task: AzureCLI@2
+    displayName: Terraform fmt / validate / plan (read-only)
+    inputs:
+      azureSubscription: $(azureServiceConnection)
+      scriptType: bash
+      scriptLocation: inlineScript
+      addSpnToEnvironment: true
+      workingDirectory: infra/azure-sql/terraform
+      inlineScript: |
+        set -euo pipefail
+
+        # Passwordless: take the SPN + OIDC token the service connection exposes and pass them
+        # to Terraform's azurerm provider + backend as ARM_* env vars.
+        export ARM_CLIENT_ID="$servicePrincipalId"
+        export ARM_OIDC_TOKEN="$idToken"
+        export ARM_TENANT_ID="$tenantId"
+        export ARM_SUBSCRIPTION_ID="$(AZURE_SUBSCRIPTION_ID)"
+        export ARM_USE_OIDC=true
+
+        terraform fmt -check -recursive
+
+        terraform init \
+          -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+          -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
+          -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+          -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+        terraform validate
+
+        terraform plan -lock=false \
+          -var="entra_admin_login=$(SQL_ENTRA_ADMIN_LOGIN)" \
+          -var="entra_admin_object_id=$(SQL_ENTRA_ADMIN_OBJECT_ID)" \
+          -var="location=$(AZURE_LOCATION)" \
+          -var="location_abbreviation=$(AZURE_LOCATION_ABBREVIATION)"

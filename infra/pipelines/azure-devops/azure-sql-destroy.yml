@@ -1,0 +1,52 @@
+# Azure SQL — Terraform destroy (Azure DevOps reference)
+#
+# Mirrors .github/workflows/azure-sql-destroy.yml: tears down the Azure SQL module nightly at
+# 21:00 UTC (9pm GMT / 10pm BST) so nothing bills overnight, and can also be run manually.
+# Azure DevOps cron is UTC, like GitHub Actions; `always: true` runs it even with no new commits.
+#
+# Auth: the same workload-identity-federation service connection and remote state as apply.
+
+trigger: none
+pr: none
+
+schedules:
+  - cron: '0 21 * * *'
+    displayName: Nightly teardown at 21:00 UTC
+    branches:
+      include: [ main ]
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: fabcon26-azure-sql
+
+steps:
+  - task: AzureCLI@2
+    displayName: Terraform init + destroy
+    inputs:
+      azureSubscription: $(azureServiceConnection)
+      scriptType: bash
+      scriptLocation: inlineScript
+      addSpnToEnvironment: true
+      workingDirectory: infra/azure-sql/terraform
+      inlineScript: |
+        set -euo pipefail
+        export ARM_CLIENT_ID="$servicePrincipalId"
+        export ARM_OIDC_TOKEN="$idToken"
+        export ARM_TENANT_ID="$tenantId"
+        export ARM_SUBSCRIPTION_ID="$(AZURE_SUBSCRIPTION_ID)"
+        export ARM_USE_OIDC=true
+
+        terraform init \
+          -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+          -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
+          -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+          -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+        terraform destroy -auto-approve \
+          -var="entra_admin_login=$(SQL_ENTRA_ADMIN_LOGIN)" \
+          -var="entra_admin_object_id=$(SQL_ENTRA_ADMIN_OBJECT_ID)" \
+          -var="location=$(AZURE_LOCATION)" \
+          -var="location_abbreviation=$(AZURE_LOCATION_ABBREVIATION)"
