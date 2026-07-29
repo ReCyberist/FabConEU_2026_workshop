@@ -232,4 +232,36 @@ the documented/taught default — this restriction is specific to this one sandb
 subscription, not the module). Ran `azure-sql-destroy.yml` once to clear the empty
 West Europe resource group before switching regions.
 
+## 2026-07-29 — First live Azure SQL apply succeeded in UK South; DACPAC publish job added
+**Context:** Re-ran `azure-sql-apply.yml` after merging the region override (PR #11), then
+wired the DB-as-code publish step onto the same workflow (tasks #9/#14).
+**Learning 1 — the region override worked, single-region as designed.** Run
+[`30436925832`](https://github.com/JessAndRob/FabConEU_2026_workshop/actions/runs/30436925832)
+went green: **5 resources added** in **UK South** — `rg-fabcon26-dev-uks`,
+`sql-fabcon26-dev-uks-lmf5m4` (+ DB `sqldb-football-dev`, allow-Azure-services firewall
+rule, random suffix). RG ~24s, server ~1m24s, DB ~2m6s, whole run 4m36s. Confirms the
+module is single-region: the DB inherits the server's location which inherits the RG's
+`var.location`, so one `location`/`location_abbreviation` pair moves everything together —
+there was never a cross-region split, just a half-finished apply on the earlier WEU failure.
+**Learning 2 — Entra-only server + human admin blocks CI publish (the real gotcha).** The
+server is `azuread_authentication_only = true` with the Entra admin set to a **user**
+(`jpomfret7`). A logical SQL server allows exactly **one** Entra admin (user *or* group),
+so the GitHub Actions OIDC service principal (`AZURE_CLIENT_ID`) has **no way to log into
+the database** — it isn't the admin and, with SQL auth disabled, can't be a SQL login
+either. The DACPAC publish job authenticates fine (OIDC → `az account get-access-token
+--resource https://database.windows.net/` → SqlPackage `/AccessToken`) but will fail at the
+**database login** until the CI principal is granted access. Recommended fix (matches the
+module's own advice): make the server's Entra admin an **Entra group** containing both the
+presenter and the CI SP, and point `SQL_ENTRA_ADMIN_OBJECT_ID` at the group. Tracked as
+task #18.
+**Learning 3 — publish wired as a second job on the apply workflow.** The apply job now
+exposes `sql_server_fqdn`/`sql_database_name` as job outputs (`terraform output -raw` →
+`$GITHUB_OUTPUT`); the `publish` job `needs: apply` and targets them, so one dispatch does
+infra + DB. SqlPackage on the Linux runner installs via `dotnet tool install -g
+microsoft.sqlpackage` (add `$HOME/.dotnet/tools` to `$GITHUB_PATH`). The token is masked
+(`::add-mask::`) — nothing secret persists.
+**Action:** Extended [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+with the `publish` job. Tasks #9/#14 advanced, #18 added for the CI-SP DB-access
+prerequisite. **The publish job is unverified end-to-end** until #18 is done.
+
 <!-- Add new entries above this line -->

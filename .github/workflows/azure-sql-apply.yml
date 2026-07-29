@@ -34,6 +34,9 @@ jobs:
   apply:
     name: terraform apply
     runs-on: ubuntu-latest
+    outputs:
+      server_fqdn: ${{ steps.tf.outputs.server_fqdn }}
+      database_name: ${{ steps.tf.outputs.database_name }}
     defaults:
       run:
         working-directory: infra/azure-sql/terraform
@@ -64,3 +67,72 @@ jobs:
 
       - name: Terraform apply
         run: terraform apply -auto-approve tfplan
+
+      # Surface the provisioned server/database names so the publish job can target them
+      # without hard-coding the random server suffix.
+      - name: Expose Terraform outputs
+        id: tf
+        run: |
+          echo "server_fqdn=$(terraform output -raw sql_server_fqdn)" >> "$GITHUB_OUTPUT"
+          echo "database_name=$(terraform output -raw sql_database_name)" >> "$GITHUB_OUTPUT"
+
+  # -------------------------------------------------------------------------------------
+  # DB-as-code: publish the FabConFootball DACPAC into the just-provisioned database.
+  # Runs only after a successful apply and targets that apply's Terraform outputs, so the
+  # whole "infra + database as code" story is one dispatch.
+  #
+  # AUTH PREREQUISITE (see planning/tasks.md #18): the SQL server is Entra-only and its
+  # admin is a human user, so the GitHub Actions OIDC service principal cannot log into the
+  # database yet. Until the CI principal is granted DB access — recommended: make the
+  # server's Entra admin a *group* containing both the presenter and the CI SP — this job
+  # will authenticate but fail at the database login. The job mechanics are otherwise
+  # complete and correct.
+  # -------------------------------------------------------------------------------------
+  publish:
+    name: publish DACPAC
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      # RunSqlCodeAnalysis is on in the .sqlproj, so this compiles the schema to a DACPAC
+      # and runs T-SQL static analysis; -warnaserror fails the build on any smell.
+      - name: Build DACPAC
+        run: dotnet build database/sql-projects/FabConFootball.sqlproj --configuration Release -warnaserror
+
+      - name: Install SqlPackage
+        run: |
+          dotnet tool install -g microsoft.sqlpackage
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Mint a Microsoft Entra access token for the Azure SQL resource. Kept out of source
+      # and masked in the log — nothing secret is stored.
+      - name: Acquire Entra token for Azure SQL
+        run: |
+          token=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
+          echo "::add-mask::$token"
+          echo "SQL_ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
+
+      # Passwordless publish: the profile carries the deploy options (no connection string);
+      # server/database come from the apply job's Terraform outputs, auth from the Entra token.
+      - name: Publish DACPAC
+        run: |
+          sqlpackage /Action:Publish \
+            /SourceFile:"database/sql-projects/bin/Release/FabConFootball.dacpac" \
+            /Profile:"database/sql-projects/PublishProfiles/AzureSql.publish.xml" \
+            /TargetServerName:"${{ needs.apply.outputs.server_fqdn }}" \
+            /TargetDatabaseName:"${{ needs.apply.outputs.database_name }}" \
+            /AccessToken:"$SQL_ACCESS_TOKEN"
