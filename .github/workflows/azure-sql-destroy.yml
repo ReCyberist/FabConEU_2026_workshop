@@ -1,0 +1,65 @@
+name: Azure SQL — Terraform destroy
+
+# Tears down the Azure SQL infra module (infra/azure-sql/terraform) in the personal
+# sandbox subscription. Runs nightly at 21:00 UTC (we like to go to bed then) and can also
+# be triggered manually.
+#
+# Fixed UTC time, not UK-local — GitHub Actions cron has no timezone support, and running
+# two cron entries (one per DST offset) means two workflow runs a day with one always a
+# no-op, which is more confusing than it's worth for a personal sandbox. 21:00 UTC is 9pm
+# GMT in winter and 10pm BST in summer.
+#
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. Uses the same remote state as
+# azure-sql-apply.yml so destroy knows exactly what apply created, including the
+# AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION region override (see azure-sql-apply.yml).
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 21:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+
+concurrency:
+  group: azure-sql-terraform
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    name: terraform destroy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/azure-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+      - name: Terraform destroy
+        run: |
+          terraform destroy -auto-approve \
+            -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
+            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

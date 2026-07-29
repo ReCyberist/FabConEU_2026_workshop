@@ -213,13 +213,186 @@ troubleshooting labs, and if we provide something they'll expect that." Knock-on
 **unblocks #2**, and it **defuses most of #17** — there's no shared attendee state account to
 own (attendees use local state); only *our* CI/demo state backend still needs an owner.
 **Shared endpoint resolved:** it's a **SQL Server on a VM** attendees push to via pipeline —
-a database per attendee on one instance, so no DACPAC name collisions (task #18). **Deferred
+a database per attendee on one instance, so no DACPAC name collisions (task #19). **Deferred
 ("decide later"):** the Fabric IaC path's capacity cost (an F-SKU bills; a trial capacity
 can't be TF-created), and *our* CI/demo state owner (#17) — both open caveats, neither blocks
 the prereqs page.
 **Action:** Recorded as [`decisions.md`](decisions.md) **D6**; prereq checklist + shared-endpoint
 TODO in [`../planning/ordering.md`](../planning/ordering.md); tasks #1 → DONE, #2 unblocked,
-#17 note updated, new #18 (shared VM target). CLAUDE.md §2 unchanged (D6 is an operational
+#17 note updated, new #19 (shared VM target). CLAUDE.md §2 unchanged (D6 is an operational
 decision, not a scope change).
+
+## 2026-07-22 — Azure SQL apply/destroy workflows: personal-sandbox state backend + Git Bash gotcha
+**Context:** Task #9/#17 — wanted GitHub Actions workflows to `terraform apply` the Azure
+SQL module into Jess's personal sub, plus a nightly `terraform destroy` (21:00 UK, "we like
+to go to bed then") so nothing bills overnight. Needed remote state so apply and destroy —
+separate ephemeral runners — see the same state.
+**Learning 1 — keep the state storage account out of the workload RG.** The state backend
+(`stfabcon26tf4766a4`) lives in its own persistent `rg-fabcon26-state-weu`, never in the
+`rg-fabcon26-dev-weu` that `terraform destroy` tears down nightly. Obvious in hindsight, but
+worth stating: if the destroy target and the state store shared a resource group, the first
+nightly run would delete its own backend.
+**Learning 2 — two cron entries means two runs a day, not one.** First tried covering DST
+by registering **two** cron triggers (20:00 and 21:00 UTC, one per UK offset) with a gate
+step that skipped whichever one didn't land at 21:00 `Europe/London`. That does work, but
+it means the workflow **fires twice every day** — one run always a no-op — which is more
+confusing in the Actions history than it's worth for a personal sandbox. Settled on a
+single fixed **21:00 UTC** cron instead: one run a day, genuinely 9pm in winter (GMT) and
+10pm in summer (BST). Worth remembering for anything less forgiving of the drift.
+**Learning 3 — Git Bash mangles leading-slash args.** `az role assignment create --scope
+"/subscriptions/<id>"` failed with a cryptic `MissingSubscription` error — MSYS/Git Bash's
+path conversion was rewriting the `/subscriptions/...` argument as if it were a Windows path
+before `az` ever saw it. Fix: prefix the command with `MSYS_NO_PATHCONV=1`. Applies to any
+`az`/`gh`/CLI argument that starts with `/` when run from this repo's Bash tool.
+**Learning 4 — OIDC federated credential subject matching.** The federated credential
+subject `repo:<owner>/<repo>:ref:refs/heads/main` covers both `schedule` events and
+`workflow_dispatch` runs launched from `main` (both evaluate to that ref) — no separate
+`environment:` subject needed for this simple case.
+**Action:** Added [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+and [`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
+Backend + OIDC wired into `infra/azure-sql/terraform/providers.tf`; `.terraform.lock.hcl`
+un-ignored and committed. Repo variables set (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+`AZURE_SUBSCRIPTION_ID`, `TF_STATE_*`, `SQL_ENTRA_ADMIN_*`) — all non-secret with OIDC, so
+`vars` not `secrets`. Recorded in `notes/decisions.md` D5 (update) and `planning/tasks.md`
+#9/#17. First live `apply` still to be run — task #14.
+
+## 2026-07-22 — Azure Sponsorship subs can be region-restricted below what the RP advertises
+**Context:** First real `azure-sql-apply.yml` run (task #14). Resource group created fine
+in West Europe, then `azurerm_mssql_server` failed: `ProvisioningDisabled — Subscriptions
+are restricted from provisioning in this region`.
+**Learning:** `az provider show --namespace Microsoft.Sql` lists West Europe as a perfectly
+valid region for `Microsoft.Sql/servers` — that list is the **resource provider's**
+supported regions, not a promise that *your subscription* can provision there. This
+particular subscription is `quotaId: Sponsored_2016-01-01` (Azure Sponsorship), and new/
+sponsorship subscriptions are commonly region-restricted (often exactly the popular EU
+regions) independent of RP or quota. There's no clean CLI query for "which regions can
+*this* subscription actually provision in" — the practical check is just: try, read the
+error. No resources were actually created in Azure before the error (confirmed via `az
+resource list` on the resource group — empty), so nothing needed cleaning up beyond the
+now-pointless empty resource group.
+**Action:** Added `AZURE_LOCATION`/`AZURE_LOCATION_ABBREVIATION` repo variables (`uksouth`/
+`uks`) and wired them as `-var` overrides into both `azure-sql-apply.yml` and
+`azure-sql-destroy.yml`, rather than changing the module's own default (`westeurope` stays
+the documented/taught default — this restriction is specific to this one sandbox
+subscription, not the module). Ran `azure-sql-destroy.yml` once to clear the empty
+West Europe resource group before switching regions.
+
+## 2026-07-29 — First live Azure SQL apply succeeded in UK South; DACPAC publish job added
+**Context:** Re-ran `azure-sql-apply.yml` after merging the region override (PR #11), then
+wired the DB-as-code publish step onto the same workflow (tasks #9/#14).
+**Learning 1 — the region override worked, single-region as designed.** Run
+[`30436925832`](https://github.com/JessAndRob/FabConEU_2026_workshop/actions/runs/30436925832)
+went green: **5 resources added** in **UK South** — `rg-fabcon26-dev-uks`,
+`sql-fabcon26-dev-uks-lmf5m4` (+ DB `sqldb-football-dev`, allow-Azure-services firewall
+rule, random suffix). RG ~24s, server ~1m24s, DB ~2m6s, whole run 4m36s. Confirms the
+module is single-region: the DB inherits the server's location which inherits the RG's
+`var.location`, so one `location`/`location_abbreviation` pair moves everything together —
+there was never a cross-region split, just a half-finished apply on the earlier WEU failure.
+**Learning 2 — Entra-only server + human admin blocks CI publish (the real gotcha).** The
+server is `azuread_authentication_only = true` with the Entra admin set to a **user**
+(`jpomfret7`). A logical SQL server allows exactly **one** Entra admin (user *or* group),
+so the GitHub Actions OIDC service principal (`AZURE_CLIENT_ID`) has **no way to log into
+the database** — it isn't the admin and, with SQL auth disabled, can't be a SQL login
+either. The DACPAC publish job authenticates fine (OIDC → `az account get-access-token
+--resource https://database.windows.net/` → SqlPackage `/AccessToken`) but will fail at the
+**database login** until the CI principal is granted access. Recommended fix (matches the
+module's own advice): make the server's Entra admin an **Entra group** containing both the
+presenter and the CI SP, and point `SQL_ENTRA_ADMIN_OBJECT_ID` at the group. Tracked as
+task #18.
+**Learning 3 — publish wired as a second job on the apply workflow.** The apply job now
+exposes `sql_server_fqdn`/`sql_database_name` as job outputs (`terraform output -raw` →
+`$GITHUB_OUTPUT`); the `publish` job `needs: apply` and targets them, so one dispatch does
+infra + DB. SqlPackage on the Linux runner installs via `dotnet tool install -g
+microsoft.sqlpackage` (add `$HOME/.dotnet/tools` to `$GITHUB_PATH`). The token is masked
+(`::add-mask::`) — nothing secret persists.
+**Action:** Extended [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+with the `publish` job. Tasks #9/#14 advanced, #18 added for the CI-SP DB-access
+prerequisite. **The publish job is unverified end-to-end** until #18 is done.
+
+## 2026-07-29 — End-to-end "infra + DB as code" verified: Entra group admin unblocks CI publish
+**Context:** Closing the #18 auth gap so the DACPAC publish job (#9) could run for real.
+**Learning — an Entra *group* as the SQL server admin is what makes passwordless CI
+publish work.** Created group `fabcon26-sql-admins`, added the presenters **and** the CI
+service principal, then pointed the server's Entra admin at the group (via the
+`SQL_ENTRA_ADMIN_LOGIN`/`SQL_ENTRA_ADMIN_OBJECT_ID` repo vars → `terraform apply`, a clean
+`1 changed` in-place update of the `azuread_administrator` block). Because the CI SP is now
+a *member* of the admin group, its OIDC token authenticates against the DB with no SQL
+login and no secret. Two gotchas worth repeating: (1) group membership needs the CI
+principal's **service-principal object id** (`az ad sp show --id <appId> --query id`), which
+is **not** the app/client id in `AZURE_CLIENT_ID`; (2) a logical SQL server allows exactly
+one Entra admin, so a *group* is the only way to admin-grant more than one identity — this
+is the reusable pattern for attendees too (one workshop group, everyone in it).
+**Result:** Re-ran `azure-sql-apply.yml` (run
+[`30441294528`](https://github.com/JessAndRob/FabConEU_2026_workshop/actions/runs/30441294528))
+— both jobs green: `apply` 58s, `publish` 1m26s. SqlPackage reported **"Successfully
+published database"**, creating all 9 tables + indexes/FKs/checks, 3 views, 3 procs, and
+running the post-deploy seed — into `sqldb-football-dev` on `sql-fabcon26-dev-uks-lmf5m4`,
+passwordless. First full infra→schema deploy of the workshop's content-focus path.
+**Action:** Tasks #9 and #18 → DONE; #14 → Azure SQL side verified at deploy level (Fabric
+SQL still open). No file changes — the publish job already shipped in PR #12.
+
+## 2026-07-29 — Post-publish DB smoke test; and two auth/network gotchas testing it
+**Context:** Optional polish after the end-to-end deploy — add a data-level smoke test to
+the publish job and clear the Node 20 action-deprecation warnings.
+**Learning 1 — action bumps to clear the Node 20 warnings.** `hashicorp/setup-terraform@v3`
+and `azure/login@v2` both emitted "Node.js 20 is deprecated … forced to run on Node.js 24".
+The fix is just newer majors: **`setup-terraform@v4`** (v4.0.1, Feb 2026) and
+**`azure/login@v3`** (v3.0.0, Mar 2026), both Node-24 native. Bumped in the apply + destroy
+workflows.
+**Learning 2 — the OIDC federated credential only trusts `main`, so deploy workflows can't
+be test-run from a branch.** Dispatching `azure-sql-apply.yml` on a feature branch fails at
+`terraform init` with `AADSTS700213: No matching federated identity record found for
+presented assertion subject 'repo:…:ref:refs/heads/<branch>'`. The credential subject is
+`repo:JessAndRob/FabConEU_2026_workshop:ref:refs/heads/main` (see the 2026-07-22 entry), and
+the OIDC subject for a branch run is that branch's ref — no match, no token. Practical
+consequence: **these workflows can only be verified after merging to `main`** (or by adding
+a branch/environment federated credential, which we deliberately don't for a sandbox).
+**Learning 3 — GitHub-hosted runners pass `AllowAzureServices`, external clients don't.**
+The server's only firewall opening is the `0.0.0.0` "allow Azure services" rule. That's why
+the publish job connects fine — **GitHub-hosted runners run on Azure**, so they count as an
+Azure service. A developer machine (or this agent's sandbox IP) is *not* Azure-internal and
+gets `Client with IP address '…' is not allowed to access the server`, even with a valid
+Entra token (the login is accepted; the network ACL is what blocks). To smoke-test from
+outside, add a temporary `az sql server firewall-rule create` for your IP and remove it
+after.
+**Learning 4 — the smoke test itself.** A `pwsh` step installs the `SqlServer` module and
+uses `Invoke-Sqlcmd -AccessToken` (reusing the publish job's Entra token — no new secret) to
+assert the deployed schema *serves data*: rows from `Club`, `Fixture`, `vw_LeagueTable`,
+`vw_TopScorers`, and `usp_GetLeagueTable` (called with a competition/season pulled from the
+league-table view). `vw_UpcomingFixtures` is executed but not row-asserted — it's
+date-relative (`GETDATE()`), so it can legitimately be empty as seeded fixtures age.
+**Verified against the live UK South DB** (via a temporary firewall rule): all checks OK,
+proc returned a 2-row table. The in-pipeline run is pending a merge to `main` (Learning 2).
+**Action:** Bumps + smoke-test step in
+[`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) and
+the setup-terraform bump in
+[`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
+Confirms task #14's Azure SQL side at the data level.
+
+## 2026-07-29 — Plan on PR (read-only), apply stays manual — needs a `pull_request` FIC
+**Context:** The only Azure SQL infra workflow was `azure-sql-apply.yml` — a manual apply
+whose very name reads as dangerous — and there was no way to see an infra change's effect
+before merging. Added a read-only check (chosen over a tag-based apply credential).
+**Learning — the idiomatic split is *plan on PR, apply on intent*, and each ref-context
+needs its own OIDC federated credential.** New `azure-sql-plan.yml` runs
+`fmt`/`validate`/`plan` — **never apply** — on `pull_request` events touching
+`infra/azure-sql/**`, so reviewers see the plan in the PR checks; provisioning stays a
+deliberate `workflow_dispatch` apply from `main`. The catch that makes this non-obvious: a
+`pull_request` run's OIDC subject is `repo:<owner>/<repo>:pull_request`, which the existing
+`…:ref:refs/heads/main` credential does **not** cover — so plan needs a *second* federated
+credential (`fabcon26-github-pr`, subject `…:pull_request`) on the same app registration.
+Read-only details: plan uses **`-lock=false`** (a plan never mutates state, so it must not
+contend for the state lock with a running apply/destroy) and reads the same remote state
+key, so it reports true drift. Verified green on its own PR (#15) — *"No changes. Your
+infrastructure matches the configuration."* (the DB was still up from the earlier apply).
+Security note: the `pull_request` credential lets any same-repo PR mint a token with the
+app's `Contributor` rights — fine for a private repo with trusted collaborators; a scoped
+read-only identity is the hardening step if the repo ever opens up. A **tag**-based
+credential was considered and rejected: it would only add another way to run *apply* from
+outside `main`, which doesn't address the safety concern — plan-on-PR does.
+**Action:** Added [`../.github/workflows/azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)
+and the `fabcon26-github-pr` federated credential; recorded in `decisions.md` D5 (update).
+Resolves the "scary apply" concern and, for the read path, the branch-can't-authenticate
+limitation noted in the smoke-test entry above.
 
 <!-- Add new entries above this line -->

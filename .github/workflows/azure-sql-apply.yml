@@ -1,0 +1,182 @@
+name: Azure SQL — Terraform apply
+
+# Manually provisions the Azure SQL infra module (infra/azure-sql/terraform) into the
+# personal sandbox subscription. Deliberately workflow_dispatch-only — this creates real,
+# billed resources, so it's never triggered automatically by a push.
+#
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. State: remote azurerm backend in
+# the persistent rg-fabcon26-state-weu resource group (kept separate from the workload RG
+# so the nightly destroy workflow never touches the state store itself).
+#
+# Region override: this personal Azure Sponsorship subscription is restricted from
+# provisioning SQL resources in the module's default region (West Europe) — a
+# subscription-level block, not a quota/RP issue. AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION
+# repo variables override to a region that's actually open on this subscription.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required to mint the OIDC token for azure/login-free ARM auth
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+
+concurrency:
+  group: azure-sql-terraform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: terraform apply
+    runs-on: ubuntu-latest
+    outputs:
+      server_fqdn: ${{ steps.tf.outputs.server_fqdn }}
+      database_name: ${{ steps.tf.outputs.database_name }}
+    defaults:
+      run:
+        working-directory: infra/azure-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+      - name: Terraform plan
+        run: |
+          terraform plan -out=tfplan \
+            -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
+            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
+
+      # Surface the provisioned server/database names so the publish job can target them
+      # without hard-coding the random server suffix.
+      - name: Expose Terraform outputs
+        id: tf
+        run: |
+          echo "server_fqdn=$(terraform output -raw sql_server_fqdn)" >> "$GITHUB_OUTPUT"
+          echo "database_name=$(terraform output -raw sql_database_name)" >> "$GITHUB_OUTPUT"
+
+  # -------------------------------------------------------------------------------------
+  # DB-as-code: publish the FabConFootball DACPAC into the just-provisioned database.
+  # Runs only after a successful apply and targets that apply's Terraform outputs, so the
+  # whole "infra + database as code" story is one dispatch.
+  #
+  # AUTH PREREQUISITE (see planning/tasks.md #18): the SQL server is Entra-only and its
+  # admin is a human user, so the GitHub Actions OIDC service principal cannot log into the
+  # database yet. Until the CI principal is granted DB access — recommended: make the
+  # server's Entra admin a *group* containing both the presenter and the CI SP — this job
+  # will authenticate but fail at the database login. The job mechanics are otherwise
+  # complete and correct.
+  # -------------------------------------------------------------------------------------
+  publish:
+    name: publish DACPAC
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      # RunSqlCodeAnalysis is on in the .sqlproj, so this compiles the schema to a DACPAC
+      # and runs T-SQL static analysis; -warnaserror fails the build on any smell.
+      - name: Build DACPAC
+        run: dotnet build database/sql-projects/FabConFootball.sqlproj --configuration Release -warnaserror
+
+      - name: Install SqlPackage
+        run: |
+          dotnet tool install -g microsoft.sqlpackage
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Mint a Microsoft Entra access token for the Azure SQL resource. Kept out of source
+      # and masked in the log — nothing secret is stored.
+      - name: Acquire Entra token for Azure SQL
+        run: |
+          token=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
+          echo "::add-mask::$token"
+          echo "SQL_ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
+
+      # Passwordless publish: the profile carries the deploy options (no connection string);
+      # server/database come from the apply job's Terraform outputs, auth from the Entra token.
+      - name: Publish DACPAC
+        run: |
+          sqlpackage /Action:Publish \
+            /SourceFile:"database/sql-projects/bin/Release/FabConFootball.dacpac" \
+            /Profile:"database/sql-projects/PublishProfiles/AzureSql.publish.xml" \
+            /TargetServerName:"${{ needs.apply.outputs.server_fqdn }}" \
+            /TargetDatabaseName:"${{ needs.apply.outputs.database_name }}" \
+            /AccessToken:"$SQL_ACCESS_TOKEN"
+
+      # Post-publish smoke test: prove the deployed schema actually serves data, not just
+      # that the objects exist. Reuses the same Entra token (no new secret) via the
+      # SqlServer module's Invoke-Sqlcmd -AccessToken. The seed populates all nine tables,
+      # so the stable views must return rows; vw_UpcomingFixtures is date-relative (fixtures
+      # seeded as "upcoming" may now be in the past), so it's executed but not row-asserted.
+      - name: Smoke-test the deployed database
+        shell: pwsh
+        env:
+          SQL_SERVER: ${{ needs.apply.outputs.server_fqdn }}
+          SQL_DATABASE: ${{ needs.apply.outputs.database_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Installing SqlServer module...'
+          Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber | Out-Null
+
+          $server = $env:SQL_SERVER
+          $db     = $env:SQL_DATABASE
+          $token  = $env:SQL_ACCESS_TOKEN
+
+          function Test-Query([string]$Label, [string]$Query, [switch]$MustHaveRows) {
+              $rows = Invoke-Sqlcmd -ServerInstance $server -Database $db -AccessToken $token `
+                  -EncryptConnection -Query $Query
+              $count = @($rows).Count
+              if ($MustHaveRows -and $count -eq 0) {
+                  throw "FAIL  $Label - expected rows, got 0"
+              }
+              Write-Host "OK    $Label - $count row(s)"
+              return $rows
+          }
+
+          Test-Query 'table  football.Club'          'SELECT TOP (1) 1 AS present FROM football.Club'              -MustHaveRows | Out-Null
+          Test-Query 'table  football.Fixture'       'SELECT TOP (1) 1 AS present FROM football.Fixture'           -MustHaveRows | Out-Null
+          Test-Query 'view   vw_LeagueTable'         'SELECT TOP (1) 1 AS present FROM football.vw_LeagueTable'    -MustHaveRows | Out-Null
+          Test-Query 'view   vw_TopScorers'          'SELECT TOP (1) 1 AS present FROM football.vw_TopScorers'     -MustHaveRows | Out-Null
+          Test-Query 'view   vw_UpcomingFixtures'    'SELECT TOP (1) 1 AS present FROM football.vw_UpcomingFixtures' | Out-Null
+
+          # Execute the parameterised proc with a competition/season that actually has standings.
+          $key = Invoke-Sqlcmd -ServerInstance $server -Database $db -AccessToken $token `
+              -EncryptConnection -Query 'SELECT TOP (1) CompetitionId, SeasonId FROM football.vw_LeagueTable'
+          $exec = "EXEC football.usp_GetLeagueTable @CompetitionId = $($key.CompetitionId), @SeasonId = $($key.SeasonId)"
+          Test-Query 'proc   usp_GetLeagueTable'     $exec                                                          -MustHaveRows | Out-Null
+
+          Write-Host 'Smoke test passed.'

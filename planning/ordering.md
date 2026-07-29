@@ -10,7 +10,7 @@ Track everything that must be arranged **before** the event. Tick items as confi
       **DB deploy** needs a target SQL. We provide **one shared SQL endpoint on the day,
       explicitly unsupported.** See [`../notes/decisions.md`](../notes/decisions.md) **D6**.
 - [ ] **The shared unsupported endpoint** — a **SQL Server on a VM** attendees push to via
-      pipeline (per-attendee database on one instance). Provision + teardown = **task #18**.
+      pipeline (per-attendee database on one instance). Provision + teardown = **task #19**.
 - [ ] Cost estimate + spending caps / auto-teardown for **our** demo resources.
 
 ## Attendee prerequisites (from D6 — feeds the `docs/` prereqs page, task #2)

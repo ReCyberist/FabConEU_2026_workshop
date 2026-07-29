@@ -1,0 +1,73 @@
+name: Azure SQL — Terraform plan (PR)
+
+# Read-only verification for pull requests that touch the Azure SQL infra module.
+# Runs `terraform fmt`/`validate`/`plan` only — it NEVER applies — so reviewers can see the
+# intended change in the PR checks before anything is provisioned. Actually creating or
+# changing resources stays a deliberate, manual action from main (see azure-sql-apply.yml,
+# which is workflow_dispatch-only and named "apply" on purpose).
+#
+# Auth: OIDC (no secrets). A pull_request run's OIDC subject is
+# repo:<owner>/<repo>:pull_request — matched by the `fabcon26-github-pr` federated
+# credential on the fabcon26-github-actions app (the `...:ref:refs/heads/main` credential
+# only covers main, which is why plan needs its own). State: the same remote azurerm
+# backend as apply, read with -lock=false so a PR plan never blocks the real apply/destroy.
+
+on:
+  pull_request:
+    paths:
+      - 'infra/azure-sql/**'
+      - '.github/workflows/azure-sql-plan.yml'
+
+permissions:
+  contents: read
+  id-token: write   # required to mint the OIDC token for passwordless ARM auth
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+
+concurrency:
+  group: azure-sql-terraform-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: terraform plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/azure-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      # Read-only: shows what an apply *would* do. -lock=false because a plan never mutates
+      # state, so it should not contend for the lock with a running apply/destroy.
+      - name: Terraform plan
+        run: |
+          terraform plan -lock=false \
+            -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
+            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
