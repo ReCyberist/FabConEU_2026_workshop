@@ -1,0 +1,31 @@
+# Copy to terraform.tfvars and adjust. Every value here has a sensible default, so the
+# file is optional — the module runs with no tfvars at all (the capacity admin then
+# defaults to your own signed-in principal).
+#
+# Auth is passwordless. Before running:
+#   az login
+#   $env:ARM_SUBSCRIPTION_ID = "<your-subscription-guid>"   # for the Fabric capacity
+#   # optional: $env:FABRIC_TENANT_ID = "<your-tenant-guid>"
+
+# --- Naming (matches the Azure SQL module) ---
+workload              = "fabcon26"
+environment           = "dev"
+location              = "westeurope"
+location_abbreviation = "weu"
+database_name         = "football"
+
+# --- Fabric capacity ---
+# F2 is the smallest/cheapest SKU. Pause the capacity when idle to stop billing.
+capacity_sku = "F2"
+
+# Entra admins for the capacity (UPNs or SP object IDs). Leave unset to use your own
+# principal. A group is recommended for a shared workshop.
+# capacity_admin_members = ["you@contoso.com"]
+
+# --- SQL database ---
+database_collation             = "SQL_Latin1_General_CP1_CI_AS"
+database_backup_retention_days = 7
+
+tags = {
+  owner = "jess-and-rob"
+}

@@ -79,3 +79,34 @@ are still open, gated on #1 as originally decided.
 `repo:JessAndRob/FabConEU_2026_workshop:pull_request` (a PR run's OIDC subject is
 `…:pull_request`, not a branch ref, so `…:ref:refs/heads/main` doesn't match it). Cements
 plan-on-PR as the taught CI/CD pattern for the module and keeps `apply` deliberate.
+
+## D6 — Attendee sandbox: bring-your-own, two independent lab parts, one unsupported shared endpoint
+**Date:** 2026-07-18
+**Decision:** We do **not** provision per-attendee sandboxes. Attendees use **whatever cloud
+access they already have**. The hands-on splits into **two independent parts**, each gated on
+what the attendee brings:
+1. **IaC part** — needs their **own Azure subscription** with rights to create resources (and,
+   for the Fabric path, a Fabric capacity). Have it → deploy along; don't → follow/watch.
+2. **Database-deploy part** — needs a **target SQL** (an Azure SQL or Fabric SQL endpoint they
+   can reach). Have one → deploy; don't → follow/watch.
+The parts are **independent**: you can do part 2 without part 1 if you already have a target
+SQL. Attendees can **build along live or replay later** — both supported. On the day we
+provide **one shared SQL endpoint** as a best-effort target for part 2, **explicitly
+unsupported** (we will not troubleshoot it), so people with nothing of their own can still try.
+**Why:** We can't spend the day troubleshooting heterogeneous lab environments, and providing
+managed sandboxes creates an expectation and a support burden ("if we provide something they'll
+expect that"). BYO keeps us out of the provisioning/support business while letting everyone
+participate at some level. (Rob + Jess, chat 2026-07-18.)
+**Consequence:**
+- The attendee **prerequisites page (#2)** can now be written: state the two paths, what each
+  needs, cost + teardown warnings, and that the shared endpoint is unsupported. **Unblocks #2.**
+- **Partly resolves #17's gate:** there is *no shared attendee state account* to own —
+  attendees run their own state (local state is fine for a one-shot lab). The owner of *our
+  own* CI/demo state backend is deferred ("decide later", task #17).
+- **The shared endpoint is a SQL Server on a VM** (2026-07-18): attendees push their database
+  changes to it **via pipeline**, unsupported. A full SQL Server instance hosts a database per
+  attendee, so the DACPAC name-collision problem goes away (each attendee owns their own DB on
+  the one instance). Provisioning it is **task #19**.
+- **Deferred ("decide later"):** the Fabric IaC path's capacity cost (an F-SKU bills; a trial
+  capacity can't be Terraform-created), and the CI/demo state owner (#17). Both noted as open
+  caveats; neither blocks the prerequisites page.

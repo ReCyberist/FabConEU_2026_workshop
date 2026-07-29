@@ -177,6 +177,51 @@ excluded, `mkdocs build --strict` publishes only `index.html` (+ auto `404.html`
 [`../docs/index.md`](../docs/index.md) reworked into a teaser. Content pages stay on `main`,
 held back until reveal.
 
+## 2026-07-18 — Fabric SQL Terraform module: two providers, capacity→workspace→database
+**Context:** Task #5 — the Fabric SQL infra module, the "side by side" partner to the Azure
+SQL module (#4).
+**Learning:** Fabric SQL needs **two providers**, not one. The **capacity** is an *Azure*
+resource — `azurerm_fabric_capacity` (`Microsoft.Fabric/capacities`, added to azurerm in
+**v4.14**, so pin `~> 4.14` not `~> 4.0`) — while the **workspace** and **SQL database** are
+Fabric items managed by the **`microsoft/fabric`** provider (~> 1.12, needs Terraform
+>= 1.8) over the Fabric REST APIs. So the shape is **capacity → workspace → database**, where
+Azure SQL is **server → database**. Gotchas that cost a validate cycle: (1) a Fabric capacity
+name is **lowercase-alphanumeric only** (`^[a-z][a-z0-9]*$`, no hyphens), so it can't take the
+hyphenated CAF form — build it from the tokens minus separators. (2) On `fabric_sql_database`
+the connection details are **nested under a computed `properties` object**
+(`properties.database_name` / `.server_fqdn` / `.connection_string`), *not* top-level
+attributes — the registry docs page implied top-level and `validate` caught it; confirm
+against `terraform providers schema -json`. Both providers are **passwordless** (reuse
+`az login`; OIDC/SP in CI). `fmt`/`init`/`validate` are clean against the real schemas; no
+live `plan`/`apply` (needs a real capacity — #14). The `fabric_sql_database` resource can also
+deploy a `.sqlproj`/DACPAC directly via `definition`/`format` — noted as a future alternative,
+but we keep the SqlPackage path for symmetry with Azure SQL.
+**Action:** New module [`../infra/fabric-sql/terraform/`](../infra/fabric-sql/terraform/)
+(`providers/variables/main/outputs.tf` + `terraform.tfvars.example`, README rewritten). Task
+#5 → DONE. Reinforces the earlier flag to **commit `.terraform.lock.hcl`** — doubly true for
+the fast-moving preview Fabric provider (still gitignored today; revisit with #17). Next: a
+terraform `fmt`/`validate` CI job (#8) now covers both #4 and #5.
+
+## 2026-07-18 — Attendee sandbox decided: bring-your-own (unblocks the prerequisites)
+**Context:** Task #1 — the sandbox strategy that gates the prerequisites page (#2) and the tf
+state backend owner (#17). Settled in a Jess + Rob chat.
+**Learning:** We go **bring-your-own** — no per-attendee sandboxes. The hands-on is **two
+independent parts**: IaC (needs the attendee's own Azure sub) and DB-deploy (needs a target
+SQL), each optional depending on what they bring, plus **one shared SQL endpoint on the day
+that we explicitly won't support**. The driver was support cost: "we can't spend a lot of time
+troubleshooting labs, and if we provide something they'll expect that." Knock-on effects: it
+**unblocks #2**, and it **defuses most of #17** — there's no shared attendee state account to
+own (attendees use local state); only *our* CI/demo state backend still needs an owner.
+**Shared endpoint resolved:** it's a **SQL Server on a VM** attendees push to via pipeline —
+a database per attendee on one instance, so no DACPAC name collisions (task #19). **Deferred
+("decide later"):** the Fabric IaC path's capacity cost (an F-SKU bills; a trial capacity
+can't be TF-created), and *our* CI/demo state owner (#17) — both open caveats, neither blocks
+the prereqs page.
+**Action:** Recorded as [`decisions.md`](decisions.md) **D6**; prereq checklist + shared-endpoint
+TODO in [`../planning/ordering.md`](../planning/ordering.md); tasks #1 → DONE, #2 unblocked,
+#17 note updated, new #19 (shared VM target). CLAUDE.md §2 unchanged (D6 is an operational
+decision, not a scope change).
+
 ## 2026-07-22 — Azure SQL apply/destroy workflows: personal-sandbox state backend + Git Bash gotcha
 **Context:** Task #9/#17 — wanted GitHub Actions workflows to `terraform apply` the Azure
 SQL module into Jess's personal sub, plus a nightly `terraform destroy` (21:00 UK, "we like
