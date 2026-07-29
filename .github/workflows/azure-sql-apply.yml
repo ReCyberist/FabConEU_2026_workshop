@@ -7,6 +7,11 @@ name: Azure SQL — Terraform apply
 # Auth: OIDC (no secrets) — see notes/decisions.md D5. State: remote azurerm backend in
 # the persistent rg-fabcon26-state-weu resource group (kept separate from the workload RG
 # so the nightly destroy workflow never touches the state store itself).
+#
+# Region override: this personal Azure Sponsorship subscription is restricted from
+# provisioning SQL resources in the module's default region (West Europe) — a
+# subscription-level block, not a quota/RP issue. AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION
+# repo variables override to a region that's actually open on this subscription.
 
 on:
   workflow_dispatch:
@@ -53,7 +58,9 @@ jobs:
         run: |
           terraform plan -out=tfplan \
             -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
-            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}"
+            -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
 
       - name: Terraform apply
         run: terraform apply -auto-approve tfplan
