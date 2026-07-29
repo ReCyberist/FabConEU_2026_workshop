@@ -264,6 +264,28 @@ microsoft.sqlpackage` (add `$HOME/.dotnet/tools` to `$GITHUB_PATH`). The token i
 with the `publish` job. Tasks #9/#14 advanced, #18 added for the CI-SP DB-access
 prerequisite. **The publish job is unverified end-to-end** until #18 is done.
 
+## 2026-07-29 — End-to-end "infra + DB as code" verified: Entra group admin unblocks CI publish
+**Context:** Closing the #18 auth gap so the DACPAC publish job (#9) could run for real.
+**Learning — an Entra *group* as the SQL server admin is what makes passwordless CI
+publish work.** Created group `fabcon26-sql-admins`, added the presenters **and** the CI
+service principal, then pointed the server's Entra admin at the group (via the
+`SQL_ENTRA_ADMIN_LOGIN`/`SQL_ENTRA_ADMIN_OBJECT_ID` repo vars → `terraform apply`, a clean
+`1 changed` in-place update of the `azuread_administrator` block). Because the CI SP is now
+a *member* of the admin group, its OIDC token authenticates against the DB with no SQL
+login and no secret. Two gotchas worth repeating: (1) group membership needs the CI
+principal's **service-principal object id** (`az ad sp show --id <appId> --query id`), which
+is **not** the app/client id in `AZURE_CLIENT_ID`; (2) a logical SQL server allows exactly
+one Entra admin, so a *group* is the only way to admin-grant more than one identity — this
+is the reusable pattern for attendees too (one workshop group, everyone in it).
+**Result:** Re-ran `azure-sql-apply.yml` (run
+[`30441294528`](https://github.com/JessAndRob/FabConEU_2026_workshop/actions/runs/30441294528))
+— both jobs green: `apply` 58s, `publish` 1m26s. SqlPackage reported **"Successfully
+published database"**, creating all 9 tables + indexes/FKs/checks, 3 views, 3 procs, and
+running the post-deploy seed — into `sqldb-football-dev` on `sql-fabcon26-dev-uks-lmf5m4`,
+passwordless. First full infra→schema deploy of the workshop's content-focus path.
+**Action:** Tasks #9 and #18 → DONE; #14 → Azure SQL side verified at deploy level (Fabric
+SQL still open). No file changes — the publish job already shipped in PR #12.
+
 ## 2026-07-29 — Post-publish DB smoke test; and two auth/network gotchas testing it
 **Context:** Optional polish after the end-to-end deploy — add a data-level smoke test to
 the publish job and clear the Node 20 action-deprecation warnings.
