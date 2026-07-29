@@ -21,8 +21,16 @@ terraform {
     }
   }
 
-  # Local state for now. Same remote-backend direction as the Azure SQL module —
-  # see notes/decisions.md D5 and task #17 (gated on #1).
+  # Remote azurerm backend (Azure Storage) — see notes/decisions.md D5. AAD auth (no
+  # storage account keys), matching the passwordless design used everywhere else. The
+  # storage account/container/key are supplied via -backend-config at `terraform init`
+  # (see infra/pipelines/github-actions), since they're environment-specific. Uses its own
+  # state key (fabric-sql/dev.terraform.tfstate) so it never collides with the Azure SQL
+  # module's state.
+  backend "azurerm" {
+    use_oidc         = true
+    use_azuread_auth = true
+  }
 }
 
 provider "azurerm" {
