@@ -15,7 +15,7 @@ name: Azure SQL — Terraform plan (PR)
 on:
   pull_request:
     paths:
-      - 'infra/azure-sql/**'
+      - 'infra/azure-sql/terraform/**'
       - '.github/workflows/azure-sql-plan.yml'
 
 permissions:

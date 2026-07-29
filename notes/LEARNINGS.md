@@ -395,4 +395,35 @@ and the `fabcon26-github-pr` federated credential; recorded in `decisions.md` D5
 Resolves the "scary apply" concern and, for the read path, the branch-can't-authenticate
 limitation noted in the smoke-test entry above.
 
+## 2026-07-29 — Bicep reference modules: Azure SQL mirrors fully, Fabric can only do the capacity
+**Context:** Task #6 — the Bicep reference variant of the infra ("all as code": every tooling
+variant exists even though the taught content leads with Terraform).
+**Learning 1 — Azure SQL maps cleanly to Bicep, with a few ARM-vs-Terraform seams.** A
+subscription-scoped `main.bicep` creates the RG and calls an RG-scoped `sql.bicep`
+(server + serverless DB + firewall) — the idiomatic Bicep shape for "make the RG too".
+Passwordless is `Microsoft.Sql/servers` `properties.administrators` with
+`azureADOnlyAuthentication: true` and **no** SQL admin login. Seams worth noting: (a) Bicep
+has **no decimal type**, so `minCapacity` (0.5) is passed as a string and converted with
+`json()`; (b) the globally-unique server suffix is `take(uniqueString(resourceGroup().id), 6)`
+(the deterministic stand-in for Terraform's `random_string`); (c) the DB `sku` is verbose
+(`name`/`tier`/`family`/`capacity`) where Terraform takes a single `sku_name`, so a
+provisioned SKU needs matching tier/family/capacity; (d) firewall loop uses
+`items(allowedClientIps)` over the map.
+**Learning 2 — Fabric SQL can NOT be fully done in Bicep, and that's the teaching point.**
+Only the **capacity** is an ARM resource (`Microsoft.Fabric/capacities`). The **workspace**
+and the **SQL database in Fabric** are Fabric control-plane items with **no ARM resource
+type at all** — Bicep/ARM simply can't create them. So the Fabric Bicep provisions the
+capacity only and documents the gap; the full `capacity → workspace → database` stack needs
+the Terraform `microsoft/fabric` provider (#5) or the Fabric REST API/CLI. This is exactly
+why the taught IaC path is Terraform, not Bicep, for Fabric.
+**Learning 3 — validate Bicep offline with `az bicep build`.** `az bicep build --file x.bicep`
+compiles to ARM JSON with no Azure connection (install once via `az bicep install`);
+`az bicep build-params` validates a `.bicepparam`. All four templates + both param files
+compile clean with **zero linter warnings**. `az deployment sub what-if` is the next step up
+(needs Azure) for a real preview.
+**Action:** Added [`../infra/azure-sql/bicep/`](../infra/azure-sql/bicep/) (`main.bicep`,
+`sql.bicep`, `main.bicepparam`) and [`../infra/fabric-sql/bicep/`](../infra/fabric-sql/bicep/)
+(`main.bicep`, `capacity.bicep`, `main.bicepparam`); both READMEs rewritten. Task #6 → DONE.
+Live deploy still tracked by #14.
+
 <!-- Add new entries above this line -->
