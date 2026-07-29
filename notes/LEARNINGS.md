@@ -448,4 +448,39 @@ all four YAML files parse and follow the schema; GitHub Actions remains the live
 (`ci.yml`, `azure-sql-plan.yml`, `azure-sql-apply.yml`, `azure-sql-destroy.yml`) + README.
 Task #10 → DONE.
 
+## 2026-07-29 — Fabric SQL CI/CD: verified the Fabric-specific bits against MS Learn, then built the pipeline
+**Context:** Task #20 — the Fabric mirror of the Azure SQL pipeline (#9). Before writing it,
+verified the three things that differ from Azure SQL against Microsoft Learn.
+**Learning 1 — dual-provider OIDC.** The job needs *two* passwordless auths: `azurerm`
+(`ARM_*`, for the `Microsoft.Fabric/capacities` resource + the state backend) **and** the
+`microsoft/fabric` provider (`FABRIC_USE_OIDC=true` + `FABRIC_CLIENT_ID` + `FABRIC_TENANT_ID`).
+In GitHub Actions the fabric provider **auto-detects** `ACTIONS_ID_TOKEN_REQUEST_URL/TOKEN`
+(so `id-token: write` is all the extra wiring). Same OIDC app as Azure SQL — reuse
+`AZURE_CLIENT_ID`/`AZURE_TENANT_ID`.
+**Learning 2 — SqlPackage → Fabric needs two extra publish properties.** A DACPAC built for a
+non-Fabric platform is refused unless you set **`AllowIncompatiblePlatform=True`**, and
+**`ExcludeObjectTypes=Logins;Users`** avoids compat problems (Fabric has no logins). Added
+both to `FabricSql.publish.xml` (belt-and-braces for us — our schema has neither). The DB must
+already exist (the module provisions it); endpoint is `…database.fabric.microsoft.com,1433`;
+token audience is the same `https://database.windows.net/` as Azure SQL. Source:
+[Fabric SqlPackage](https://learn.microsoft.com/en-us/fabric/database/sql/sqlpackage).
+**Learning 3 — the #18 analog is simpler in Fabric, but there's a hard tenant gate.** Fabric
+SQL is Entra-only (no SQL auth/logins). The CI principal needs **Read item permission** via a
+**Fabric workspace role** — with Fabric access controls you *don't* need manual
+`CREATE USER` (unlike a raw contained user). BUT a **tenant admin must enable "Service
+principals can use Fabric APIs"** or SPs can't connect at all — this is the real blocker, and
+no pipeline/Terraform can flip it. Source:
+[Fabric SQL authentication](https://learn.microsoft.com/en-us/fabric/database/sql/authentication).
+**Learning 4 — cost shape.** An F-SKU capacity **bills continuously** (no serverless
+auto-pause), so the nightly `fabric-sql-destroy.yml` matters more than the Azure SQL one; a
+future `use_existing_capacity` toggle would let trial-capacity users avoid the F2 charge
+(trial capacities can't be Terraform-created).
+**Action:** Wired the remote backend into `infra/fabric-sql/terraform/providers.tf`
+(state key `fabric-sql/dev.terraform.tfstate`); added the two publish properties; added
+[`../.github/workflows/fabric-sql-plan.yml`](../.github/workflows/fabric-sql-plan.yml),
+[`fabric-sql-apply.yml`](../.github/workflows/fabric-sql-apply.yml), and
+[`fabric-sql-destroy.yml`](../.github/workflows/fabric-sql-destroy.yml). YAML + `fmt` clean.
+**Untested end-to-end** — blocked on the tenant setting + workspace role + a capacity (task
+#20; live verify is the Fabric side of #14).
+
 <!-- Add new entries above this line -->

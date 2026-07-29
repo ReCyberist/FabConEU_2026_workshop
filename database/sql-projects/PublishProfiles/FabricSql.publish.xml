@@ -43,6 +43,16 @@
          most ALTER DATABASE statements, so never script them from the DACPAC model. -->
     <ScriptDatabaseOptions>False</ScriptDatabaseOptions>
 
+    <!-- Required to publish to SQL database in Fabric: our DACPAC is built for a non-Fabric
+         platform, so SqlPackage refuses the deploy without this. (Microsoft Learn:
+         fabric/database/sql/sqlpackage — "Extract and publish".) -->
+    <AllowIncompatiblePlatform>True</AllowIncompatiblePlatform>
+
+    <!-- Fabric has no server logins and manages users differently — exclude these object
+         types to avoid compatibility problems on publish (per the same Learn article).
+         Our schema defines neither, so this is belt-and-braces. -->
+    <ExcludeObjectTypes>Logins;Users</ExcludeObjectTypes>
+
     <!-- Verify the generated plan before applying it. -->
     <VerifyDeployment>True</VerifyDeployment>
   </PropertyGroup>

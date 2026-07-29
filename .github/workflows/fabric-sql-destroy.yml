@@ -1,0 +1,61 @@
+name: Fabric SQL — Terraform destroy
+
+# Tears down the Fabric SQL module nightly at 21:00 UTC + on demand. This matters MORE than
+# the Azure SQL destroy: an F-SKU Fabric capacity BILLS the whole time it exists (no
+# serverless auto-pause), so leaving it up overnight is real money. Mirrors
+# azure-sql-destroy.yml and uses the same remote state key as fabric-sql-apply.yml.
+#
+# Auth: OIDC — azurerm via ARM_*, the fabric provider via FABRIC_USE_OIDC + FABRIC_CLIENT_ID/
+# TENANT_ID. (Live runs are blocked on the same Fabric prereqs as apply — see #20.)
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 21:00 UTC — 9pm GMT / 10pm BST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+  FABRIC_USE_OIDC: true
+  FABRIC_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  FABRIC_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+
+concurrency:
+  group: fabric-sql-terraform
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    name: terraform destroy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/fabric-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=fabric-sql/dev.terraform.tfstate"
+
+      - name: Terraform destroy
+        run: |
+          terraform destroy -auto-approve \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

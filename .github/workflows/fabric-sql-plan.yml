@@ -1,0 +1,73 @@
+name: Fabric SQL — Terraform plan (PR)
+
+# Read-only verification for PRs touching the Fabric SQL Terraform module. Runs
+# fmt/validate/plan only — never apply. Mirrors azure-sql-plan.yml; the Fabric twist is that
+# it needs BOTH provider auths: azurerm (for the Microsoft.Fabric/capacities resource + the
+# state backend) and the microsoft/fabric provider (for the workspace + SQL database).
+#
+# Auth: OIDC, passwordless. azurerm reads ARM_*; the fabric provider reads FABRIC_USE_OIDC +
+# FABRIC_CLIENT_ID + FABRIC_TENANT_ID and auto-detects the GitHub Actions id-token request
+# env (needs id-token: write). See the microsoft/fabric provider "auth_spn_oidc" guide.
+#
+# NOTE (live runs blocked — see planning/tasks.md #20): a real apply also needs the Fabric
+# tenant setting "Service principals can use Fabric APIs" enabled and the CI principal granted
+# a Fabric workspace role. plan is read-only and does not create the workspace/database.
+
+on:
+  pull_request:
+    paths:
+      - 'infra/fabric-sql/terraform/**'
+      - '.github/workflows/fabric-sql-plan.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+  FABRIC_USE_OIDC: true
+  FABRIC_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  FABRIC_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+
+concurrency:
+  group: fabric-sql-terraform-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: terraform plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/fabric-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=fabric-sql/dev.terraform.tfstate"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: |
+          terraform plan -lock=false \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

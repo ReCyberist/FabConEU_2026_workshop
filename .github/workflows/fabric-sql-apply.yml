@@ -1,0 +1,166 @@
+name: Fabric SQL — Terraform apply
+
+# Manually provisions the Fabric SQL module (infra/fabric-sql/terraform) — Fabric capacity
+# (azurerm) + workspace + SQL database (microsoft/fabric) — then publishes the FabConFootball
+# DACPAC into the database and smoke-tests it. The Fabric mirror of azure-sql-apply.yml.
+# workflow_dispatch-only: this creates a real F-SKU capacity, which BILLS continuously.
+#
+# !! BLOCKED ON PREREQS (planning/tasks.md #20) — this cannot succeed until:
+#   1. Fabric tenant setting "Service principals can use Fabric APIs" is enabled for the CI
+#      principal (a tenant-admin action; the pipeline can't set it).
+#   2. The CI principal has a Fabric workspace role granting DB access (Read item permission)
+#      — the Fabric analog of the Azure SQL Entra-admin group (#18).
+#   3. A capacity SKU your subscription is allowed to provision (F2 default; F-SKUs bill —
+#      the nightly fabric-sql-destroy.yml tears it back down).
+# The workflow mechanics are complete; it is untested end-to-end.
+#
+# Auth: OIDC, passwordless — azurerm via ARM_*, the fabric provider via FABRIC_USE_OIDC +
+# FABRIC_CLIENT_ID/TENANT_ID (auto-detects the GitHub id-token request env).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+  FABRIC_USE_OIDC: true
+  FABRIC_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  FABRIC_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+
+concurrency:
+  group: fabric-sql-terraform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: terraform apply
+    runs-on: ubuntu-latest
+    outputs:
+      server_fqdn: ${{ steps.tf.outputs.server_fqdn }}
+      database_name: ${{ steps.tf.outputs.database_name }}
+    defaults:
+      run:
+        working-directory: infra/fabric-sql/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=fabric-sql/dev.terraform.tfstate"
+
+      - name: Terraform apply
+        run: |
+          terraform apply -auto-approve \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+
+      # Surface the Fabric SQL endpoint + database name so the publish job can target them.
+      - name: Expose Terraform outputs
+        id: tf
+        run: |
+          echo "server_fqdn=$(terraform output -raw sql_server_fqdn)" >> "$GITHUB_OUTPUT"
+          echo "database_name=$(terraform output -raw sql_database_name)" >> "$GITHUB_OUTPUT"
+
+  # -------------------------------------------------------------------------------------
+  # DB-as-code: publish the DACPAC into the Fabric SQL database. The SAME DACPAC as Azure
+  # SQL, but the FabricSql publish profile adds /p:AllowIncompatiblePlatform + ExcludeObject
+  # Types=Logins;Users (required for a SQL database in Fabric — Microsoft Learn:
+  # fabric/database/sql/sqlpackage).
+  # -------------------------------------------------------------------------------------
+  publish:
+    name: publish DACPAC
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build DACPAC
+        run: dotnet build database/sql-projects/FabConFootball.sqlproj --configuration Release -warnaserror
+
+      - name: Install SqlPackage
+        run: |
+          dotnet tool install -g microsoft.sqlpackage
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Fabric SQL uses Microsoft Entra auth with the SQL resource audience (database.windows.net),
+      # the same as Azure SQL — the endpoint just lives on database.fabric.microsoft.com.
+      - name: Acquire Entra token for Fabric SQL
+        run: |
+          token=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
+          echo "::add-mask::$token"
+          echo "SQL_ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Publish DACPAC
+        run: |
+          sqlpackage /Action:Publish \
+            /SourceFile:"database/sql-projects/bin/Release/FabConFootball.dacpac" \
+            /Profile:"database/sql-projects/PublishProfiles/FabricSql.publish.xml" \
+            /TargetServerName:"${{ needs.apply.outputs.server_fqdn }}" \
+            /TargetDatabaseName:"${{ needs.apply.outputs.database_name }}" \
+            /AccessToken:"$SQL_ACCESS_TOKEN"
+
+      # Same data-level smoke test as the Azure SQL path — the schema is identical, so the
+      # seeded views must return rows (vw_UpcomingFixtures is date-relative, so not asserted).
+      - name: Smoke-test the deployed database
+        shell: pwsh
+        env:
+          SQL_SERVER: ${{ needs.apply.outputs.server_fqdn }}
+          SQL_DATABASE: ${{ needs.apply.outputs.database_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber | Out-Null
+
+          $server = $env:SQL_SERVER
+          $db     = $env:SQL_DATABASE
+          $token  = $env:SQL_ACCESS_TOKEN
+
+          function Test-Query([string]$Label, [string]$Query, [switch]$MustHaveRows) {
+              $rows = Invoke-Sqlcmd -ServerInstance $server -Database $db -AccessToken $token `
+                  -EncryptConnection -Query $Query
+              $count = @($rows).Count
+              if ($MustHaveRows -and $count -eq 0) { throw "FAIL  $Label - expected rows, got 0" }
+              Write-Host "OK    $Label - $count row(s)"
+              return $rows
+          }
+
+          Test-Query 'table  football.Club'       'SELECT TOP (1) 1 AS present FROM football.Club'               -MustHaveRows | Out-Null
+          Test-Query 'table  football.Fixture'    'SELECT TOP (1) 1 AS present FROM football.Fixture'            -MustHaveRows | Out-Null
+          Test-Query 'view   vw_LeagueTable'      'SELECT TOP (1) 1 AS present FROM football.vw_LeagueTable'     -MustHaveRows | Out-Null
+          Test-Query 'view   vw_TopScorers'       'SELECT TOP (1) 1 AS present FROM football.vw_TopScorers'      -MustHaveRows | Out-Null
+          Test-Query 'view   vw_UpcomingFixtures' 'SELECT TOP (1) 1 AS present FROM football.vw_UpcomingFixtures' | Out-Null
+
+          $key = Invoke-Sqlcmd -ServerInstance $server -Database $db -AccessToken $token `
+              -EncryptConnection -Query 'SELECT TOP (1) CompetitionId, SeasonId FROM football.vw_LeagueTable'
+          $exec = "EXEC football.usp_GetLeagueTable @CompetitionId = $($key.CompetitionId), @SeasonId = $($key.SeasonId)"
+          Test-Query 'proc   usp_GetLeagueTable'  $exec -MustHaveRows | Out-Null
+
+          Write-Host 'Smoke test passed.'
