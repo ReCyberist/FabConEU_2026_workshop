@@ -264,4 +264,42 @@ microsoft.sqlpackage` (add `$HOME/.dotnet/tools` to `$GITHUB_PATH`). The token i
 with the `publish` job. Tasks #9/#14 advanced, #18 added for the CI-SP DB-access
 prerequisite. **The publish job is unverified end-to-end** until #18 is done.
 
+## 2026-07-29 — Post-publish DB smoke test; and two auth/network gotchas testing it
+**Context:** Optional polish after the end-to-end deploy — add a data-level smoke test to
+the publish job and clear the Node 20 action-deprecation warnings.
+**Learning 1 — action bumps to clear the Node 20 warnings.** `hashicorp/setup-terraform@v3`
+and `azure/login@v2` both emitted "Node.js 20 is deprecated … forced to run on Node.js 24".
+The fix is just newer majors: **`setup-terraform@v4`** (v4.0.1, Feb 2026) and
+**`azure/login@v3`** (v3.0.0, Mar 2026), both Node-24 native. Bumped in the apply + destroy
+workflows.
+**Learning 2 — the OIDC federated credential only trusts `main`, so deploy workflows can't
+be test-run from a branch.** Dispatching `azure-sql-apply.yml` on a feature branch fails at
+`terraform init` with `AADSTS700213: No matching federated identity record found for
+presented assertion subject 'repo:…:ref:refs/heads/<branch>'`. The credential subject is
+`repo:JessAndRob/FabConEU_2026_workshop:ref:refs/heads/main` (see the 2026-07-22 entry), and
+the OIDC subject for a branch run is that branch's ref — no match, no token. Practical
+consequence: **these workflows can only be verified after merging to `main`** (or by adding
+a branch/environment federated credential, which we deliberately don't for a sandbox).
+**Learning 3 — GitHub-hosted runners pass `AllowAzureServices`, external clients don't.**
+The server's only firewall opening is the `0.0.0.0` "allow Azure services" rule. That's why
+the publish job connects fine — **GitHub-hosted runners run on Azure**, so they count as an
+Azure service. A developer machine (or this agent's sandbox IP) is *not* Azure-internal and
+gets `Client with IP address '…' is not allowed to access the server`, even with a valid
+Entra token (the login is accepted; the network ACL is what blocks). To smoke-test from
+outside, add a temporary `az sql server firewall-rule create` for your IP and remove it
+after.
+**Learning 4 — the smoke test itself.** A `pwsh` step installs the `SqlServer` module and
+uses `Invoke-Sqlcmd -AccessToken` (reusing the publish job's Entra token — no new secret) to
+assert the deployed schema *serves data*: rows from `Club`, `Fixture`, `vw_LeagueTable`,
+`vw_TopScorers`, and `usp_GetLeagueTable` (called with a competition/season pulled from the
+league-table view). `vw_UpcomingFixtures` is executed but not row-asserted — it's
+date-relative (`GETDATE()`), so it can legitimately be empty as seeded fixtures age.
+**Verified against the live UK South DB** (via a temporary firewall rule): all checks OK,
+proc returned a 2-row table. The in-pipeline run is pending a merge to `main` (Learning 2).
+**Action:** Bumps + smoke-test step in
+[`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) and
+the setup-terraform bump in
+[`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
+Confirms task #14's Azure SQL side at the data level.
+
 <!-- Add new entries above this line -->
