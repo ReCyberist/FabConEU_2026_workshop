@@ -70,3 +70,12 @@ itself), OIDC app registration + federated credential scoped to `ref:refs/heads/
 `.terraform.lock.hcl` un-ignored and committed per the note above. This resolves D5 for
 personal/demo use only — the *attendee-facing* bootstrap script and state-account ownership
 are still open, gated on #1 as originally decided.
+
+**Update 2026-07-29:** Split the pipeline into *plan on PR, apply on intent*. Added
+`azure-sql-plan.yml` — a read-only `fmt`/`validate`/`plan` (`-lock=false`) that runs on
+`pull_request` events touching `infra/azure-sql/**` — while `apply` stays a manual
+`workflow_dispatch` from `main`. This needed a **second** federated credential on the
+`fabcon26-github-actions` app: `fabcon26-github-pr`, subject
+`repo:JessAndRob/FabConEU_2026_workshop:pull_request` (a PR run's OIDC subject is
+`…:pull_request`, not a branch ref, so `…:ref:refs/heads/main` doesn't match it). Cements
+plan-on-PR as the taught CI/CD pattern for the module and keeps `apply` deliberate.

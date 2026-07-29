@@ -324,4 +324,30 @@ the setup-terraform bump in
 [`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
 Confirms task #14's Azure SQL side at the data level.
 
+## 2026-07-29 — Plan on PR (read-only), apply stays manual — needs a `pull_request` FIC
+**Context:** The only Azure SQL infra workflow was `azure-sql-apply.yml` — a manual apply
+whose very name reads as dangerous — and there was no way to see an infra change's effect
+before merging. Added a read-only check (chosen over a tag-based apply credential).
+**Learning — the idiomatic split is *plan on PR, apply on intent*, and each ref-context
+needs its own OIDC federated credential.** New `azure-sql-plan.yml` runs
+`fmt`/`validate`/`plan` — **never apply** — on `pull_request` events touching
+`infra/azure-sql/**`, so reviewers see the plan in the PR checks; provisioning stays a
+deliberate `workflow_dispatch` apply from `main`. The catch that makes this non-obvious: a
+`pull_request` run's OIDC subject is `repo:<owner>/<repo>:pull_request`, which the existing
+`…:ref:refs/heads/main` credential does **not** cover — so plan needs a *second* federated
+credential (`fabcon26-github-pr`, subject `…:pull_request`) on the same app registration.
+Read-only details: plan uses **`-lock=false`** (a plan never mutates state, so it must not
+contend for the state lock with a running apply/destroy) and reads the same remote state
+key, so it reports true drift. Verified green on its own PR (#15) — *"No changes. Your
+infrastructure matches the configuration."* (the DB was still up from the earlier apply).
+Security note: the `pull_request` credential lets any same-repo PR mint a token with the
+app's `Contributor` rights — fine for a private repo with trusted collaborators; a scoped
+read-only identity is the hardening step if the repo ever opens up. A **tag**-based
+credential was considered and rejected: it would only add another way to run *apply* from
+outside `main`, which doesn't address the safety concern — plan-on-PR does.
+**Action:** Added [`../.github/workflows/azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)
+and the `fabcon26-github-pr` federated credential; recorded in `decisions.md` D5 (update).
+Resolves the "scary apply" concern and, for the read path, the branch-can't-authenticate
+limitation noted in the smoke-test entry above.
+
 <!-- Add new entries above this line -->
