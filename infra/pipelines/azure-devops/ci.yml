@@ -1,0 +1,36 @@
+# CI — build & validate (Azure DevOps reference)
+#
+# Mirrors .github/workflows/ci.yml (the taught path). Builds the SQL project, which runs
+# T-SQL static code analysis in-build (RunSqlCodeAnalysis is on in the .sqlproj); -warnaserror
+# fails on any smell or model warning. The .NET SDK is pinned to 8.0 by the repo-root
+# global.json, so UseDotNet@2 resolves the same SDK as local + GitHub Actions.
+#
+# No Azure auth needed — this compiles code only, touches no cloud resources.
+
+trigger:
+  branches:
+    include: [ main ]
+
+pr:
+  branches:
+    include: [ '*' ]
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: UseDotNet@2
+    displayName: Set up .NET SDK
+    inputs:
+      packageType: sdk
+      version: 8.0.x
+
+  - script: dotnet build database/sql-projects/FabConFootball.sqlproj --configuration Release -warnaserror
+    displayName: Build SQL project + code analysis
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish DACPAC artifact
+    condition: succeeded()
+    inputs:
+      targetPath: database/sql-projects/bin/Release/FabConFootball.dacpac
+      artifact: FabConFootball-dacpac

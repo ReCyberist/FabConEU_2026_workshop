@@ -426,4 +426,26 @@ compile clean with **zero linter warnings**. `az deployment sub what-if` is the 
 (`main.bicep`, `capacity.bicep`, `main.bicepparam`); both READMEs rewritten. Task #6 → DONE.
 Live deploy still tracked by #14.
 
+## 2026-07-29 — Azure DevOps reference pipelines: WIF is the OIDC equivalent
+**Context:** Task #10 — the Azure DevOps reference variant of the CI/CD pipelines ("all as
+code"; taught path stays GitHub Actions).
+**Learning — the passwordless story ports cleanly, the mechanics differ.** Where GitHub
+Actions uses **OIDC federated credentials**, Azure DevOps uses an **ARM service connection
+configured for workload identity federation (WIF)** — same "no secrets" outcome. The bridge
+to Terraform: `AzureCLI@2` with **`addSpnToEnvironment: true`** exposes `$servicePrincipalId`,
+`$idToken`, `$tenantId` to the inline script, which exports them as `ARM_CLIENT_ID` /
+`ARM_OIDC_TOKEN` / `ARM_TENANT_ID` + `ARM_USE_OIDC=true` — Terraform then auths exactly like
+in CI on GitHub. Other mappings worth noting: GH repo **variables** → an ADO **variable
+group** (`fabcon26-azure-sql`); `workflow_dispatch` → `trigger: none` + manual run; GH `cron`
+→ ADO `schedules:` (also UTC) with **`always: true`** (ADO skips scheduled runs with no new
+commits otherwise); job-to-job `outputs` → `##vso[task.setvariable ...;isOutput=true]` read
+downstream via `stageDependencies.<Stage>.<job>.outputs['<step>.<var>']`; adding a dir to
+`$PATH` → `##vso[task.prependpath]`. Terraform is preinstalled on the hosted `ubuntu-latest`
+image (or pin via the `TerraformInstaller@1` extension task). The DACPAC publish + smoke test
+reuse the same Entra-token approach as GHA. **Not executed** — no ADO org in this repo — but
+all four YAML files parse and follow the schema; GitHub Actions remains the live-verified path.
+**Action:** Added [`../infra/pipelines/azure-devops/`](../infra/pipelines/azure-devops/)
+(`ci.yml`, `azure-sql-plan.yml`, `azure-sql-apply.yml`, `azure-sql-destroy.yml`) + README.
+Task #10 → DONE.
+
 <!-- Add new entries above this line -->

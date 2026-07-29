@@ -1,0 +1,135 @@
+# Azure SQL — Terraform apply + DACPAC publish (Azure DevOps reference)
+#
+# Mirrors .github/workflows/azure-sql-apply.yml: one manual run provisions the infra, then
+# publishes the FabConFootball DACPAC into the just-provisioned database and smoke-tests it.
+# Manual only (`trigger: none`, `pr: none`) — this creates real, billed resources.
+#
+# Auth: a workload-identity-federation service connection (passwordless, no secrets), the ADO
+# equivalent of GitHub Actions OIDC. State: the same remote azurerm backend as the GHA path.
+#
+# AUTH PREREQUISITE (parity with GHA / task #18): the SQL server is Entra-only, so the service
+# connection's principal must be able to log into the database — add it to the server's Entra
+# admin **group**. Otherwise the publish stage authenticates but fails at the database login.
+#
+# Prereqs: variable group `fabcon26-azure-sql` (see README). Consider an ADO **Environment**
+# with a required-approval check on the Publish stage for a gated deploy.
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: fabcon26-azure-sql
+
+stages:
+  - stage: Apply
+    displayName: Terraform apply
+    jobs:
+      - job: apply
+        displayName: terraform apply
+        steps:
+          - task: AzureCLI@2
+            name: tf   # named so the Publish stage can read its output variables
+            displayName: Terraform init + apply
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              addSpnToEnvironment: true
+              workingDirectory: infra/azure-sql/terraform
+              inlineScript: |
+                set -euo pipefail
+                export ARM_CLIENT_ID="$servicePrincipalId"
+                export ARM_OIDC_TOKEN="$idToken"
+                export ARM_TENANT_ID="$tenantId"
+                export ARM_SUBSCRIPTION_ID="$(AZURE_SUBSCRIPTION_ID)"
+                export ARM_USE_OIDC=true
+
+                terraform init \
+                  -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
+                  -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+                  -backend-config="key=azure-sql/dev.terraform.tfstate"
+
+                terraform apply -auto-approve \
+                  -var="entra_admin_login=$(SQL_ENTRA_ADMIN_LOGIN)" \
+                  -var="entra_admin_object_id=$(SQL_ENTRA_ADMIN_OBJECT_ID)" \
+                  -var="location=$(AZURE_LOCATION)" \
+                  -var="location_abbreviation=$(AZURE_LOCATION_ABBREVIATION)"
+
+                # Surface the provisioned server/database names to the Publish stage.
+                echo "##vso[task.setvariable variable=serverFqdn;isOutput=true]$(terraform output -raw sql_server_fqdn)"
+                echo "##vso[task.setvariable variable=databaseName;isOutput=true]$(terraform output -raw sql_database_name)"
+
+  - stage: Publish
+    displayName: Publish DACPAC
+    dependsOn: Apply
+    variables:
+      serverFqdn: $[ stageDependencies.Apply.apply.outputs['tf.serverFqdn'] ]
+      databaseName: $[ stageDependencies.Apply.apply.outputs['tf.databaseName'] ]
+    jobs:
+      - job: publish
+        displayName: publish DACPAC
+        steps:
+          - task: UseDotNet@2
+            displayName: Set up .NET SDK
+            inputs:
+              packageType: sdk
+              version: 8.0.x
+
+          - script: dotnet build database/sql-projects/FabConFootball.sqlproj --configuration Release -warnaserror
+            displayName: Build DACPAC
+
+          - script: |
+              dotnet tool install -g microsoft.sqlpackage
+              echo "##vso[task.prependpath]$HOME/.dotnet/tools"
+            displayName: Install SqlPackage
+
+          - task: AzureCLI@2
+            displayName: Publish DACPAC + smoke test
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: pscore
+              scriptLocation: inlineScript
+              inlineScript: |
+                $ErrorActionPreference = 'Stop'
+
+                # Passwordless: mint a Microsoft Entra access token for Azure SQL (the service
+                # connection is already logged in), then hand it to SqlPackage and Invoke-Sqlcmd.
+                $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+                $server = "$(serverFqdn)"
+                $db     = "$(databaseName)"
+
+                sqlpackage /Action:Publish `
+                  /SourceFile:"database/sql-projects/bin/Release/FabConFootball.dacpac" `
+                  /Profile:"database/sql-projects/PublishProfiles/AzureSql.publish.xml" `
+                  /TargetServerName:"$server" `
+                  /TargetDatabaseName:"$db" `
+                  /AccessToken:$token
+
+                # Smoke test: prove the deployed schema serves data (not just that objects exist).
+                Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber | Out-Null
+
+                function Test-Query([string]$Label, [string]$Query, [switch]$MustHaveRows) {
+                    $rows = Invoke-Sqlcmd -ServerInstance $server -Database $db -AccessToken $token `
+                        -EncryptConnection -Query $Query
+                    $count = @($rows).Count
+                    if ($MustHaveRows -and $count -eq 0) { throw "FAIL  $Label - expected rows, got 0" }
+                    Write-Host "OK    $Label - $count row(s)"
+                    return $rows
+                }
+
+                Test-Query 'table  football.Club'       'SELECT TOP (1) 1 AS present FROM football.Club'               -MustHaveRows | Out-Null
+                Test-Query 'table  football.Fixture'    'SELECT TOP (1) 1 AS present FROM football.Fixture'            -MustHaveRows | Out-Null
+                Test-Query 'view   vw_LeagueTable'      'SELECT TOP (1) 1 AS present FROM football.vw_LeagueTable'     -MustHaveRows | Out-Null
+                Test-Query 'view   vw_TopScorers'       'SELECT TOP (1) 1 AS present FROM football.vw_TopScorers'      -MustHaveRows | Out-Null
+                Test-Query 'view   vw_UpcomingFixtures' 'SELECT TOP (1) 1 AS present FROM football.vw_UpcomingFixtures' | Out-Null
+
+                $key = Invoke-Sqlcmd -ServerInstance $server -Database $db -AccessToken $token `
+                    -EncryptConnection -Query 'SELECT TOP (1) CompetitionId, SeasonId FROM football.vw_LeagueTable'
+                $exec = "EXEC football.usp_GetLeagueTable @CompetitionId = $($key.CompetitionId), @SeasonId = $($key.SeasonId)"
+                Test-Query 'proc   usp_GetLeagueTable'  $exec -MustHaveRows | Out-Null
+
+                Write-Host 'Smoke test passed.'
