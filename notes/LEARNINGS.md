@@ -554,4 +554,25 @@ added) or `azure/login` fails with AADSTS700213. So the gate is a *coordinated* 
 rather than wired, since it can't be enforced on this repo's plan; deleted the bare `production`
 environment to keep things clean. Task #21 note updated.
 
+## 2026-08-04 — Attendee site skeleton: 12 templated stubs, held in teaser mode
+**Context:** Task #22 — turning the attendee site from a lone teaser into the full workshop
+shape. Designed the content system first (a [spec](../planning/2026-08-04-attendee-content-design.md)
++ [plan](../planning/2026-08-04-attendee-content-skeleton-plan.md) via the brainstorming/
+writing-plans flow), then built **Phase 1**: the page skeleton.
+**Learning:** Held the whole skeleton out of the published site with **`exclude_docs`** while
+keeping `mkdocs build --strict` green. The key property: an excluded page is dropped from the
+build entirely, so it neither publishes nor trips the strict *"page exists but not in nav"* check
+— **and its own internal links aren't validated either**. So a stub can link `[Prerequisites]` /
+`[What's next]` to other held pages and strict stays happy; the only rule is that the one *built*
+page (`index.md`) must not link to a held page (verified with a grep). Confirmed the teaser build
+emits exactly `index.html` + `404.html` with all 12 stubs present in the repo. Toolchain note for
+a Debian box: system pip is PEP 668 *externally-managed*, so mkdocs went in a throwaway **venv in
+the scratchpad** (never in the repo — nothing to gitignore or accidentally commit) and the build
+wrote to a scratch `site/` dir, keeping the working tree clean. **Reveal stays a one-PR diff** —
+drop the `exclude_docs` entries and uncomment the nav, both already staged in `mkdocs.yml`.
+**Action:** 12 stub pages under `docs/` (setup / foundations / infra / database / cicd / wrap-up /
+reference) on a shared 9-section template, plus the full commented nav. Branch
+`docs/attendee-content-skeleton`. Task #22 → DOING (Phase 1 done; Phase 2 = flesh the prerequisites
+page #2, Phase 3 = polish the Azure SQL core, each its own branch).
+
 <!-- Add new entries above this line -->
