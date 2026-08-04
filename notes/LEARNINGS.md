@@ -483,4 +483,20 @@ future `use_existing_capacity` toggle would let trial-capacity users avoid the F
 **Untested end-to-end** — blocked on the tenant setting + workspace role + a capacity (task
 #20; live verify is the Fabric side of #14).
 
+## 2026-08-04 — "Ship changes as code" designed around a DB `plan` and the guard we already ship
+**Context:** Task #15 — designing the PR-driven schema-change increments for the 15:30 module.
+**Learning:** The clean framing is *"a database change is a PR, and the pipeline shows you what
+it will do to your data before it does it"* — the DB analog of `terraform plan`, driven by
+**`sqlpackage /Action:DeployReport`** (emits the would-be operations incl. `DataIssue`
+data-loss alerts, applies nothing). The punchline demo (drop the populated
+`Player.ShirtNumber`) needs almost no new safety code because **our publish profiles already
+set `BlockOnPossibleDataLoss=True`** — so the "good path" is: the report flags the drop on the
+PR, and the guard makes a blind publish fail loudly instead of silently losing data. "Manual
+apply" = a **GitHub Environment required-reviewer gate**, not an out-of-band step (still
+as-code). Nice reuse: the seed already populates `ShirtNumber`, so the data loss is real with
+zero extra setup. Same flow on Azure SQL and Fabric SQL (per-target profile only).
+**Action:** Designed in [`../planning/ship-changes-increments.md`](../planning/ship-changes-increments.md);
+task #15 → DONE, implementation split out as #21. Answered the open questions in
+[`Ideas.md`](Ideas.md).
+
 <!-- Add new entries above this line -->
