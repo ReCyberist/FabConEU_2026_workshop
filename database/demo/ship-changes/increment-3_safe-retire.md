@@ -49,5 +49,12 @@ jobs:
 Nothing is clicked *in the database* — the approval is the only manual step, and it's still
 "as code." Azure DevOps equivalent: an Environment **approval check**.
 
+> **Plan note.** GitHub **required-reviewer** (and wait-timer) environment protection rules need
+> a **Team or Enterprise** plan on **private** repos (they're free on public repos). On a plan
+> that doesn't support them, the API/UI rejects the rule — this is the production-grade pattern;
+> enable it where your plan allows. Also note: adding `environment:` to a job changes its OIDC
+> subject to `repo:<org>/<repo>:environment:<name>`, so the deploy principal needs a matching
+> **federated credential** for that subject (alongside the existing `ref:refs/heads/main` one).
+
 **Lesson:** destructive changes ship as code too — with a data-preserving migration (A) or a
 rename refactor (B), **and** a human gate. Never a blind auto-apply.

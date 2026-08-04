@@ -536,4 +536,22 @@ pipeline now emits a real "DB plan" artifact before every publish, and the same 
 and the demo README; deploy-report step live-verified (run `30902247159`, whole apply→report→
 publish→smoke pipeline green). Task #21 advanced.
 
+## 2026-08-04 — GitHub Environment approval gates need a paid plan on private repos
+**Context:** Wiring the #15/#21 "manual approval" gate as a **GitHub Environment required
+reviewer** on the deploy job.
+**Learning:** On a **private** repo, environment **protection rules** (required reviewers *and*
+wait timer) require **GitHub Team or Enterprise** — they're only free on public repos. The API
+`PUT …/environments/{name}` creates the bare environment on any plan, but adding a
+protection rule returns **`422 — Please ensure the billing plan supports the … protection
+rule`** (hit this even though `orgs/…/plan.name` reported "team" — worth checking billing/seats
+in the UI). Second gotcha for when it *is* enabled: referencing `environment: <name>` on a job
+changes that job's **OIDC `sub` claim** to `repo:<org>/<repo>:environment:<name>`, so the deploy
+principal needs a **third federated credential** for that subject (like the `pull_request` one we
+added) or `azure/login` fails with AADSTS700213. So the gate is a *coordinated* change (env rule
++ FIC + YAML), not a one-liner.
+**Decision:** Left the gate **documented** (the production-grade pattern is in
+[`../database/demo/ship-changes/increment-3_safe-retire.md`](../database/demo/ship-changes/increment-3_safe-retire.md))
+rather than wired, since it can't be enforced on this repo's plan; deleted the bare `production`
+environment to keep things clean. Task #21 note updated.
+
 <!-- Add new entries above this line -->
