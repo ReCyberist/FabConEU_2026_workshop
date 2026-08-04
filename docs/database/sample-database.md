@@ -1,6 +1,6 @@
 # The sample database
 
-Every demo and lab in this workshop deploys **one canonical sample database**: a small
+Every demo in this workshop deploys **one canonical sample database**: a small
 football schema that covers **both the men's and women's game**. It's deliberately compact
 — big enough to be realistic, small enough to reason about while you focus on the *real*
 subject: shipping schema as code.
@@ -121,7 +121,7 @@ erDiagram
 
 ## Views and stored procedures
 
-Ready-made objects you'll deploy and query in the labs:
+Ready-made objects you'll deploy and query as you follow along:
 
 | Object | Type | Purpose |
 |--------|------|---------|

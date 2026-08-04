@@ -6,7 +6,7 @@ Presented by **Jess Pomfret** & **Rob Sewell**
 ---
 
 !!! tip "🚧 Full workshop content drops closer to the event — check back soon."
-    You've found the teaser. The complete hands-on labs, code bundles, and prerequisites
+    You've found the teaser. The complete walkthroughs, code bundles, and prerequisites
     will land on this page before FabCon Europe 2026. Bookmark it.
 
 Managing Azure SQL or Fabric SQL by hand doesn't scale. In this full-day, hands-on workshop
@@ -16,7 +16,11 @@ controlled, repeatable, and ready for production.
 
 **Hands-on, practical, and no clicking required.**
 
-## What you'll do
+## What you'll see (and can follow along with)
+Everything is a live demo you can **follow along with on your own Azure / Fabric kit** if you
+have it — or just watch. There's no provided lab environment; bring your own or replay it later
+from the downloads.
+
 - Provision **Azure SQL** and **Fabric SQL** as code (Terraform), side by side.
 - Define your database schema as code with **SQL projects** (`.sqlproj` / DACPAC).
 - Wire it all into **CI/CD pipelines** (GitHub Actions) that deploy automatically.
