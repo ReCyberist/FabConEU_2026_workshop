@@ -518,4 +518,22 @@ box only has .NET 9 + no SqlPackage; validation happens in CI / against a live D
 **Action:** Added the demo folder; task #21 → DOING (content done; the `deploy-report` CI job,
 Dev→Test approval gate, and naive-publish workflow remain, best done against a live DB).
 
+## 2026-08-04 — DeployReport in CI: it's `/OutputPath`, not `/DeployReportPath` — validated live
+**Context:** Wiring the "database plan" (`sqlpackage /Action:DeployReport`) into
+`azure-sql-apply.yml` before the publish step (task #21).
+**Learning:** The SqlPackage **DeployReport** CLI action writes its XML with **`/OutputPath:`**.
+`/DeployReportPath` is an **MSBuild property**, not a CLI arg — passing it fails the action with
+*"'DeployReportPath' is not a valid argument for the 'DeployReport' action."* A live
+`azure-sql-apply` run caught this (the step failed before publish); the branch-only checks
+couldn't, because the OIDC federated credential only trusts `main`, so the deploy workflow can
+only be exercised after merge (recurring theme). Fixed → re-ran → green. The report's shape is
+useful to know for the demo: `<DeploymentReport><Alerts/><Operations>…</Operations>` — against
+a **fresh/empty** DB `Alerts` is empty and every object is a `Create`; a **column drop against a
+populated** DB is where an `<Alert Name="DataIssue">` (possible data loss) shows up. So the
+pipeline now emits a real "DB plan" artifact before every publish, and the same grep that shows
+"None reported" here will surface the data-loss alert in the #15/#21 demo.
+**Action:** `/OutputPath` fix in [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+and the demo README; deploy-report step live-verified (run `30902247159`, whole apply→report→
+publish→smoke pipeline green). Task #21 advanced.
+
 <!-- Add new entries above this line -->
