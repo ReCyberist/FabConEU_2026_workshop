@@ -138,7 +138,7 @@ jobs:
             /TargetServerName:"${{ needs.apply.outputs.server_fqdn }}" \
             /TargetDatabaseName:"${{ needs.apply.outputs.database_name }}" \
             /AccessToken:"$SQL_ACCESS_TOKEN" \
-            /DeployReportPath:"deploy-report.xml"
+            /OutputPath:"deploy-report.xml"
           echo "----- data-loss / warning operations in the plan -----"
           grep -iE "DataIssue|data loss|<Operation" deploy-report.xml || echo "None reported."
 
