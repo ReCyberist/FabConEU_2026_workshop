@@ -6,7 +6,7 @@ Track everything that must be arranged **before** the event. Tick items as confi
 - [ ] Azure subscription(s) for demos — with quota for Azure SQL in the demo region.
 - [ ] Microsoft Fabric capacity / trial for Fabric SQL demos.
 - [x] **Attendee sandbox strategy — DECIDED (D6, 2026-07-18): bring-your-own.** Attendees use
-      whatever they already have. Two independent lab parts: **IaC** needs their own Azure sub;
+      whatever they already have. Two independent follow-along parts: **IaC** needs their own Azure sub;
       **DB deploy** needs a target SQL. We provide **one shared SQL endpoint on the day,
       explicitly unsupported.** See [`../notes/decisions.md`](../notes/decisions.md) **D6**.
 - [ ] **The shared unsupported endpoint** — a **SQL Server on a VM** attendees push to via
@@ -24,9 +24,9 @@ Track everything that must be arranged **before** the event. Tick items as confi
       or Fabric SQL), **or** use our shared unsupported endpoint on the day.
 - [ ] Cost + **teardown** guidance for attendees who deploy into their own subscription.
 
-## Lab environment
+## Attendee environment (bring-your-own — no provided lab)
 - [ ] Confirm what attendees need locally vs. in-cloud (see attendee prerequisites in `docs/`).
-- [ ] Fallback for attendees who can't provision cloud resources (read-only walkthrough?).
+- [ ] Fallback for attendees who can't provision cloud resources (read-only walkthrough / just watch).
 - [ ] GitHub org/repo access for attendees (template repo to fork/clone).
 
 ## Assets

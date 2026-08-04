@@ -1,7 +1,7 @@
 # "Ship database changes as code" — increment design (task #15)
 
 **Feeds:** the **15:30** agenda module — *CI/CD part 3: ship database changes automatically*
-(45 min: ~5 concept → ~20 demo → ~20 lab). Builds on the
+(45 min: ~5 concept → ~40 live demo with optional follow-along). Builds on the
 [blind-deploy-vs-schema-compare demo idea](../notes/Ideas.md).
 
 **The one-line thesis of the module:** a database change is a **pull request**, and the
@@ -18,7 +18,8 @@ seeded data** so data loss is real and visible.
 ## The narrative arc — three increments, each a PR
 
 Each increment is one branch/PR against the football schema, prepared as a **demo checkpoint**
-(presenter can `git checkout` each state; attendees redo it in the lab).
+(presenter can `git checkout` each state; attendees can follow along on their own kit if they
+have it — there's no provided lab).
 
 ### Increment 1 — Additive change (the safe, automatable path)
 **Change:** add a read-only view `football.vw_SquadAges` (players + age from `DateOfBirth`).
@@ -85,8 +86,8 @@ human gate, never a blind auto-apply.
    against the Test DB, upload the report as an artifact and/or post the data-loss alerts as a
    PR comment. (Extends `azure-sql-plan.yml` / a DB-plan job — the DB analog of `terraform
    plan` on PR.)
-2. **The three increment branches** as reproducible demo checkpoints (+ a short lab script
-   with hard "we move on" checkpoints per the agenda's timing discipline).
+2. **The three increment branches** as reproducible demo checkpoints (+ a short follow-along
+   script with hard "we move on" checkpoints per the agenda's timing discipline).
 3. **A two-stage Dev → Test promotion** with a **Test environment approval gate** (GitHub
    Environment + required reviewer). Reuses the existing apply/publish workflows.
 4. **A throwaway "naive" publish** for demo 2a only (`BlockOnPossibleDataLoss=false`) — clearly
@@ -96,6 +97,7 @@ human gate, never a blind auto-apply.
 ## Timing / delivery notes
 - Demo order = the three increments; **Increment 2 is the punchline** — leave time to let the
   silent-data-loss moment land before showing the guardrail.
-- Lab: attendees do Increment 1 themselves (safe, confidence-building); Increments 2–3 can be
-  presenter-led with attendees following, since the trap is easier to *watch* than to hit.
+- Follow-along (optional, bring-your-own — **no provided lab**): Increment 1 is the one to
+  invite attendees to try on their own kit (safe, confidence-building); Increments 2–3 are
+  presenter-led with attendees watching/following, since the trap is easier to *watch* than to hit.
 - Log actual vs planned timings in [`../notes/LEARNINGS.md`](../notes/LEARNINGS.md) on the dry run.
