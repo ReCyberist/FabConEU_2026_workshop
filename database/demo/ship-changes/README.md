@@ -44,7 +44,7 @@ sqlpackage /Action:DeployReport `
   /SourceFile:"bin/Release/FabConFootball.dacpac" `
   /Profile:"PublishProfiles/AzureSql.publish.xml" `
   /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
-  /DeployReportPath:"deploy-report.xml"
+  /OutputPath:"deploy-report.xml"
 ```
 
 The report lists *one view to create* and **no `DataIssue` alerts** → safe. Publishing is the
