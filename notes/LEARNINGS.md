@@ -499,4 +499,23 @@ zero extra setup. Same flow on Azure SQL and Fabric SQL (per-target profile only
 task #15 → DONE, implementation split out as #21. Answered the open questions in
 [`Ideas.md`](Ideas.md).
 
+## 2026-08-04 — "Ship changes" demo built as runnable artifacts; DeployReport is the DB's `plan`
+**Context:** Task #21 — turning the #15 design into the actual demo. Built the demo-as-code
+first (the reusable teaching content), before the CI wiring.
+**Learning:** The three increments live in [`../database/demo/ship-changes/`](../database/demo/ship-changes/)
+as real, copy-into-the-project SQL + a follow-along `README` with the exact commands — not just
+prose. Two things worth recording: (1) **`sqlpackage /Action:DeployReport` is the "database
+plan"** — it emits an XML report of what a publish *would* do, including `<Alert
+Name="DataIssue">` for a column drop, and (per MS Learn) it flags the data-loss *operation*
+from the schema diff, so it surfaces the risk **before** any deploy. (2) The "good path" needed
+almost no new safety code — our publish profiles already ship `BlockOnPossibleDataLoss=True`,
+so a blind publish **fails loudly** instead of silently dropping the populated `ShirtNumber`;
+the demo just contrasts that with a throwaway `/p:BlockOnPossibleDataLoss=false`. Schema-fidelity
+gotcha while writing the views: `Team` has **no `Name`** — a team's display name is
+`Club.Name` + `Category` (the men's/women's split), so `vw_TeamRosterSizes` joins `Club`.
+Can't build/verify locally — `global.json` pins .NET **8** (`rollForward: latestMinor`) and this
+box only has .NET 9 + no SqlPackage; validation happens in CI / against a live DB.
+**Action:** Added the demo folder; task #21 → DOING (content done; the `deploy-report` CI job,
+Dev→Test approval gate, and naive-publish workflow remain, best done against a live DB).
+
 <!-- Add new entries above this line -->
