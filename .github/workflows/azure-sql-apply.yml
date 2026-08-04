@@ -126,6 +126,30 @@ jobs:
           echo "::add-mask::$token"
           echo "SQL_ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
 
+      # The "database plan": DeployReport is the DB's answer to `terraform plan` — it reports
+      # exactly what the publish below WOULD do (incl. <Alert Name="DataIssue"> data-loss
+      # operations) without changing anything. Informational; the actual guard is
+      # BlockOnPossibleDataLoss=True in the profile. Underpins the #15/#21 "ship changes" story.
+      - name: Deploy report (DB plan)
+        run: |
+          sqlpackage /Action:DeployReport \
+            /SourceFile:"database/sql-projects/bin/Release/FabConFootball.dacpac" \
+            /Profile:"database/sql-projects/PublishProfiles/AzureSql.publish.xml" \
+            /TargetServerName:"${{ needs.apply.outputs.server_fqdn }}" \
+            /TargetDatabaseName:"${{ needs.apply.outputs.database_name }}" \
+            /AccessToken:"$SQL_ACCESS_TOKEN" \
+            /DeployReportPath:"deploy-report.xml"
+          echo "----- data-loss / warning operations in the plan -----"
+          grep -iE "DataIssue|data loss|<Operation" deploy-report.xml || echo "None reported."
+
+      - name: Upload deploy report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: azure-sql-deploy-report
+          path: deploy-report.xml
+          if-no-files-found: ignore
+
       # Passwordless publish: the profile carries the deploy options (no connection string);
       # server/database come from the apply job's Terraform outputs, auth from the Entra token.
       - name: Publish DACPAC
