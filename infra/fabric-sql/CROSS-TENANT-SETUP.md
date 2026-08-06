@@ -35,10 +35,13 @@ az ad sp create --id $appId | Out-Null
 $spObjectId = az ad sp show --id $appId --query id -o tsv   # SP *object* id (not appId)
 
 # 2) Two GitHub OIDC federated credentials: main (apply/destroy/automation) + PRs (plan)
+#    NOTE: delimit the variable as ${repo}. A bare "$repo:" is parsed by PowerShell as a
+#    namespaced variable ($scope:name, like $env:PATH), silently dropping the value and
+#    corrupting the subject (-> AADSTS700213 at token exchange).
 @"
 { "name": "fabcon26-fabric-main",
   "issuer": "https://token.actions.githubusercontent.com",
-  "subject": "repo:$repo:ref:refs/heads/main",
+  "subject": "repo:${repo}:ref:refs/heads/main",
   "audiences": ["api://AzureADTokenExchange"] }
 "@ | Set-Content -Path fic-main.json -Encoding utf8
 az ad app federated-credential create --id $appId --parameters '@fic-main.json'
@@ -46,7 +49,7 @@ az ad app federated-credential create --id $appId --parameters '@fic-main.json'
 @"
 { "name": "fabcon26-fabric-pr",
   "issuer": "https://token.actions.githubusercontent.com",
-  "subject": "repo:$repo:pull_request",
+  "subject": "repo:${repo}:pull_request",
   "audiences": ["api://AzureADTokenExchange"] }
 "@ | Set-Content -Path fic-pr.json -Encoding utf8
 az ad app federated-credential create --id $appId --parameters '@fic-pr.json'

@@ -607,4 +607,22 @@ reference) on a shared 9-section template, plus the full commented nav. Branch
 `docs/attendee-content-skeleton`. Task #22 → DOING (Phase 1 done; Phase 2 = flesh the prerequisites
 page #2, Phase 3 = polish the Azure SQL core, each its own branch).
 
+## 2026-08-06 — PowerShell `$var:` scope syntax silently corrupts OIDC federated-credential subjects
+**Context:** The first cross-tenant `fabric-sql-plan` failed at the azurerm-provider token
+exchange with `AADSTS700213 — No matching federated identity record found for subject
+repo:JessAndRob/FabConEU_2026_workshop:pull_request`, even though a `fabcon26-fabric-pr` federated
+credential existed on the Tenant B app.
+**Learning:** The credential existed but its **subject was missing the repo** — stored as `repo:`
+and `repo:/heads/main` instead of the full `repo:<org>/<repo>:pull_request` /
+`…:ref:refs/heads/main`. Cause: the setup built the subject in a **double-quoted** here-string as
+`"repo:$repo:pull_request"`, and PowerShell parses `$repo:pull_request` as a **namespaced
+variable** (`$scope:name`, exactly like `$env:PATH`) — so `$repo` is dropped and the `:pull_request`
+tail is swallowed. Fix: delimit with **`${repo}`** (`"repo:${repo}:pull_request"`), or use a
+single-quoted here-string with the repo hard-coded. Diagnostic that pinpoints it:
+`az ad app federated-credential list --id <appId> --query "[].{name:name,subject:subject}" -o table`
+— **AADSTS700213 means the app was found but no subject matched** (credential present ≠ correct).
+**Action:** Recreated both subjects (`main` + `pr`); patched
+[`../infra/fabric-sql/CROSS-TENANT-SETUP.md`](../infra/fabric-sql/CROSS-TENANT-SETUP.md) to use
+`${repo}` + a warning. Unblocks the first live Fabric plan (tasks #20).
+
 <!-- Add new entries above this line -->
