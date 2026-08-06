@@ -1,6 +1,6 @@
 # Fabric cross-tenant + capacity automation — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** Follow the checklist below task-by-task (each step ends with a verify gate + commit). Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rewire the Fabric SQL module + workflows so the **state stays in Tenant A** while the **infra + DB deploy run in Tenant B**, and add a persistent **Azure Automation** that pauses the capacity every 2h / resumes on demand — without touching any Azure SQL work.
 
