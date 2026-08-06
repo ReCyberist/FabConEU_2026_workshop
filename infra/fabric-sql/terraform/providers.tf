@@ -36,8 +36,15 @@ terraform {
 provider "azurerm" {
   features {}
 
-  # azurerm v4 requires the subscription explicitly. Supply it out-of-band via the
-  # ARM_SUBSCRIPTION_ID environment variable so no subscription id is committed.
+  # Pinned to Tenant B (the Fabric infra). The Terraform STATE BACKEND authenticates
+  # separately to Tenant A via the ARM_* env — explicit provider args here beat those env
+  # vars, so backend (Tenant A) and provider (Tenant B) diverge cleanly in one run. See
+  # planning/2026-08-05-fabric-cross-tenant-automation-design.md §4b. Vars default empty /
+  # use_oidc=false so a local `az login` (into Tenant B) still works; CI supplies them.
+  subscription_id = var.fabric_subscription_id
+  client_id       = var.fabric_client_id != "" ? var.fabric_client_id : null
+  tenant_id       = var.fabric_tenant_id != "" ? var.fabric_tenant_id : null
+  use_oidc        = var.fabric_use_oidc
 }
 
 provider "fabric" {
