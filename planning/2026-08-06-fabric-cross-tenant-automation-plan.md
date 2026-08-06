@@ -136,7 +136,7 @@ Run: `terraform init -backend=false && terraform validate` → expect `Success! 
 
 - [ ] **Step 5: Commit**
 
-```bash
+```powershell
 git add infra/fabric-sql/terraform/providers.tf infra/fabric-sql/terraform/variables.tf infra/fabric-sql/terraform/main.tf
 git commit -m "Pin Fabric azurerm provider to Tenant B; state backend stays Tenant A" -m "<body>" -m "<trailers>"
 ```
