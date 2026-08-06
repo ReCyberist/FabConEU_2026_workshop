@@ -71,7 +71,7 @@ resource "azurerm_automation_runbook" "pause" {
   resource_group_name     = azurerm_resource_group.automation.name
   automation_account_name = azurerm_automation_account.this.name
   location                = azurerm_resource_group.automation.location
-  runbook_type            = "PowerShell72"
+  runbook_type            = "PowerShell76"
   log_verbose             = false
   log_progress            = false
   description             = "Suspend the workshop Fabric capacity (cost control)."
@@ -83,7 +83,7 @@ resource "azurerm_automation_runbook" "resume" {
   resource_group_name     = azurerm_resource_group.automation.name
   automation_account_name = azurerm_automation_account.this.name
   location                = azurerm_resource_group.automation.location
-  runbook_type            = "PowerShell72"
+  runbook_type            = "PowerShell76"
   log_verbose             = false
   log_progress            = false
   description             = "Resume the workshop Fabric capacity (on demand)."

@@ -1,4 +1,4 @@
-# Azure Automation runbook (PowerShell 7.2). Runs as the account's system-assigned managed
+# Azure Automation runbook (PowerShell 7.6). Runs as the account's system-assigned managed
 # identity. Discovers the Fabric capacity in the workload resource group and resumes it via the
 # ARM resume action. On-demand only (no schedule) — run before a demo. Idempotent.
 $ErrorActionPreference = 'Stop'
