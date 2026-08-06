@@ -13,9 +13,7 @@ This page is the **one-time Tenant B identity setup**, as code — nothing click
 
 ## Prerequisites (Tenant B)
 
-- A **tenant admin has enabled *"Service principals can use Fabric APIs"*** (Fabric admin portal →
-  Tenant settings → Developer settings), scoped to the **`data-deployment-sps`** security group (or
-  org-wide). That group also carries the Fabric **workspace** access.
+- A **tenant admin has enabled *"Service principals can use Fabric APIs"*** in Fabric tenant settings, scoped to the **`data-deployment-sps`** security group (or org-wide). That group also carries the Fabric **workspace** access.
 - You can **create app registrations** in Tenant B and are **Owner or User Access Administrator** on
   the Tenant B subscription (needed to grant the two roles below).
 - `gh` is authenticated with write access to `JessAndRob/FabConEU_2026_workshop`.
