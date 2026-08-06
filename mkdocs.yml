@@ -50,20 +50,41 @@ markdown_extensions:
 #      real nav entries. That one PR is the reveal.
 exclude_docs: |
   database/sample-database.md
+  setup/welcome.md
+  setup/prerequisites.md
+  foundations/source-control.md
+  infra/azure-sql.md
+  infra/fabric-sql.md
+  database/sql-projects.md
+  cicd/build-validate.md
+  cicd/deploy-infra.md
+  cicd/ship-database-changes.md
+  wrap-up/migrations-drift-teardown.md
+  wrap-up/resources.md
+  reference/other-tooling.md
 # ────────────────────────────────────────────────────────────────────────────────
 
-# Navigation — expand as content is written under docs/.
+# Navigation — the full site tree lives here but stays COMMENTED until reveal.
 nav:
   - Home: index.md
-  # --- Held until reveal (see exclude_docs above) ---
-  # - Database as code:
-  #     - The sample database: database/sample-database.md
+  # --- Held until reveal: delete the exclude_docs entries above AND uncomment below ---
   # - Getting started:
+  #     - Welcome & how the day works: setup/welcome.md
   #     - Prerequisites: setup/prerequisites.md
+  # - Foundations:
+  #     - Source control for databases: foundations/source-control.md
   # - Infrastructure as code:
   #     - Azure SQL (Terraform): infra/azure-sql.md
   #     - Fabric SQL (Terraform): infra/fabric-sql.md
   # - Database as code:
+  #     - The sample database: database/sample-database.md
   #     - SQL projects: database/sql-projects.md
   # - CI/CD:
-  #     - GitHub Actions: cicd/github-actions.md
+  #     - Build & validate: cicd/build-validate.md
+  #     - Deploy infrastructure: cicd/deploy-infra.md
+  #     - Ship database changes: cicd/ship-database-changes.md
+  # - Wrap up:
+  #     - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
+  #     - Resources & next steps: wrap-up/resources.md
+  # - Reference:
+  #     - Other tooling: reference/other-tooling.md
