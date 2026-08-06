@@ -66,41 +66,40 @@ resource "azurerm_automation_variable_string" "workload_rg" {
   value                   = local.workload_rg_name
 }
 
-# PowerShell 7.6 runtime environment — required because PowerShell76 is not a valid
+# PowerShell 7.4 runtime environment — required because PowerShell76 is not a valid
 # runbook_type enum; the correct path for PS 7.4+ is a custom runtime environment.
-resource "azurerm_automation_runtime_environment" "ps76" {
-  name                    = "ps76"
-  resource_group_name     = azurerm_resource_group.automation.name
-  automation_account_id   = azurerm_automation_account.this.id
-  location                = azurerm_resource_group.automation.location
-  language                = "PowerShell"
-  version                 = "7.6"
+resource "azurerm_automation_runtime_environment" "ps74" {
+  name                  = "ps74"
+  automation_account_id = azurerm_automation_account.this.id
+  location              = azurerm_resource_group.automation.location
+  runtime_language      = "PowerShell"
+  runtime_version       = "7.4"
 }
 
 resource "azurerm_automation_runbook" "pause" {
-  name                    = "Pause-FabricCapacity"
-  resource_group_name     = azurerm_resource_group.automation.name
-  automation_account_name = azurerm_automation_account.this.name
-  location                = azurerm_resource_group.automation.location
-  runbook_type            = "PowerShell"
-  runtime_environment_name = azurerm_automation_runtime_environment.ps76.name
-  log_verbose             = false
-  log_progress            = false
-  description             = "Suspend the workshop Fabric capacity (cost control)."
-  content                 = file("${path.module}/runbooks/Pause-FabricCapacity.ps1")
+  name                     = "Pause-FabricCapacity"
+  resource_group_name      = azurerm_resource_group.automation.name
+  automation_account_name  = azurerm_automation_account.this.name
+  location                 = azurerm_resource_group.automation.location
+  runbook_type             = "PowerShell"
+  runtime_environment_name = azurerm_automation_runtime_environment.ps74.name
+  log_verbose              = false
+  log_progress             = false
+  description              = "Suspend the workshop Fabric capacity (cost control)."
+  content                  = file("${path.module}/runbooks/Pause-FabricCapacity.ps1")
 }
 
 resource "azurerm_automation_runbook" "resume" {
-  name                    = "Resume-FabricCapacity"
-  resource_group_name     = azurerm_resource_group.automation.name
-  automation_account_name = azurerm_automation_account.this.name
-  location                = azurerm_resource_group.automation.location
-  runbook_type            = "PowerShell"
-  runtime_environment_name = azurerm_automation_runtime_environment.ps76.name
-  log_verbose             = false
-  log_progress            = false
-  description             = "Resume the workshop Fabric capacity (on demand)."
-  content                 = file("${path.module}/runbooks/Resume-FabricCapacity.ps1")
+  name                     = "Resume-FabricCapacity"
+  resource_group_name      = azurerm_resource_group.automation.name
+  automation_account_name  = azurerm_automation_account.this.name
+  location                 = azurerm_resource_group.automation.location
+  runbook_type             = "PowerShell"
+  runtime_environment_name = azurerm_automation_runtime_environment.ps74.name
+  log_verbose              = false
+  log_progress             = false
+  description              = "Resume the workshop Fabric capacity (on demand)."
+  content                  = file("${path.module}/runbooks/Resume-FabricCapacity.ps1")
 }
 
 # Pause every 2 hours. Resume has NO schedule (on-demand only).

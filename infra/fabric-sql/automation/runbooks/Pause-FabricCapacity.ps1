@@ -1,4 +1,4 @@
-# Azure Automation runbook (PowerShell 7.6). Runs as the account's system-assigned managed
+# Azure Automation runbook (PowerShell 7.4). Runs as the account's system-assigned managed
 # identity. Discovers the Fabric capacity in the workload resource group (its name is
 # random-suffixed, so we discover rather than hard-code) and suspends it via the ARM suspend
 # action. Idempotent — a no-op if there is no capacity (e.g. after the nightly destroy).
