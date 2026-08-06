@@ -554,4 +554,36 @@ added) or `azure/login` fails with AADSTS700213. So the gate is a *coordinated* 
 rather than wired, since it can't be enforced on this repo's plan; deleted the bare `production`
 environment to keep things clean. Task #21 note updated.
 
+## 2026-08-06 — Cross-tenant Terraform: state in one tenant, infra in another (Fabric SQL)
+**Context:** Task #20 — the Fabric SQL infra + DB deploy had to run in a *different* tenant /
+subscription / client (**Tenant B**) than the Azure SQL work and the Terraform state backend
+(**Tenant A**), without touching any Azure SQL wiring.
+**Learning:** The reusable *separation-of-duties* pattern — **state in one subscription, the infra
+it describes in another** — comes down to splitting the azurerm **backend** from the azurerm
+**provider**, which both default to reading `ARM_*`. The clean split: leave the **backend** on the
+`ARM_*` env (Tenant A) and **pin the provider explicitly in `providers.tf`** (`subscription_id` /
+`client_id` / `tenant_id` / `use_oidc` from vars = Tenant B). Explicit provider args beat the
+`ARM_*` env, so backend and provider authenticate to different tenants **in one `terraform` run**.
+The `microsoft/fabric` provider uses its own `FABRIC_*` env (no clash), and the DACPAC publish's
+`azure/login` moves to Tenant B. One GitHub OIDC token is exchanged at *both* tenants — so Tenant B
+needs its own app registration with `main` + `pull_request` federated credentials (mirroring
+Tenant A). Two gotchas worth keeping: (1) `azurerm_fabric_capacity.administration_members` takes
+**users by UPN** and **service principals by object id** — and the module now *always* includes the
+deploying caller as a capacity admin (an explicit list previously *replaced* it, which would break
+the workspace→capacity assignment); (2) the Tenant B CI app needs **User Access Administrator** on
+top of Contributor so Terraform can create the automation identity's custom role + assignment as
+code.
+**Also landed (task #23):** a **persistent Azure Automation** (its own state key) that pauses the
+Fabric capacity **every 2h** and resumes **on demand** via PowerShell runbooks under a
+system-assigned managed identity with a sub-scoped least-privilege custom role. The runbooks
+**discover the capacity by its (stable) resource group** because the capacity name is random and
+nightly-recreated. Since pausing preserves the workspace + DB + data (unlike destroy), the nightly
+Fabric destroy is now a candidate to relax.
+**Action:** Module + workflows rewired; `infra/fabric-sql/automation/` added; Tenant B setup
+documented in [`../infra/fabric-sql/CROSS-TENANT-SETUP.md`](../infra/fabric-sql/CROSS-TENANT-SETUP.md).
+Design [`../planning/2026-08-05-fabric-cross-tenant-automation-design.md`](../planning/2026-08-05-fabric-cross-tenant-automation-design.md),
+plan [`../planning/2026-08-06-fabric-cross-tenant-automation-plan.md`](../planning/2026-08-06-fabric-cross-tenant-automation-plan.md).
+Branch `feat/fabric-cross-tenant-automation`; tasks #20 advanced, #23 added. Live plan→apply is the
+next step (the long-blocked Fabric side of #14).
+
 <!-- Add new entries above this line -->
