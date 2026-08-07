@@ -1,0 +1,67 @@
+name: Fabric SQL — capacity automation apply
+
+# Provisions the PERSISTENT Fabric capacity pause/resume automation (infra/fabric-sql/automation):
+# an Azure Automation account + managed identity + Pause/Resume runbooks (pause every 2h, resume
+# on demand). Applied ONCE — it is not part of the nightly destroy/apply cycle. Cross-tenant:
+# state in Tenant A (ARM_*), resources in Tenant B (TF_VAR_fabric_*). No fabric provider and no
+# capacity admins here, so those env vars are omitted. See
+# planning/2026-08-05-fabric-cross-tenant-automation-design.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  # --- Terraform state backend -> Tenant A ---
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+  # --- azurerm provider -> Tenant B ---
+  TF_VAR_fabric_client_id: ${{ vars.FABRIC_CLIENT_ID }}
+  TF_VAR_fabric_tenant_id: ${{ vars.FABRIC_TENANT_ID }}
+  TF_VAR_fabric_subscription_id: ${{ vars.FABRIC_SUBSCRIPTION_ID }}
+  TF_VAR_fabric_use_oidc: true
+
+concurrency:
+  group: fabric-sql-automation
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: terraform apply
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/fabric-sql/automation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=fabric-sql/automation.tfstate"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform apply
+        run: |
+          terraform apply -auto-approve \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

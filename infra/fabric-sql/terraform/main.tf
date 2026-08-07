@@ -13,9 +13,12 @@ locals {
   workspace_name    = "ws-${local.naming_suffix}"
   sql_database_name = "${var.database_name}-${var.environment}"
 
-  # Default the capacity admin to the caller's own principal when none is supplied,
-  # so the module is usable without extra input (mirrors a passwordless quick start).
-  capacity_admin_members = length(var.capacity_admin_members) > 0 ? var.capacity_admin_members : [data.azurerm_client_config.current.object_id]
+  # Capacity admins are ALWAYS the deploying caller (the CI SP in Tenant B — required for the
+  # workspace->capacity assignment) PLUS any extras supplied (presenter UPNs). distinct()
+  # dedupes if the caller is also listed. Previously an explicit list *replaced* the caller,
+  # which would break the assignment — see
+  # planning/2026-08-05-fabric-cross-tenant-automation-design.md §4d.
+  capacity_admin_members = distinct(concat([data.azurerm_client_config.current.object_id], var.capacity_admin_members))
 
   tags = merge({
     workload    = var.workload

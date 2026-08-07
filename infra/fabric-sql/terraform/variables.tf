@@ -110,3 +110,32 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# ---------------------------------------------------------------------------------------
+# Cross-tenant identity for the azurerm provider (Fabric capacity + RG). The Terraform state
+# backend authenticates separately (Tenant A, ARM_* env); these pin the *provider* to
+# Tenant B. See planning/2026-08-05-fabric-cross-tenant-automation-design.md.
+# ---------------------------------------------------------------------------------------
+
+variable "fabric_subscription_id" {
+  description = "Tenant B subscription id for the Fabric capacity (azurerm provider)."
+  type        = string
+}
+
+variable "fabric_client_id" {
+  description = "Tenant B app (client) id for the azurerm provider. Empty = use the az CLI login."
+  type        = string
+  default     = ""
+}
+
+variable "fabric_tenant_id" {
+  description = "Tenant B tenant id for the azurerm provider. Empty = use the az CLI login's tenant."
+  type        = string
+  default     = ""
+}
+
+variable "fabric_use_oidc" {
+  description = "azurerm provider uses GitHub OIDC (CI true) vs the az CLI login (local false)."
+  type        = bool
+  default     = false
+}

@@ -1,0 +1,13 @@
+# Tenant B identity. In CI these come from repo vars via TF_VAR_*/env; locally, set
+# fabric_subscription_id and either leave client/tenant empty (use your `az login` context,
+# signed in to Tenant B) or fill them in with use_oidc = false.
+fabric_subscription_id = "00000000-0000-0000-0000-000000000000"
+# fabric_client_id     = "<tenant-b-app-client-id>"
+# fabric_tenant_id     = "<tenant-b-tenant-id>"
+# fabric_use_oidc      = true   # CI sets this to true
+
+# Naming — MUST match the Fabric module so the workload resource group is found.
+workload              = "fabcon26"
+environment           = "dev"
+location              = "westeurope"
+location_abbreviation = "weu"

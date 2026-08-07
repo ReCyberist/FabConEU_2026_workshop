@@ -5,8 +5,9 @@ name: Fabric SQL — Terraform destroy
 # serverless auto-pause), so leaving it up overnight is real money. Mirrors
 # azure-sql-destroy.yml and uses the same remote state key as fabric-sql-apply.yml.
 #
-# Auth: OIDC — azurerm via ARM_*, the fabric provider via FABRIC_USE_OIDC + FABRIC_CLIENT_ID/
-# TENANT_ID. (Live runs are blocked on the same Fabric prereqs as apply — see #20.)
+# Auth: OIDC, CROSS-TENANT — the Terraform state backend authenticates to Tenant A via ARM_*,
+# while the azurerm + fabric providers authenticate to Tenant B (TF_VAR_fabric_* / FABRIC_*).
+# (Live runs are gated on the Fabric prereqs — see #20.)
 
 on:
   schedule:
@@ -18,13 +19,22 @@ permissions:
   id-token: write
 
 env:
+  # --- Terraform state backend -> Tenant A (unchanged identity) ---
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_OIDC: true
+  # --- azurerm provider (Fabric capacity) -> Tenant B (pinned in providers.tf via TF_VAR_*) ---
+  TF_VAR_fabric_client_id: ${{ vars.FABRIC_CLIENT_ID }}
+  TF_VAR_fabric_tenant_id: ${{ vars.FABRIC_TENANT_ID }}
+  TF_VAR_fabric_subscription_id: ${{ vars.FABRIC_SUBSCRIPTION_ID }}
+  TF_VAR_fabric_use_oidc: true
+  # --- fabric provider (workspace + SQL DB) -> Tenant B ---
   FABRIC_USE_OIDC: true
-  FABRIC_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-  FABRIC_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  FABRIC_CLIENT_ID: ${{ vars.FABRIC_CLIENT_ID }}
+  FABRIC_TENANT_ID: ${{ vars.FABRIC_TENANT_ID }}
+  # --- capacity admins: presenter UPNs (the CI SP is auto-added as the caller) ---
+  TF_VAR_capacity_admin_members: ${{ vars.FABRIC_CAPACITY_ADMIN_UPNS }}
 
 concurrency:
   group: fabric-sql-terraform
