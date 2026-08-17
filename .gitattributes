@@ -1,0 +1,48 @@
+# Line-ending normalisation.
+#
+# Git stores LF in the repo; Windows working copies check out CRLF. Without this
+# file a Windows checkout can make every file look modified, which buries real
+# diffs (it did, 2026-08-17 — see notes/LEARNINGS.md).
+#
+# After adding this, run once:  git add --renormalize .
+
+* text=auto
+
+# Text we actually ship (belt and braces)
+*.md          text
+*.txt         text
+*.sql         text
+*.sqlproj     text
+*.tf          text
+*.tfvars      text
+*.hcl         text
+*.yml         text
+*.yaml        text
+*.json        text
+*.xml         text
+*.bicep       text
+*.bicepparam  text
+*.ps1         text
+*.psm1        text
+*.psd1        text
+
+# Must be LF — these run on Linux runners
+*.sh          text eol=lf
+
+# Must be CRLF — Windows shells are fussy
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+
+# Binary — never convert
+*.png         binary
+*.jpg         binary
+*.jpeg        binary
+*.gif         binary
+*.ico         binary
+*.pdf         binary
+*.zip         binary
+*.dacpac      binary
+*.bacpac      binary
+*.xlsx        binary
+*.pptx        binary
+*.docx        binary
