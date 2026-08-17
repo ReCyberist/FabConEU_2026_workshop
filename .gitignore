@@ -40,3 +40,9 @@ dist/
 Thumbs.db
 .vs/
 .idea/
+
+# PowerPoint — the conference template and the generated deck stay out of git.
+# The deck is generated from slides/content.py + slides/build.py; see slides/README.md
+*.pptx
+*.potx
+*.ppt
