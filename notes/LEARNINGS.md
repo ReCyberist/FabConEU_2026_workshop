@@ -625,4 +625,45 @@ single-quoted here-string with the repo hard-coded. Diagnostic that pinpoints it
 [`../infra/fabric-sql/CROSS-TENANT-SETUP.md`](../infra/fabric-sql/CROSS-TENANT-SETUP.md) to use
 `${repo}` + a warning. Unblocks the first live Fabric plan (tasks #20).
 
+## 2026-08-17 — The people module goes to the front of the day, and the morning pays for it
+**Context:** Rob wanted the "hardest part of IT" hook — the egos-and-feelings bit, written up
+in `README.md` under "👉 Start here" — promoted from a repo-front line into an actual agenda
+module, at 09:30, ahead of any tech.
+**Learning:** A full-day agenda that already runs 09:00–17:00 has **no slack** — the 30 minutes
+had to come out of the same morning, because the 11:00 break, 12:45 lunch and 17:00 end are
+fixed. Three sources, in order of how painless they were: the environment check (25 → 10 min;
+it's bring-your-own per D6, so individual help belongs in the breaks, not the room's time);
+splitting the Azure SQL Terraform module **across** the 11:00 break so `terraform apply` runs
+while everyone's at coffee (same 45 min of teaching, 15 minutes of waiting deleted); and
+SQL projects 45 → 30, which is the one genuine squeeze on a focus module. The afternoon was
+left completely untouched — worth preserving as a property, it makes the change reviewable.
+**Action:** [`../agenda/agenda.md`](../agenda/agenda.md) rebuilt (new 09:30 row, hook text in
+Rob's voice under the table, plus a "where the 30 minutes came from" note so the trade is
+auditable at the dry run). Task **#24** added to build the module content; the SQL-projects
+squeeze is explicitly flagged for **#13** (dry run) — if 30 min doesn't hold, take it back from
+the 16:15 block. **Doc nit spotted, not fixed:** this file's header says "Newest entries at the
+top" but every entry is appended at the bottom above the `<!-- Add new entries -->` marker —
+one of the two is wrong and should be settled.
+
+## 2026-08-17 — The repo had no `.gitattributes`, and it made every file look modified
+**Context:** Committing the agenda change (above), `git status` reported **all 102 files
+modified** — 7,600 insertions against 7,549 deletions — despite only three files being touched.
+**Learning:** Every file on disk was **CRLF** while the index held **LF**, with no
+`.gitattributes` and `core.autocrlf` unset, so git saw each file as a whole-file rewrite. Real
+diffs become unreviewable — a three-line agenda edit is indistinguishable from a rewrite of the
+Terraform modules, which is exactly the failure mode PR review is supposed to prevent. Note
+that `git add --renormalize .` does **nothing** until `.gitattributes` exists — the renormalise
+uses whatever attributes are in force at the time, so the order is: add the file, *then*
+renormalise.
+**Action:** Added [`../.gitattributes`](../.gitattributes) — `* text=auto` plus explicit
+`eol=lf` for `*.sh` (Linux runners), `eol=crlf` for `*.bat`/`*.cmd`, and `binary` for images and
+`.dacpac`/`.bacpac`. Renormalise + commit run by hand on Windows (see below).
+**Second learning — git can't be driven from a Cowork cloud session over the device bridge.**
+The bridge mount is deletion-restricted, so git cannot unlink `.git/index.lock` after an index
+operation: the lock survives, and the *next* git command dies with "Another git process seems to
+be running." It also strands `tmp_obj_*` files under `.git/objects`. Reads and file edits over
+the bridge are fine; **anything that writes the git index must be run on the Windows box** (or
+in a Cowork session running *on the computer* rather than in the cloud). Leftovers from this
+session were quarantined in `.git/_cowork_to_delete/` — safe to delete.
+
 <!-- Add new entries above this line -->
