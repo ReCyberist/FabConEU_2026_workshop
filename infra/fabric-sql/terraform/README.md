@@ -92,6 +92,18 @@ usual once the backend lands.
 > tenant — that needs a real Fabric capacity and is tracked with the runtime deploy in
 > [`planning/tasks.md`](../../../planning/tasks.md) #14 (and the sandbox decision #1).
 
+### Who can see the workspace
+
+Terraform runs as a **service principal**, which becomes the workspace's creator and sole
+admin — so **humans see nothing** until granted a role, and because the workspace is recreated
+on every apply, a portal grant would vanish next run. Grant access **as code** instead: list the
+presenters' Entra **user object IDs** in `workspace_admin_object_ids` and the module assigns each
+the workspace **Admin** role every apply.
+
+```powershell
+az ad user show --id you@contoso.com --query id -o tsv   # the object id (a GUID, not the UPN)
+```
+
 ## Inputs
 
 Every input has a sensible default — the module runs with **no tfvars at all**. See

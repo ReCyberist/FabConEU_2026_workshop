@@ -119,6 +119,25 @@ variable "capacity_sku" {
 }
 
 # ---------------------------------------------------------------------------------------
+# Workspace access. The CI service principal that runs Terraform is the workspace's creator
+# and sole admin, so humans can't see the workspace until they're granted a role. We grant it
+# AS CODE (not in the portal) because the workspace is recreated on every apply — a manual
+# grant would vanish on the next run. List the Entra USER object IDs to make workspace admins
+# (get one with: az ad user show --id you@contoso.com --query id -o tsv).
+# ---------------------------------------------------------------------------------------
+
+variable "workspace_admin_object_ids" {
+  description = "Entra USER object IDs (GUIDs, not UPNs) to grant the Admin role on the Fabric workspace, so presenters can see/use it. Empty = only the CI service principal has access."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for id in var.workspace_admin_object_ids : can(regex("^[0-9a-fA-F-]{36}$", id))])
+    error_message = "workspace_admin_object_ids must be Entra object-id GUIDs (not UPNs). Look one up with: az ad user show --id you@contoso.com --query id -o tsv"
+  }
+}
+
+# ---------------------------------------------------------------------------------------
 # SQL database options.
 # ---------------------------------------------------------------------------------------
 
