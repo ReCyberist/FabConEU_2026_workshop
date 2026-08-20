@@ -6,9 +6,14 @@ name: Fabric SQL — Terraform destroy
 # fabric-sql-apply to recreate). Cost is already handled by the every-2h capacity pause (#23);
 # this is about a clean slate, not billing.
 #
+# DON'T WAKE SLEEPING FABRIC: first we read Terraform state (no capacity calls) — if nothing has
+# been deployed since the last destroy (no fabric_workspace.this in state), we bail out and leave
+# the capacity asleep. No point resuming (and billing) a capacity just to destroy nothing.
+#
 # EXISTING-CAPACITY MODE (FABRIC_USE_EXISTING_CAPACITY): the capacity is a read-only data
 # source, so `terraform destroy` removes ONLY the workspace + SQL database and can NEVER touch
-# the capacity itself. BUT deleting Fabric items needs an ACTIVE capacity, so this workflow:
+# the capacity itself. BUT deleting Fabric items needs an ACTIVE capacity, so when there IS a
+# deployment this workflow:
 #   1. RESUMES the capacity (the every-2h pause has usually suspended it by 21:00),
 #   2. terraform destroy (workspace + DB),
 #   3. RE-PAUSES the capacity so it isn't left billing (the every-2h would catch it anyway).
@@ -75,10 +80,36 @@ jobs:
         with:
           terraform_version: '~1.12.0'
 
-      # Resume/pause only apply when binding to an existing capacity — in create-as-code mode
-      # the module provisions and destroys its own F-SKU, so there's nothing to resume.
+      # Init first (Tenant A backend only — no capacity calls) so we can read state before
+      # deciding whether to wake anything.
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=fabric-sql/dev.terraform.tfstate"
+
+      # Don't wake sleeping Fabric. Reads ONLY the Terraform state (no capacity/API calls, so the
+      # capacity stays asleep) to see whether a workspace is currently deployed. A destroy removes
+      # fabric_workspace.this from state and an apply puts it back, so its presence is exactly
+      # "did we deploy anything since the last destroy?". If nothing's deployed, we skip the
+      # resume → destroy → re-pause entirely and leave the capacity paused.
+      - name: Don't wake sleeping Fabric
+        id: check
+        run: |
+          if terraform state list | grep -qxF 'fabric_workspace.this'; then
+            echo "A workspace is deployed — proceeding with teardown."
+            echo "deployed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Nothing deployed since the last destroy — leaving the capacity asleep. 😴"
+            echo "deployed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Resume/pause only apply when binding to an existing capacity — in create-as-code mode the
+      # module provisions and destroys its own F-SKU, so there's nothing to resume.
       - name: Azure login (Tenant B, for capacity resume/pause)
-        if: ${{ vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        if: ${{ steps.check.outputs.deployed == 'true' && vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
         uses: azure/login@v3
         with:
           client-id: ${{ vars.FABRIC_CLIENT_ID }}
@@ -88,7 +119,7 @@ jobs:
       # Deleting the workspace + SQL database needs an ACTIVE capacity; the every-2h automation
       # has usually paused it by now. Resume (if not already Active) and wait for it.
       - name: Resume capacity
-        if: ${{ vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        if: ${{ steps.check.outputs.deployed == 'true' && vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
         run: |
           CAP_ID="/subscriptions/${{ vars.FABRIC_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.FABRIC_EXISTING_CAPACITY_RG }}/providers/Microsoft.Fabric/capacities/${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}"
           state=$(az resource show --ids "$CAP_ID" --api-version 2023-11-01 --query "properties.state" -o tsv)
@@ -106,25 +137,17 @@ jobs:
           fi
           echo "Capacity is Active."
 
-      - name: Terraform init (remote state)
-        run: |
-          terraform init \
-            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
-            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
-            -backend-config="key=fabric-sql/dev.terraform.tfstate"
-
       - name: Terraform destroy
+        if: ${{ steps.check.outputs.deployed == 'true' }}
         run: |
           terraform destroy -auto-approve \
             -var="location=${{ vars.AZURE_LOCATION }}" \
             -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
 
       # Re-pause so the capacity isn't left billing after the teardown. Runs even if destroy
-      # failed (always()); if the resume never happened this is a harmless no-op. The every-2h
-      # automation is the backstop.
+      # failed (always()), but only if we actually resumed. The every-2h automation is the backstop.
       - name: Re-pause capacity
-        if: ${{ always() && vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        if: ${{ always() && steps.check.outputs.deployed == 'true' && vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
         run: |
           CAP_ID="/subscriptions/${{ vars.FABRIC_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.FABRIC_EXISTING_CAPACITY_RG }}/providers/Microsoft.Fabric/capacities/${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}"
           echo "Suspending $CAP_ID"
