@@ -106,6 +106,20 @@ resource "fabric_workspace" "this" {
   capacity_id  = local.capacity_id
 }
 
+# Grant the presenters (and anyone else listed) the Admin role on the workspace, so the
+# workspace is visible/usable to humans — not just the CI service principal that created it.
+# As-code so it's re-applied every run; the SP can assign roles because it's the workspace admin.
+resource "fabric_workspace_role_assignment" "admins" {
+  for_each     = toset(var.workspace_admin_object_ids)
+  workspace_id = fabric_workspace.this.id
+  role         = "Admin"
+
+  principal = {
+    id   = each.value
+    type = "User"
+  }
+}
+
 # SQL database in Fabric (transactional, Azure SQL-compatible surface — see
 # notes/fabric-sql-notes.md). The same DACPAC that targets Azure SQL publishes here; this
 # module just provisions the empty database, the schema ships via SqlPackage (task #9),

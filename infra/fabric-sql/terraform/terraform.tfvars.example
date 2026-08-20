@@ -31,6 +31,12 @@ capacity_sku = "F2"
 # existing_capacity_name           = "cappymccapface"   # the capacity's display name (looked up tenant-wide)
 # existing_capacity_resource_group = "fabcon-demo-rg"    # informational; also where the #23 pause/resume automation targets
 
+# --- Workspace access ---
+# The CI service principal that runs Terraform is the workspace's only admin, so humans can't
+# see it until granted a role. Grant it as code (survives workspace recreation). List Entra
+# USER object ids (GUIDs, not UPNs): az ad user show --id you@contoso.com --query id -o tsv
+# workspace_admin_object_ids = ["00000000-0000-0000-0000-000000000000"]
+
 # --- SQL database ---
 database_collation             = "SQL_Latin1_General_CP1_CI_AS"
 database_backup_retention_days = 7

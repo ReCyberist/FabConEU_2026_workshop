@@ -50,6 +50,9 @@ env:
   TF_VAR_use_existing_capacity: ${{ vars.FABRIC_USE_EXISTING_CAPACITY || 'false' }}
   TF_VAR_existing_capacity_name: ${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}
   TF_VAR_existing_capacity_resource_group: ${{ vars.FABRIC_EXISTING_CAPACITY_RG }}
+  # --- workspace admins: Entra USER object ids (JSON array) granted Admin on the workspace so
+  #     humans can see it — the CI SP is its only member otherwise. Unset => SP-only. ---
+  TF_VAR_workspace_admin_object_ids: ${{ vars.FABRIC_WORKSPACE_ADMIN_OBJECT_IDS || '[]' }}
 
 concurrency:
   group: fabric-sql-terraform
