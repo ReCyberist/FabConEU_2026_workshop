@@ -702,4 +702,46 @@ plan→apply is the next step** (still after a merge — OIDC only trusts `main`
 advanced, #25 added (slides). **Still needs: set the 3 repo vars, then run `fabric-sql-plan` on the
 PR and `fabric-sql-apply` after merge.**
 
+## 2026-08-20 — First live Fabric deploy end-to-end; two access gotchas on the way
+**Context:** Straight after the `use_existing_capacity` toggle merged (PR #33), took the Fabric
+path live for the first time against our persistent paid F-SKU **`cappymccapface`** (`fabcon-demo-rg`,
+Tenant B) — the long-blocked Fabric side of #14/#20.
+**The milestone:** `fabric-sql-apply` went **green end-to-end** (run `32393958396`): `terraform apply`
+= *2 added* (workspace + SQL DB), capacity untouched; DACPAC publish = **"Successfully published
+database"**; smoke test passed (every seeded view + `usp_GetLeagueTable` returning rows on the real
+Fabric SQL DB). First working "infra + DB as code" deploy to Fabric, side by side with Azure SQL.
+**Gotcha 1 — `data.fabric_capacity` only sees capacities the CI SP is a capacity ADMIN of.** The
+first `fabric-sql-plan` failed: *"Unable to find Capacity with 'display_name': cappymccapface"* —
+even though auth succeeded (no `AADSTS700213`; the fabric provider queried the API fine). The
+`fabric_capacity` **data source lists capacities the principal can see**, and a capacity we created
+out-of-band doesn''t include the CI SP. In *create* mode the module auto-adds the deploying SP as a
+capacity admin, so this never surfaced; for an *existing* capacity it''s the Fabric analog of #18 —
+a one-time out-of-band grant. **Also ruled out** as red herrings first: a *paused* capacity (resumed,
+still failed) and a display-name typo. **Least-privilege note (parked, issue-worthy):** capacity
+**admin** is more than needed — Fabric **"Capacity contributor"** lets a principal assign workspaces
+without admin; but the list-capacities API may not return contributor-only capacities, so the truly
+minimal setup is to **pass the capacity GUID directly** (drop the data source) + grant contributor.
+We took admin for now to get moving.
+**Gotcha 2 — a workspace created by an SP is invisible to humans.** After the apply, Jess/Rob
+couldn''t see the workspace: its creator (the CI SP) is the **only member**. Fix = grant them the
+**Admin** role **as code** via `fabric_workspace_role_assignment` (PR #34, `workspace_admin_object_ids`
+→ repo var `FABRIC_WORKSPACE_ADMIN_OBJECT_IDS`, a JSON array of **Entra USER object ids** — GUIDs,
+**not** UPNs; principal `type = "User"`). Must be as-code because the workspace is recreated on every
+apply — a portal grant wouldn''t survive. Plan confirmed *2 role assignments to add, 0 change, 0
+destroy* (workspace/DB/capacity untouched).
+**Gotcha 3 (design, not bug) — pause ≠ destroy, so the nightly-destroy question reopened.** With the
+every-2h capacity pause already zeroing overnight cost, a nightly *destroy* is now only about a
+**clean slate each morning**, not money — and destroying Fabric items needs the capacity **resumed**
+first (resume → destroy → re-pause). Captured as a decision for Rob in **issue #35** rather than
+silently wiring it.
+**Process note — the fabric provider schema is the source of truth.** Used
+`terraform providers schema -json` (via a temp `backend "local"` override, since `providers schema`
+needs backend init) to confirm both `data.fabric_capacity` (look up by `display_name`) and
+`fabric_workspace_role_assignment` (`principal = { id, type }` object, not a block) *before* writing —
+no validate cycles wasted, per the standing rule.
+**Action:** Toggle + workspace-admin grant shipped (PRs #33/#34, merged); repo vars set
+(`FABRIC_USE_EXISTING_CAPACITY`, `FABRIC_EXISTING_CAPACITY_NAME/RG`, `FABRIC_WORKSPACE_ADMIN_OBJECT_IDS`).
+Tasks #14 (**Fabric side now verified end-to-end**) and #20 updated. Open follow-ups: nightly-teardown
+decision (issue #35), least-privilege contributor+GUID refactor, and a possible PR-time plan comment.
+
 <!-- Add new entries above this line -->
