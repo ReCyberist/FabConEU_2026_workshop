@@ -74,6 +74,10 @@ resource "azurerm_automation_runtime_environment" "ps74" {
   location              = azurerm_resource_group.automation.location
   runtime_language      = "PowerShell"
   runtime_version       = "7.4"
+  runtime_default_packages = {
+    "az"        = "11.2.0"
+    "azure cli" = "2.56.0"
+  }
 }
 
 resource "azurerm_automation_runbook" "pause" {
@@ -81,6 +85,7 @@ resource "azurerm_automation_runbook" "pause" {
   resource_group_name      = azurerm_resource_group.automation.name
   automation_account_name  = azurerm_automation_account.this.name
   location                 = azurerm_resource_group.automation.location
+  runbook_type             = "PowerShell"
   runtime_environment_name = azurerm_automation_runtime_environment.ps74.name
   log_verbose              = false
   log_progress             = false
@@ -93,6 +98,7 @@ resource "azurerm_automation_runbook" "resume" {
   resource_group_name      = azurerm_resource_group.automation.name
   automation_account_name  = azurerm_automation_account.this.name
   location                 = azurerm_resource_group.automation.location
+  runbook_type             = "PowerShell"
   runtime_environment_name = azurerm_automation_runtime_environment.ps74.name
   log_verbose              = false
   log_progress             = false
