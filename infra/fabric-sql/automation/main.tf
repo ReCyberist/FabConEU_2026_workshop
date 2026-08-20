@@ -75,7 +75,7 @@ resource "azurerm_automation_runtime_environment" "ps74" {
   runtime_language      = "PowerShell"
   runtime_version       = "7.4"
   runtime_default_packages = {
-    "az"        = "11.2.0"
+    "az"        = "12.3.0"
     "azure cli" = "2.56.0"
   }
 }
