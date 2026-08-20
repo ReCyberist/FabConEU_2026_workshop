@@ -77,6 +77,38 @@ jobs:
         with:
           terraform_version: '~1.12.0'
 
+      # Wakey wakey. Creating the workspace + SQL DB (and the publish + smoke test that follow)
+      # all need an ACTIVE capacity, but the every-2h automation / the nightly destroy's re-pause
+      # usually leaves it suspended. Resume it and wait for Active. Unlike destroy, apply does NOT
+      # re-pause afterwards — you applied because you want to use it; the every-2h pause is the
+      # backstop once it goes idle. Only relevant in existing-capacity mode.
+      - name: Azure login (Tenant B, for capacity resume)
+        if: ${{ vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.FABRIC_CLIENT_ID }}
+          tenant-id: ${{ vars.FABRIC_TENANT_ID }}
+          subscription-id: ${{ vars.FABRIC_SUBSCRIPTION_ID }}
+
+      - name: Resume capacity
+        if: ${{ vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        run: |
+          CAP_ID="/subscriptions/${{ vars.FABRIC_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.FABRIC_EXISTING_CAPACITY_RG }}/providers/Microsoft.Fabric/capacities/${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}"
+          state=$(az resource show --ids "$CAP_ID" --api-version 2023-11-01 --query "properties.state" -o tsv)
+          echo "Capacity state: $state"
+          if [ "$state" != "Active" ]; then
+            echo "Resuming $CAP_ID"
+            az rest --method post --url "https://management.azure.com${CAP_ID}/resume?api-version=2023-11-01"
+            for i in $(seq 1 30); do
+              state=$(az resource show --ids "$CAP_ID" --api-version 2023-11-01 --query "properties.state" -o tsv)
+              echo "  waiting... state=$state"
+              [ "$state" = "Active" ] && break
+              sleep 10
+            done
+            [ "$state" = "Active" ] || { echo "Capacity did not reach Active in time" >&2; exit 1; }
+          fi
+          echo "Capacity is Active."
+
       - name: Terraform init (remote state)
         run: |
           terraform init \
