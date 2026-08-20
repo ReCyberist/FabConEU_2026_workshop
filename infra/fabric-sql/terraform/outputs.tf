@@ -1,11 +1,11 @@
 output "resource_group_name" {
-  description = "Name of the resource group holding the Fabric capacity."
-  value       = azurerm_resource_group.this.name
+  description = "Name of the resource group holding the Fabric capacity (the created RG, or the existing capacity's RG in use_existing_capacity mode)."
+  value       = var.use_existing_capacity ? var.existing_capacity_resource_group : azurerm_resource_group.this[0].name
 }
 
 output "capacity_name" {
-  description = "Name of the Fabric capacity (globally unique)."
-  value       = azurerm_fabric_capacity.this.name
+  description = "Name of the Fabric capacity the workspace is bound to (created or existing)."
+  value       = local.capacity_name
 }
 
 output "workspace_id" {

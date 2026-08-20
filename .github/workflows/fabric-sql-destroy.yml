@@ -1,17 +1,25 @@
 name: Fabric SQL — Terraform destroy
 
-# Tears down the Fabric SQL module nightly at 21:00 UTC + on demand. This matters MORE than
-# the Azure SQL destroy: an F-SKU Fabric capacity BILLS the whole time it exists (no
-# serverless auto-pause), so leaving it up overnight is real money. Mirrors
+# Tears down the Fabric SQL module (workspace + SQL database) on demand. Mirrors
 # azure-sql-destroy.yml and uses the same remote state key as fabric-sql-apply.yml.
+#
+# COST CONTROL = PAUSE, NOT DESTROY. We now run against an EXISTING, persistent F-SKU
+# capacity (FABRIC_USE_EXISTING_CAPACITY) that we PAUSE when idle (the #23 automation / portal)
+# to stop billing — pausing preserves the workspace, database and data, which nightly destroy
+# would wipe. So the nightly 21:00 cron is DISABLED: this workflow is manual-only, for when we
+# deliberately want the workspace + DB gone. In this mode the capacity is a read-only data
+# source and can NEVER be destroyed here.
+#
+# To restore the old create-and-nightly-destroy behaviour (unset FABRIC_USE_EXISTING_CAPACITY
+# so the module provisions its own F-SKU), re-enable the `schedule:` trigger below — an F-SKU
+# left running overnight is real money.
 #
 # Auth: OIDC, CROSS-TENANT — the Terraform state backend authenticates to Tenant A via ARM_*,
 # while the azurerm + fabric providers authenticate to Tenant B (TF_VAR_fabric_* / FABRIC_*).
-# (Live runs are gated on the Fabric prereqs — see #20.)
 
 on:
-  schedule:
-    - cron: '0 21 * * *'   # 21:00 UTC — 9pm GMT / 10pm BST
+  # schedule:
+  #   - cron: '0 21 * * *'   # 21:00 UTC — re-enable ONLY if the module creates its own F-SKU
   workflow_dispatch:
 
 permissions:
@@ -35,6 +43,12 @@ env:
   FABRIC_TENANT_ID: ${{ vars.FABRIC_TENANT_ID }}
   # --- capacity admins: presenter UPNs (the CI SP is auto-added as the caller) ---
   TF_VAR_capacity_admin_members: ${{ vars.FABRIC_CAPACITY_ADMIN_UPNS }}
+  # --- existing-capacity mode (see fabric-sql-apply.yml). CRITICAL for destroy: in this mode
+  #     the capacity is a read-only data source, so `terraform destroy` removes only the
+  #     workspace + SQL database and CANNOT touch the capacity. Unset => create-as-code path. ---
+  TF_VAR_use_existing_capacity: ${{ vars.FABRIC_USE_EXISTING_CAPACITY || 'false' }}
+  TF_VAR_existing_capacity_name: ${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}
+  TF_VAR_existing_capacity_resource_group: ${{ vars.FABRIC_EXISTING_CAPACITY_RG }}
 
 concurrency:
   group: fabric-sql-terraform

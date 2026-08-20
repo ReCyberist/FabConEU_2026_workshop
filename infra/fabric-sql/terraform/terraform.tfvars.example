@@ -22,6 +22,15 @@ capacity_sku = "F2"
 # principal. A group is recommended for a shared workshop.
 # capacity_admin_members = ["you@contoso.com"]
 
+# --- Existing-capacity mode (optional) ---
+# Bind the workspace to a capacity that ALREADY exists instead of creating one. Use this for a
+# paid F-SKU you manage and PAUSE out-of-band (billing stops on pause; the capacity is never
+# destroyed by this module). When true, capacity_sku / capacity_admin_members are ignored, and
+# the resource group + capacity are NOT created — only the workspace + SQL database.
+# use_existing_capacity            = true
+# existing_capacity_name           = "cappymccapface"   # the capacity's display name (looked up tenant-wide)
+# existing_capacity_resource_group = "fabcon-demo-rg"    # informational; also where the #23 pause/resume automation targets
+
 # --- SQL database ---
 database_collation             = "SQL_Latin1_General_CP1_CI_AS"
 database_backup_retention_days = 7

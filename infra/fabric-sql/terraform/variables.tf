@@ -70,7 +70,41 @@ variable "capacity_admin_members" {
 }
 
 # ---------------------------------------------------------------------------------------
+# Existing-capacity mode. By default the module PROVISIONS the Fabric capacity as code (the
+# taught "infra as code" path). Set use_existing_capacity = true to bind the workspace to a
+# capacity that ALREADY EXISTS and is managed out-of-band — e.g. a paid F-SKU you pause when
+# idle. In that mode the module creates NEITHER the resource group NOR the capacity (only the
+# workspace + SQL database), and it can NEVER destroy the capacity because the capacity is a
+# read-only data source, not a managed resource. capacity_sku / capacity_admin_members are
+# then ignored (the existing capacity owns its own SKU and admins).
+# ---------------------------------------------------------------------------------------
+
+variable "use_existing_capacity" {
+  description = "Bind the workspace to an existing Fabric capacity instead of creating one. The existing capacity is never managed, modified, or destroyed by this module — pause it out-of-band to stop billing."
+  type        = bool
+  default     = false
+}
+
+variable "existing_capacity_name" {
+  description = "Display name of the existing Fabric capacity to bind to (required when use_existing_capacity = true). Resolved tenant-wide by the fabric provider — the Azure resource group is not needed for the lookup."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = !var.use_existing_capacity || length(var.existing_capacity_name) > 0
+    error_message = "existing_capacity_name is required when use_existing_capacity = true."
+  }
+}
+
+variable "existing_capacity_resource_group" {
+  description = "Azure resource group of the existing capacity. Informational (the workspace binds by display name, not RG); surfaced in outputs and the resource group the #23 pause/resume automation targets."
+  type        = string
+  default     = ""
+}
+
+# ---------------------------------------------------------------------------------------
 # Fabric capacity sizing — defaults to the smallest SKU (cost-aware for a lab).
+# Ignored when use_existing_capacity = true.
 # ---------------------------------------------------------------------------------------
 
 variable "capacity_sku" {

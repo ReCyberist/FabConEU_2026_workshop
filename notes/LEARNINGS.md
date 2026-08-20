@@ -666,4 +666,40 @@ the bridge are fine; **anything that writes the git index must be run on the Win
 in a Cowork session running *on the computer* rather than in the cloud). Leftovers from this
 session were quarantined in `.git/_cowork_to_delete/` — safe to delete.
 
+## 2026-08-20 — `use_existing_capacity` toggle: bind to a capacity we pause, never destroy
+**Context:** We now have a **persistent paid F-SKU** (`cappymccapface` in `fabcon-demo-rg`,
+Tenant B) to run the first live Fabric apply against, rather than creating/nightly-destroying an
+F2. The module always created the capacity; needed a way to *use ours* and guarantee Terraform
+can never tear it down. Also pruned all merged branches and tracked the slides deck (#25).
+**Learning 1 — the fabric provider gives you the correct binding id; azurerm's `.id` may not.**
+`terraform providers schema -json` (microsoft/fabric v1.13) shows `fabric_workspace.capacity_id`
+wants **"the ID of the Fabric Capacity"** — the Fabric **GUID** — and there's a
+**`data "fabric_capacity"`** that resolves a capacity **by `display_name` tenant-wide** to exactly
+that GUID (no resource group needed for the lookup). That flagged a **latent risk in the untested
+create path**: it binds `capacity_id = azurerm_fabric_capacity.this.id`, which is the **ARM resource
+id**, not the GUID. Left the create path as-is (can't live-test it today) with a `# KNOWN RISK`
+comment; the existing path uses `data.fabric_capacity.existing[0].id` (unambiguously the GUID). If
+the first *create-mode* apply rejects the ARM id, resolve the created capacity via
+`data.fabric_capacity` too. Reinforces the repo's standing rule: **confirm provider shapes against
+`providers schema -json`, not the registry docs.**
+**Learning 2 — `count = 0` is the teardown guarantee.** With `use_existing_capacity = true` the
+capacity is a **read-only data source** and the `azurerm_fabric_capacity` / `azurerm_resource_group`
+resources drop to `count = 0`, so they're **never in state** — `terraform destroy` provably cannot
+touch the capacity (or its RG); it removes only the workspace + SQL DB. Cost control becomes
+**pause, not destroy** (pausing preserves workspace/DB/data), so the **nightly 21:00 destroy cron
+was disabled** (commented out; manual `workflow_dispatch` kept) — leaving it on would wipe the DB we
+just deployed onto a persistent capacity every night. Re-enable the cron only if we revert to the
+module creating its own F-SKU.
+**Learning 3 — drive the mode from a repo variable with a safe default.** Workflows pass
+`TF_VAR_use_existing_capacity: ${{ vars.FABRIC_USE_EXISTING_CAPACITY || 'false' }}` — unset ⇒ the
+taught create-as-code path still works; set to `true` ⇒ existing-capacity mode. Needs three Tenant B
+repo vars: `FABRIC_USE_EXISTING_CAPACITY=true`, `FABRIC_EXISTING_CAPACITY_NAME=cappymccapface`,
+`FABRIC_EXISTING_CAPACITY_RG=fabcon-demo-rg`.
+**Action:** Toggle in [`../infra/fabric-sql/terraform/`](../infra/fabric-sql/terraform/) (main /
+variables / outputs / tfvars.example / README) + the three `fabric-sql-*` workflows;
+`.terraform.lock.hcl` generated & kept (repo convention). `fmt`/`validate` clean offline; **live
+plan→apply is the next step** (still after a merge — OIDC only trusts `main`). Tasks #20/#14
+advanced, #25 added (slides). **Still needs: set the 3 repo vars, then run `fabric-sql-plan` on the
+PR and `fabric-sql-apply` after merge.**
+
 <!-- Add new entries above this line -->
