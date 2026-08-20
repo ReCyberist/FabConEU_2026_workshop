@@ -40,6 +40,11 @@ env:
   FABRIC_TENANT_ID: ${{ vars.FABRIC_TENANT_ID }}
   # --- capacity admins: presenter UPNs (the CI SP is auto-added as the caller) ---
   TF_VAR_capacity_admin_members: ${{ vars.FABRIC_CAPACITY_ADMIN_UPNS }}
+  # --- existing-capacity mode (see fabric-sql-apply.yml). Unset FABRIC_USE_EXISTING_CAPACITY
+  #     => taught create-as-code path. ---
+  TF_VAR_use_existing_capacity: ${{ vars.FABRIC_USE_EXISTING_CAPACITY || 'false' }}
+  TF_VAR_existing_capacity_name: ${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}
+  TF_VAR_existing_capacity_resource_group: ${{ vars.FABRIC_EXISTING_CAPACITY_RG }}
 
 concurrency:
   group: fabric-sql-terraform-plan-${{ github.ref }}

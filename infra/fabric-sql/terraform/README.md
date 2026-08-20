@@ -61,6 +61,26 @@ terraform apply
 > capacity** (az CLI / portal) when idle to stop billing. Terraform manages the capacity's
 > existence, not its paused state.
 
+### Using an existing capacity (paid F-SKU you pause)
+
+By default the module **creates** the capacity (the taught "infra as code" path). To bind the
+workspace to a capacity that **already exists** — e.g. a paid F-SKU you manage out-of-band and
+**pause** when idle — set:
+
+```hcl
+use_existing_capacity            = true
+existing_capacity_name           = "cappymccapface"   # the capacity's display name
+existing_capacity_resource_group = "fabcon-demo-rg"   # informational (binding is by display name)
+```
+
+In this mode the module creates **neither the resource group nor the capacity** — only the
+**workspace + SQL database** — and it resolves the capacity read-only via `data.fabric_capacity`.
+Because the capacity is a data source, not a managed resource, **`terraform destroy` can never
+tear it down** (it removes only the workspace + DB). Cost control here is **pause, not destroy**:
+pausing preserves the workspace, database and data; pause via the portal or the
+[#23 pause/resume automation](../automation/). `capacity_sku` and `capacity_admin_members` are
+ignored in this mode (the existing capacity owns its own SKU and admins).
+
 **State.** Same direction as the Azure SQL module — a remote `azurerm` backend (Azure
 Storage) for CI + attendees (see [`notes/decisions.md`](../../../notes/decisions.md) **D5**,
 task #17, gated on #1). Local state until then. The `microsoft/fabric` provider is young and

@@ -1,18 +1,19 @@
 name: Fabric SQL — Terraform apply
 
-# Manually provisions the Fabric SQL module (infra/fabric-sql/terraform) — Fabric capacity
-# (azurerm) + workspace + SQL database (microsoft/fabric) — then publishes the FabConFootball
+# Manually provisions the Fabric SQL module (infra/fabric-sql/terraform) — workspace + SQL
+# database (microsoft/fabric), bound to a Fabric capacity — then publishes the FabConFootball
 # DACPAC into the database and smoke-tests it. The Fabric mirror of azure-sql-apply.yml.
-# workflow_dispatch-only: this creates a real F-SKU capacity, which BILLS continuously.
 #
-# !! BLOCKED ON PREREQS (planning/tasks.md #20) — this cannot succeed until:
-#   1. Fabric tenant setting "Service principals can use Fabric APIs" is enabled for the CI
+# CAPACITY: with FABRIC_USE_EXISTING_CAPACITY set (our default now), this binds to an
+# EXISTING, persistent F-SKU we pause when idle — apply does NOT create or bill a capacity.
+# Unset it to fall back to the taught create-as-code path (module provisions its own F-SKU,
+# which bills continuously — re-enable the nightly fabric-sql-destroy.yml cron if you do).
+#
+# PREREQS (planning/tasks.md #20), satisfied for the cross-tenant Tenant B identity:
+#   1. Fabric tenant setting "Service principals can use Fabric APIs" enabled for the CI
 #      principal (a tenant-admin action; the pipeline can't set it).
-#   2. The CI principal has a Fabric workspace role granting DB access (Read item permission)
-#      — the Fabric analog of the Azure SQL Entra-admin group (#18).
-#   3. A capacity SKU your subscription is allowed to provision (F2 default; F-SKUs bill —
-#      the nightly fabric-sql-destroy.yml tears it back down).
-# The workflow mechanics are complete; it is untested end-to-end.
+#   2. The CI principal has a Fabric workspace role / capacity-admin granting DB access.
+# First live end-to-end run pending (the long-blocked Fabric side of #14).
 #
 # Auth: OIDC, passwordless, CROSS-TENANT — the Terraform state backend authenticates to
 # Tenant A via ARM_*, while the azurerm + fabric providers AND the DACPAC publish authenticate
@@ -42,6 +43,13 @@ env:
   FABRIC_TENANT_ID: ${{ vars.FABRIC_TENANT_ID }}
   # --- capacity admins: presenter UPNs (the CI SP is auto-added as the caller) ---
   TF_VAR_capacity_admin_members: ${{ vars.FABRIC_CAPACITY_ADMIN_UPNS }}
+  # --- existing-capacity mode: bind to a capacity we manage/pause out-of-band, rather than
+  #     creating (and nightly-destroying) an F-SKU. Defaults to the taught create-as-code path
+  #     when FABRIC_USE_EXISTING_CAPACITY is unset. The capacity is a read-only data source in
+  #     this mode, so terraform destroy can NEVER tear it down. ---
+  TF_VAR_use_existing_capacity: ${{ vars.FABRIC_USE_EXISTING_CAPACITY || 'false' }}
+  TF_VAR_existing_capacity_name: ${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}
+  TF_VAR_existing_capacity_resource_group: ${{ vars.FABRIC_EXISTING_CAPACITY_RG }}
 
 concurrency:
   group: fabric-sql-terraform
