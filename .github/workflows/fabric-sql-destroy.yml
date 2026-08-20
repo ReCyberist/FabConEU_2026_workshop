@@ -1,25 +1,28 @@
 name: Fabric SQL — Terraform destroy
 
-# Tears down the Fabric SQL module (workspace + SQL database) on demand. Mirrors
-# azure-sql-destroy.yml and uses the same remote state key as fabric-sql-apply.yml.
+# Nightly CLEAN-SLATE teardown of the Fabric SQL module (workspace + SQL database) at 21:00
+# UTC + on demand. Mirrors azure-sql-destroy.yml; same remote state key as fabric-sql-apply.yml.
+# Decision: issue #35 — we want a known, freshly-seeded state each morning (re-run
+# fabric-sql-apply to recreate). Cost is already handled by the every-2h capacity pause (#23);
+# this is about a clean slate, not billing.
 #
-# COST CONTROL = PAUSE, NOT DESTROY. We now run against an EXISTING, persistent F-SKU
-# capacity (FABRIC_USE_EXISTING_CAPACITY) that we PAUSE when idle (the #23 automation / portal)
-# to stop billing — pausing preserves the workspace, database and data, which nightly destroy
-# would wipe. So the nightly 21:00 cron is DISABLED: this workflow is manual-only, for when we
-# deliberately want the workspace + DB gone. In this mode the capacity is a read-only data
-# source and can NEVER be destroyed here.
-#
-# To restore the old create-and-nightly-destroy behaviour (unset FABRIC_USE_EXISTING_CAPACITY
-# so the module provisions its own F-SKU), re-enable the `schedule:` trigger below — an F-SKU
-# left running overnight is real money.
+# EXISTING-CAPACITY MODE (FABRIC_USE_EXISTING_CAPACITY): the capacity is a read-only data
+# source, so `terraform destroy` removes ONLY the workspace + SQL database and can NEVER touch
+# the capacity itself. BUT deleting Fabric items needs an ACTIVE capacity, so this workflow:
+#   1. RESUMES the capacity (the every-2h pause has usually suspended it by 21:00),
+#   2. terraform destroy (workspace + DB),
+#   3. RE-PAUSES the capacity so it isn't left billing (the every-2h would catch it anyway).
+# The resume/pause steps are skipped in create-as-code mode (the module makes+destroys its own
+# F-SKU). Resume/pause is done by the Tenant B CI SP via the ARM resume/suspend actions
+# (mirrors infra/fabric-sql/automation runbooks) — it needs Contributor on the capacity (#35).
 #
 # Auth: OIDC, CROSS-TENANT — the Terraform state backend authenticates to Tenant A via ARM_*,
-# while the azurerm + fabric providers authenticate to Tenant B (TF_VAR_fabric_* / FABRIC_*).
+# while the azurerm + fabric providers (and the az-CLI resume/pause) authenticate to Tenant B
+# (TF_VAR_fabric_* / FABRIC_*).
 
 on:
-  # schedule:
-  #   - cron: '0 21 * * *'   # 21:00 UTC — re-enable ONLY if the module creates its own F-SKU
+  schedule:
+    - cron: '0 21 * * *'   # 21:00 UTC — 9pm GMT / 10pm BST
   workflow_dispatch:
 
 permissions:
@@ -72,6 +75,37 @@ jobs:
         with:
           terraform_version: '~1.12.0'
 
+      # Resume/pause only apply when binding to an existing capacity — in create-as-code mode
+      # the module provisions and destroys its own F-SKU, so there's nothing to resume.
+      - name: Azure login (Tenant B, for capacity resume/pause)
+        if: ${{ vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.FABRIC_CLIENT_ID }}
+          tenant-id: ${{ vars.FABRIC_TENANT_ID }}
+          subscription-id: ${{ vars.FABRIC_SUBSCRIPTION_ID }}
+
+      # Deleting the workspace + SQL database needs an ACTIVE capacity; the every-2h automation
+      # has usually paused it by now. Resume (if not already Active) and wait for it.
+      - name: Resume capacity
+        if: ${{ vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        run: |
+          CAP_ID="/subscriptions/${{ vars.FABRIC_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.FABRIC_EXISTING_CAPACITY_RG }}/providers/Microsoft.Fabric/capacities/${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}"
+          state=$(az resource show --ids "$CAP_ID" --api-version 2023-11-01 --query "properties.state" -o tsv)
+          echo "Capacity state: $state"
+          if [ "$state" != "Active" ]; then
+            echo "Resuming $CAP_ID"
+            az rest --method post --url "https://management.azure.com${CAP_ID}/resume?api-version=2023-11-01"
+            for i in $(seq 1 30); do
+              state=$(az resource show --ids "$CAP_ID" --api-version 2023-11-01 --query "properties.state" -o tsv)
+              echo "  waiting... state=$state"
+              [ "$state" = "Active" ] && break
+              sleep 10
+            done
+            [ "$state" = "Active" ] || { echo "Capacity did not reach Active in time" >&2; exit 1; }
+          fi
+          echo "Capacity is Active."
+
       - name: Terraform init (remote state)
         run: |
           terraform init \
@@ -85,3 +119,14 @@ jobs:
           terraform destroy -auto-approve \
             -var="location=${{ vars.AZURE_LOCATION }}" \
             -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+
+      # Re-pause so the capacity isn't left billing after the teardown. Runs even if destroy
+      # failed (always()); if the resume never happened this is a harmless no-op. The every-2h
+      # automation is the backstop.
+      - name: Re-pause capacity
+        if: ${{ always() && vars.FABRIC_USE_EXISTING_CAPACITY == 'true' }}
+        run: |
+          CAP_ID="/subscriptions/${{ vars.FABRIC_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.FABRIC_EXISTING_CAPACITY_RG }}/providers/Microsoft.Fabric/capacities/${{ vars.FABRIC_EXISTING_CAPACITY_NAME }}"
+          echo "Suspending $CAP_ID"
+          az rest --method post --url "https://management.azure.com${CAP_ID}/suspend?api-version=2023-11-01" \
+            || echo "Suspend call failed — the every-2h pause automation will catch it."
