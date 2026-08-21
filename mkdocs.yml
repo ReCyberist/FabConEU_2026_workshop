@@ -51,7 +51,6 @@ markdown_extensions:
 exclude_docs: |
   database/sample-database.md
   setup/welcome.md
-  setup/prerequisites.md
   foundations/source-control.md
   infra/azure-sql.md
   infra/fabric-sql.md
@@ -67,10 +66,11 @@ exclude_docs: |
 # Navigation — the full site tree lives here but stays COMMENTED until reveal.
 nav:
   - Home: index.md
-  # --- Held until reveal: delete the exclude_docs entries above AND uncomment below ---
-  # - Getting started:
+  - Getting started:
+      - Prerequisites: setup/prerequisites.md
+  # --- Held until reveal: delete remaining exclude_docs entries AND uncomment below ---
+  # - Getting started (full):
   #     - Welcome & how the day works: setup/welcome.md
-  #     - Prerequisites: setup/prerequisites.md
   # - Foundations:
   #     - Source control for databases: foundations/source-control.md
   # - Infrastructure as code:
