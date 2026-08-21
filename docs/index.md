@@ -6,8 +6,9 @@ Presented by **Jess Pomfret** & **Rob Sewell**
 ---
 
 !!! tip "🚧 Full workshop content drops closer to the event — check back soon."
-    You've found the teaser. The complete walkthroughs, code bundles, and prerequisites
-    will land on this page before FabCon Europe 2026. Bookmark it.
+    You've found the teaser. The **[prerequisites](setup/prerequisites.md)** are ready now — the
+    complete walkthroughs and code bundles will land on this page before FabCon Europe 2026.
+    Bookmark it.
 
 Managing Azure SQL or Fabric SQL by hand doesn't scale. In this full-day, hands-on workshop
 you'll deploy both your infrastructure and your database schemas **as code**, and build real
@@ -33,7 +34,13 @@ covering both the men's and women's game.
     module links to a downloadable bundle. Everything you deploy, you deploy from code.
 
 ## Before you arrive
-Prerequisites will be published here — check back closer to the event.
+This is a **bring-your-own** workshop — there's no lab environment handed out, so a little prep
+goes a long way. The only hard requirement is a laptop and some curiosity; what else you'll want
+depends on how hands-on you'd like to be — deploy on your own Azure / Fabric kit, or just watch
+and replay later.
+
+👉 **[Read the prerequisites](setup/prerequisites.md)** — what to install, the cloud access each
+optional part needs, and the all-important cost & teardown notes.
 
 ---
 _This page is attendee-facing. Contributors: see [`CLAUDE.md`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/CLAUDE.md)._
