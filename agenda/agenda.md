@@ -24,7 +24,7 @@
 | **15:45 – 17:00** | **Afternoon 2** · 75 min | Pulling it together · Q&A |
 | 17:00 | End | |
 
-**Next:** map the slides + demos into each section (then feed real durations into the dry run, #13).
+**Next:** map the slides + demos into each section (then feed real durations into the full dry run — task #13 in [`../planning/tasks.md`](../planning/tasks.md)).
 
 ## Morning 1 — the hardest part of IT (hook)
 
