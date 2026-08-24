@@ -744,4 +744,39 @@ no validate cycles wasted, per the standing rule.
 Tasks #14 (**Fabric side now verified end-to-end**) and #20 updated. Open follow-ups: nightly-teardown
 decision (issue #35), least-privilege contributor+GUID refactor, and a possible PR-time plan comment.
 
+## 2026-08-23 — Demos mapped onto the five-section agenda; CI now validates infra too
+**Context:** Status pass — "where are we, what's left, what demos go where, is the base
+complete?" The base (both Terraform modules, both pipelines, the SQL project) is built and
+**live-verified end to end on Azure SQL and Fabric SQL**; the review surfaced three genuine
+"base" gaps and one drift problem.
+**Learning 1 — the agenda restructure orphaned the demo docs.** `agenda.md` was rebuilt into
+**five teaching sections**, but the ship-changes design doc, its demo README, and the
+`Ideas.md` seed still pointed at the old **"15:30 module."** That per-30-min module map no
+longer exists. Fixed the *living* docs to point at the afternoon sections (increments 1–2 →
+Afternoon 1, increment 3 → Afternoon 2); deliberately **left the append-only log and the
+dated `2026-08-04-*` planning snapshots alone** (rewriting a timestamped record falsifies
+history — same reason this file's old entries keep their original times).
+**Learning 2 — the coffee-break apply trick died with the restructure.** The 2026-08-17 plan
+hid the Azure SQL `terraform apply` behind the 10:30 break by splitting the module across it.
+In the five-section agenda **IaC (Morning 2) sits entirely *after* the break**, so there's
+nowhere to hide ~4–5 min of provisioning — the apply now runs live inside the block (kick off
+early, narrate the module while it runs; Fabric is faster because the capacity is
+pre-provisioned). Flagged Morning 2 as the section most at risk of overrun for the dry run (#13).
+**Learning 3 — CI validated our SQL + docs but not the infra it ships.** `ci.yml` had only
+`database` + `docs` jobs, so a broken Terraform/Bicep change passed CI. Added **`terraform`**
+(`fmt -check -recursive` + per-module `validate` with **`init -backend=false`** so it needs no
+Azure creds — the committed `.terraform.lock.hcl` pins providers) and **`bicep`**
+(`az bicep install` → `az bicep build` templates + `build-params`), both **path-gated** with
+`dorny/paths-filter` like the docs job so unrelated PRs don't pay for them. YAML validated;
+live-verify on the next PR touching each area (the deploy workflows' OIDC-only-trusts-`main`
+limit doesn't apply here — these jobs are credential-free).
+**Action:** `agenda.md` gained a per-section demo map (M1 source-control → A2 pulling-together,
+each naming the driving workflow/module); stale "15:30" refs fixed in
+[`ship-changes-increments.md`](../planning/ship-changes-increments.md),
+[`ship-changes/README.md`](../database/demo/ship-changes/README.md), and [`Ideas.md`](Ideas.md);
+`terraform`+`bicep` jobs added to [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packaging — attendee
+downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
+"all as code" (fine as pointers if we decide that consciously — worth a decision).
+
 <!-- Add new entries above this line -->
