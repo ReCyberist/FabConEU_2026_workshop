@@ -92,16 +92,23 @@ resource "azurerm_mssql_firewall_rule" "client" {
   end_ip_address   = each.value
 }
 
-# Presenter/static client IPs supplied from secrets (see var.presenter_client_ips). The values
-# are passed from GitHub Actions secrets at apply time, so they're never in source. compact()
-# drops empty entries (an unset secret expands to ""), so unset secrets create no rules. The
-# rule name is a short hash of the IP — stable and unique per IP, but it keeps the address out
-# of the resource name in plan/apply logs (the IP is still the rule's value, masked as the
-# secret). Firewall rule names must be unique per server, which the hash guarantees.
+# Presenter/static client IPs supplied from secrets (see var.presenter_client_ips). compact()
+# drops empty entries (an unset secret expands to ""), so unset secrets create no rules.
+#
+# The IPs are sensitive, which means they can't drive for_each directly. Key the rules on a
+# one-way hash of each IP instead: the hash is safe to expose (it reveals nothing about the
+# address), so nonsensitive() lifts the sensitivity off the for_each keys / rule names, while
+# the IP itself stays sensitive and is looked up by hash for the rule value. Result: neither
+# the plan diff nor the resource address ever shows the IP — Terraform prints the rule value as
+# "(sensitive value)" and the name as presenter-<hash>. GitHub Actions masking is a second layer.
+locals {
+  presenter_ip_by_hash = { for ip in compact(var.presenter_client_ips) : substr(sha1(ip), 0, 8) => ip }
+}
+
 resource "azurerm_mssql_firewall_rule" "presenter" {
-  for_each         = toset(compact(var.presenter_client_ips))
-  name             = "presenter-${substr(sha1(each.value), 0, 8)}"
+  for_each         = nonsensitive(toset(keys(local.presenter_ip_by_hash)))
+  name             = "presenter-${each.key}"
   server_id        = azurerm_mssql_server.this.id
-  start_ip_address = each.value
-  end_ip_address   = each.value
+  start_ip_address = local.presenter_ip_by_hash[each.key]
+  end_ip_address   = local.presenter_ip_by_hash[each.key]
 }

@@ -54,8 +54,10 @@ Public network access is gated by firewall rules. Two ways to allow a client thr
   ```
 
   Then run [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) to create a
-  `presenter-<hash>` firewall rule per IP (the name is hashed so the address stays out of the
-  run logs). Adding a third machine = a new secret + one more entry in the workflows'
+  `presenter-<hash>` firewall rule per IP. The variable is `sensitive`, so Terraform prints the
+  rule value as `(sensitive value)` and names the rule after a one-way hash — the IP appears
+  **nowhere** in the plan/apply output, with GitHub Actions' secret masking as a second layer.
+  Adding a third machine = a new secret + one more entry in the workflows'
   `presenter_client_ips` array. (Fork PRs don't receive secrets, so a PR plan from a fork would
   show the rules as absent — not a concern for this private repo.)
 

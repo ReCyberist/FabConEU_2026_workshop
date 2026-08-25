@@ -104,14 +104,18 @@ variable "allowed_client_ips" {
 # allowed_client_ips, which is for non-secret, named IPs committed in tfvars. These are passed
 # at apply time from GitHub Actions secrets (one per person, so each rotates independently),
 # so the addresses are never committed to source. Empty entries (an unset secret expands to "")
-# are dropped, so an unset secret creates no rule. Not marked `sensitive` on purpose: a
-# sensitive value can't drive resource `for_each`, and the real protection is that the values
-# live in secrets and GitHub Actions masks them in every log line — a firewall allow-list IP
-# is an ACL entry, not a credential.
+# are dropped, so an unset secret creates no rule.
+#
+# Marked `sensitive` so Terraform prints "(sensitive value)" instead of the IP in plan/apply
+# output — belt-and-braces on top of GitHub Actions' own secret masking. A sensitive value
+# can't drive `for_each`, so main.tf keys the firewall rules on a one-way hash of each IP
+# (which reveals nothing) via nonsensitive(), keeping the IP itself sensitive. The validation
+# error_message deliberately doesn't echo the value, so a bad input can't leak it either.
 variable "presenter_client_ips" {
   description = "Optional client IPv4s to allow through the firewall, supplied from secrets (empties dropped; empty list = no rules)."
   type        = list(string)
   default     = []
+  sensitive   = true
 
   validation {
     condition     = alltrue([for ip in var.presenter_client_ips : ip == "" || can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", ip))])
