@@ -18,3 +18,9 @@ entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (p
 # allowed_client_ips = {
 #   "my-laptop" = "203.0.113.7"
 # }
+
+# A single client IP fed from a SECRET (e.g. a presenter's static IP) — do NOT set it here.
+# It's passed at apply time from the GitHub Actions secret ROB_CLIENT_IP
+# (-var="presenter_client_ip=...") so the address never lands in source control. Empty = no
+# rule. Shown here only for documentation:
+# presenter_client_ip = "203.0.113.5"

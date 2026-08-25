@@ -91,3 +91,14 @@ resource "azurerm_mssql_firewall_rule" "client" {
   start_ip_address = each.value
   end_ip_address   = each.value
 }
+
+# A single presenter/static client IP supplied from a secret (see var.presenter_client_ip).
+# The value is passed from a GitHub Actions secret at apply time, so it's never in source.
+# count = 0 when unset, so the rule only exists when a secret IP is provided.
+resource "azurerm_mssql_firewall_rule" "presenter" {
+  count            = var.presenter_client_ip == "" ? 0 : 1
+  name             = "presenter-static-ip"
+  server_id        = azurerm_mssql_server.this.id
+  start_ip_address = var.presenter_client_ip
+  end_ip_address   = var.presenter_client_ip
+}
