@@ -100,22 +100,22 @@ variable "allowed_client_ips" {
   default     = {}
 }
 
-# A single client IP sourced from a secret (e.g. a presenter's static IP) — kept SEPARATE
-# from allowed_client_ips, which is for non-secret, named IPs committed in tfvars. This one
-# is passed at apply time from a GitHub Actions secret (TF_VAR / -var), so the address is
-# never committed to source. Empty string (the default, and what an unset secret expands to)
-# creates no rule. Not marked `sensitive` on purpose: a sensitive value can't drive a
-# resource `count`, and the real protection is that the value lives in a secret and GitHub
-# Actions masks it in every log line — the firewall IP itself is an allow-list entry, not a
-# credential.
-variable "presenter_client_ip" {
-  description = "Optional single client IPv4 to allow through the firewall, supplied from a secret (empty = no rule)."
-  type        = string
-  default     = ""
+# Client IPs sourced from secrets (e.g. presenters' static IPs) — kept SEPARATE from
+# allowed_client_ips, which is for non-secret, named IPs committed in tfvars. These are passed
+# at apply time from GitHub Actions secrets (one per person, so each rotates independently),
+# so the addresses are never committed to source. Empty entries (an unset secret expands to "")
+# are dropped, so an unset secret creates no rule. Not marked `sensitive` on purpose: a
+# sensitive value can't drive resource `for_each`, and the real protection is that the values
+# live in secrets and GitHub Actions masks them in every log line — a firewall allow-list IP
+# is an ACL entry, not a credential.
+variable "presenter_client_ips" {
+  description = "Optional client IPv4s to allow through the firewall, supplied from secrets (empties dropped; empty list = no rules)."
+  type        = list(string)
+  default     = []
 
   validation {
-    condition     = var.presenter_client_ip == "" || can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", var.presenter_client_ip))
-    error_message = "presenter_client_ip must be a single IPv4 address (e.g. 203.0.113.5) or an empty string."
+    condition     = alltrue([for ip in var.presenter_client_ips : ip == "" || can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", ip))])
+    error_message = "each presenter_client_ips entry must be a single IPv4 address (e.g. 203.0.113.5) or an empty string."
   }
 }
 

@@ -19,8 +19,8 @@ entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (p
 #   "my-laptop" = "203.0.113.7"
 # }
 
-# A single client IP fed from a SECRET (e.g. a presenter's static IP) — do NOT set it here.
-# It's passed at apply time from the GitHub Actions secret ROB_CLIENT_IP
-# (-var="presenter_client_ip=...") so the address never lands in source control. Empty = no
-# rule. Shown here only for documentation:
-# presenter_client_ip = "203.0.113.5"
+# Client IPs fed from SECRETS (e.g. presenters' static IPs) — do NOT set them here. They're
+# passed at apply time from the GitHub Actions secrets ROB_CLIENT_IP / JESS_CLIENT_IP (one per
+# person, so each rotates independently) as -var="presenter_client_ips=[...]", so the addresses
+# never land in source control. Empty entries are dropped. Shown here only for documentation:
+# presenter_client_ips = ["203.0.113.5", "198.51.100.9"]

@@ -92,13 +92,16 @@ resource "azurerm_mssql_firewall_rule" "client" {
   end_ip_address   = each.value
 }
 
-# A single presenter/static client IP supplied from a secret (see var.presenter_client_ip).
-# The value is passed from a GitHub Actions secret at apply time, so it's never in source.
-# count = 0 when unset, so the rule only exists when a secret IP is provided.
+# Presenter/static client IPs supplied from secrets (see var.presenter_client_ips). The values
+# are passed from GitHub Actions secrets at apply time, so they're never in source. compact()
+# drops empty entries (an unset secret expands to ""), so unset secrets create no rules. The
+# rule name is a short hash of the IP — stable and unique per IP, but it keeps the address out
+# of the resource name in plan/apply logs (the IP is still the rule's value, masked as the
+# secret). Firewall rule names must be unique per server, which the hash guarantees.
 resource "azurerm_mssql_firewall_rule" "presenter" {
-  count            = var.presenter_client_ip == "" ? 0 : 1
-  name             = "presenter-static-ip"
+  for_each         = toset(compact(var.presenter_client_ips))
+  name             = "presenter-${substr(sha1(each.value), 0, 8)}"
   server_id        = azurerm_mssql_server.this.id
-  start_ip_address = var.presenter_client_ip
-  end_ip_address   = var.presenter_client_ip
+  start_ip_address = each.value
+  end_ip_address   = each.value
 }

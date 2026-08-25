@@ -64,7 +64,7 @@ jobs:
             -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
             -var="location=${{ vars.AZURE_LOCATION }}" \
             -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}" \
-            -var="presenter_client_ip=${{ secrets.ROB_CLIENT_IP }}"
+            -var="presenter_client_ips=[\"${{ secrets.ROB_CLIENT_IP }}\",\"${{ secrets.JESS_CLIENT_IP }}\"]"
 
       - name: Terraform apply
         run: terraform apply -auto-approve tfplan
