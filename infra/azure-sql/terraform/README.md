@@ -49,8 +49,8 @@ Public network access is gated by firewall rules. Two ways to allow a client thr
   secrets drop out ⇒ no rule. Empty list ⇒ no rules. Each person sets their own:
 
   ```powershell
-  gh secret set ROB_CLIENT_IP  --repo JessAndRob/FabConEU_2026_workshop --body "203.0.113.5"
-  gh secret set JESS_CLIENT_IP --repo JessAndRob/FabConEU_2026_workshop --body "198.51.100.9"
+  gh secret set ROB_CLIENT_IP  --repo JessAndRob/FabConEU_2026_workshop --body "<robs.static.ip>"
+  gh secret set JESS_CLIENT_IP --repo JessAndRob/FabConEU_2026_workshop --body "<jess.static.ip>"
   ```
 
   Then run [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) to create a
