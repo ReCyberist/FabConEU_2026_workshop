@@ -35,6 +35,32 @@ admin login or password, so nothing secret is committed or needs rotating. Suppl
 admin identity (a **group** is recommended) via `entra_admin_login` +
 `entra_admin_object_id`. The deploy pipeline authenticates with its own Entra identity.
 
+## Firewall access (and a secret IP)
+
+Public network access is gated by firewall rules. Two ways to allow a client through:
+
+- `allow_azure_services` (on by default) opens the `0.0.0.0` "Azure services" rule so the
+  GitHub-hosted runner can publish the DACPAC.
+- `allowed_client_ips` — a **non-secret** `{ name = ip }` map for known machines, committed
+  in tfvars.
+- `presenter_client_ips` — a **list of IPs sourced from secrets**, for presenters' static IPs
+  you don't want in source control. The apply/plan workflows build the list from one secret
+  **per person** (`ROB_CLIENT_IP`, `JESS_CLIENT_IP`) so each rotates independently; unset
+  secrets drop out ⇒ no rule. Empty list ⇒ no rules. Each person sets their own:
+
+  ```powershell
+  gh secret set ROB_CLIENT_IP  --repo JessAndRob/FabConEU_2026_workshop --body "<robs.static.ip>"
+  gh secret set JESS_CLIENT_IP --repo JessAndRob/FabConEU_2026_workshop --body "<jess.static.ip>"
+  ```
+
+  Then run [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) to create a
+  `presenter-<hash>` firewall rule per IP. The variable is `sensitive`, so Terraform prints the
+  rule value as `(sensitive value)` and names the rule after a one-way hash — the IP appears
+  **nowhere** in the plan/apply output, with GitHub Actions' secret masking as a second layer.
+  Adding a third machine = a new secret + one more entry in the workflows'
+  `presenter_client_ips` array. (Fork PRs don't receive secrets, so a PR plan from a fork would
+  show the rules as absent — not a concern for this private repo.)
+
 ## Run it
 
 Locally (local state, for iterating on the module itself):

@@ -91,3 +91,24 @@ resource "azurerm_mssql_firewall_rule" "client" {
   start_ip_address = each.value
   end_ip_address   = each.value
 }
+
+# Presenter/static client IPs supplied from secrets (see var.presenter_client_ips). compact()
+# drops empty entries (an unset secret expands to ""), so unset secrets create no rules.
+#
+# The IPs are sensitive, which means they can't drive for_each directly. Key the rules on a
+# one-way hash of each IP instead: the hash is safe to expose (it reveals nothing about the
+# address), so nonsensitive() lifts the sensitivity off the for_each keys / rule names, while
+# the IP itself stays sensitive and is looked up by hash for the rule value. Result: neither
+# the plan diff nor the resource address ever shows the IP — Terraform prints the rule value as
+# "(sensitive value)" and the name as presenter-<hash>. GitHub Actions masking is a second layer.
+locals {
+  presenter_ip_by_hash = { for ip in compact(var.presenter_client_ips) : substr(sha1(ip), 0, 8) => ip }
+}
+
+resource "azurerm_mssql_firewall_rule" "presenter" {
+  for_each         = nonsensitive(toset(keys(local.presenter_ip_by_hash)))
+  name             = "presenter-${each.key}"
+  server_id        = azurerm_mssql_server.this.id
+  start_ip_address = local.presenter_ip_by_hash[each.key]
+  end_ip_address   = local.presenter_ip_by_hash[each.key]
+}
