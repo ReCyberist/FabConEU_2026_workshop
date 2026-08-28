@@ -45,10 +45,13 @@ erDiagram
         nvarchar City
         nvarchar Country
         int Capacity
+        smallint Opened
     }
     CLUB {
         int ClubId PK
         nvarchar Name
+        nvarchar ShortName
+        smallint Founded
         int HomeStadiumId FK
     }
     COMPETITION {
@@ -56,6 +59,7 @@ erDiagram
         nvarchar Name
         nvarchar Category "Men / Women"
         nvarchar Country
+        tinyint Tier
     }
     SEASON {
         int SeasonId PK
@@ -75,11 +79,14 @@ erDiagram
         nvarchar FirstName
         nvarchar LastName
         char Position "GK/DF/MF/FW"
+        tinyint ShirtNumber
+        date DateOfBirth
     }
     REFEREE {
         int RefereeId PK
         nvarchar FirstName
         nvarchar LastName
+        nvarchar Country
     }
     FIXTURE {
         int FixtureId PK

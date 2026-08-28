@@ -779,4 +779,27 @@ Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packagi
 downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
 "all as code" (fine as pointers if we decide that consciously — worth a decision).
 
+## 2026-08-28 — Docs-accuracy sweep: pages drift behind the code that ships underneath them
+**Context:** Asked to check the whole attendee site was up to date. Read every page and diffed
+its factual claims against `tasks.md`, `LEARNINGS.md`, and the actual code.
+**Learning:** Three real drifts, all "the code moved, the prose didn't": (1) the Fabric SQL page
+**and** the CI/CD-part-3 Fabric tab still said the Fabric apply was *pending*, though it went live
+end-to-end on 2026-08-20 (#20); (2) the **build & validate** page described `ci.yml` as two jobs
+(database + docs) when #8 grew it to **four** (added terraform `fmt`/`validate` + bicep `az bicep
+build`) on 2026-08-23; (3) the sample-database **ER diagram had drifted from the schema** — missing
+`Stadium.Opened`, `Club.ShortName`/`Founded`, `Competition.Tier`, `Player.ShirtNumber`/`DateOfBirth`,
+`Referee.Country`. `ShirtNumber` is the one that stings: it's the column the whole part-3 "drop a
+populated column" demo revolves around, and it wasn't on the diagram. **Method gotcha worth keeping:**
+a quick `grep '^\s*\['` column extract that also filters `CONSTRAINT` lines gives **false negatives** —
+it hid `Fixture.Status` and `Goal.IsPenalty`/`IsOwnGoal` (inline `DEFAULT` constraints on the column
+line), which I nearly reported as missing. Read the table file to confirm a column is *absent*; a
+filtered grep only proves it's *present*. Verified the fixes with a `--strict` build of the full
+(un-excluded) site via a scratch `INHERIT` overlay.
+**Action:** Fixed [`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (earlier this session),
+[`docs/cicd/ship-database-changes.md`](../docs/cicd/ship-database-changes.md),
+[`docs/cicd/build-validate.md`](../docs/cicd/build-validate.md), and the ER diagram in
+[`docs/database/sample-database.md`](../docs/database/sample-database.md). **Still open (content, not
+accuracy — task #22):** `fabric-sql.md` is a bare skeleton while its Azure SQL sibling is fully
+fleshed, and `welcome.md` / both `wrap-up/` pages / `reference/other-tooling.md` are still stubs.
+
 <!-- Add new entries above this line -->
