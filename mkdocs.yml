@@ -46,8 +46,10 @@ markdown_extensions:
 # versioned and building locally — but is held out of the published site via exclude_docs
 # below. `mkdocs build --strict` stays happy because excluded pages aren't in the nav.
 #
+#   👉 TO PREVIEW THE FULL SITE LOCALLY (without publishing): `mkdocs serve -f mkdocs.local.yml`
+#      — that overlay inherits this config, clears exclude_docs and supplies the full nav.
 #   👉 TO REVEAL THE FULL SITE: delete the `exclude_docs` block below AND un-comment the
-#      real nav entries. That one PR is the reveal.
+#      real nav entries (they mirror mkdocs.local.yml). That one PR is the reveal.
 exclude_docs: |
   database/sample-database.md
   setup/welcome.md

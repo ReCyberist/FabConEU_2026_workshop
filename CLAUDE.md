@@ -107,7 +107,10 @@ and for our own credibility.
 ## 5. Editing the attendee site (MkDocs Material)
 
 - Content is Markdown in `docs/`. Navigation is defined in `mkdocs.yml`.
-- Preview locally: `pip install -r requirements.txt` then `mkdocs serve`.
+- Preview locally: `pip install -r requirements.txt` then `mkdocs serve` (published/teaser
+  site) or `mkdocs serve -f mkdocs.local.yml` to preview the **full** site including pages
+  still held from publish by `exclude_docs`. The overlay is local-only — CI and Pages always
+  build the default `mkdocs.yml`.
 - Publish: GitHub Actions builds and deploys to GitHub Pages on push to `main`
   (workflow to be added under `.github/workflows/`).
 - Use Material features: admonitions (`!!! note`), tabbed content (great for
