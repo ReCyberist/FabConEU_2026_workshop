@@ -744,4 +744,20 @@ no validate cycles wasted, per the standing rule.
 Tasks #14 (**Fabric side now verified end-to-end**) and #20 updated. Open follow-ups: nightly-teardown
 decision (issue #35), least-privilege contributor+GUID refactor, and a possible PR-time plan comment.
 
+## 2026-08-28 — Morning-of readiness checklist captured from the operational gotchas
+**Context:** Planning the run-of-day. Realised the demo environment is **not** standing when we
+walk in — nightly destroy (21:00 UTC) wipes the infra and the Fabric capacity auto-pauses every
+2h — so "be demo-ready" is an actual procedure, not a given.
+**Learning:** The morning setup is fully derivable from gotchas already logged, and they cluster:
+(1) both `*-apply` workflows must be re-dispatched **from `main`** (OIDC only trusts main) to
+rebuild infra + republish the DACPAC; (2) the Fabric capacity must be **resumed to `Active`**
+before anything Fabric resolves; (3) `az login` to **both tenants** (the Fabric path is
+cross-tenant); (4) the Fabric **workspace-admin grant re-applies** on every apply because the
+workspace is recreated; (5) any laptop-to-DB demo needs a **temporary firewall rule** (external
+clients are blocked). Site reveal (drop `exclude_docs` + uncomment nav) should happen **early, not
+live**.
+**Action:** Wrote [`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md);
+added task **#28**. Standalone eval flagged the real gap as **content + a timed dry run** (#13,
+#22, #24, #25), not code — the core "infra + DB as code" path is proven live on both platforms.
+
 <!-- Add new entries above this line -->
