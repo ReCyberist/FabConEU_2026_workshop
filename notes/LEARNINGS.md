@@ -779,6 +779,48 @@ Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packagi
 downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
 "all as code" (fine as pointers if we decide that consciously — worth a decision).
 
+## 2026-08-28 — Docs-accuracy sweep: pages drift behind the code that ships underneath them
+**Context:** Asked to check the whole attendee site was up to date. Read every page and diffed
+its factual claims against `tasks.md`, `LEARNINGS.md`, and the actual code.
+**Learning:** Three real drifts, all "the code moved, the prose didn't": (1) the Fabric SQL page
+**and** the CI/CD-part-3 Fabric tab still said the Fabric apply was *pending*, though it went live
+end-to-end on 2026-08-20 (#20); (2) the **build & validate** page described `ci.yml` as two jobs
+(database + docs) when #8 grew it to **four** (added terraform `fmt`/`validate` + bicep `az bicep
+build`) on 2026-08-23; (3) the sample-database **ER diagram had drifted from the schema** — missing
+`Stadium.Opened`, `Club.ShortName`/`Founded`, `Competition.Tier`, `Player.ShirtNumber`/`DateOfBirth`,
+`Referee.Country`. `ShirtNumber` is the one that stings: it's the column the whole part-3 "drop a
+populated column" demo revolves around, and it wasn't on the diagram. **Method gotcha worth keeping:**
+a quick `grep '^\s*\['` column extract that also filters `CONSTRAINT` lines gives **false negatives** —
+it hid `Fixture.Status` and `Goal.IsPenalty`/`IsOwnGoal` (inline `DEFAULT` constraints on the column
+line), which I nearly reported as missing. Read the table file to confirm a column is *absent*; a
+filtered grep only proves it's *present*. Verified the fixes with a `--strict` build of the full
+(un-excluded) site via a scratch `INHERIT` overlay.
+**Action:** Fixed [`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (earlier this session),
+[`docs/cicd/ship-database-changes.md`](../docs/cicd/ship-database-changes.md),
+[`docs/cicd/build-validate.md`](../docs/cicd/build-validate.md), and the ER diagram in
+[`docs/database/sample-database.md`](../docs/database/sample-database.md). **Still open (content, not
+accuracy — task #22):** `fabric-sql.md` is a bare skeleton while its Azure SQL sibling is fully
+fleshed, and `welcome.md` / both `wrap-up/` pages / `reference/other-tooling.md` are still stubs.
+
+## 2026-08-28 — Content Phase 3: fleshed the skeleton pages, and where "as code" honesty forced a hold
+**Context:** Fleshing the remaining stub pages (#22): `infra/fabric-sql.md`, `setup/welcome.md`,
+`wrap-up/resources.md`, `wrap-up/migrations-drift-teardown.md`.
+**Learning:** Three wrote cleanly from material already in the repo — the Fabric page from the
+Terraform module + `fabric-sql-notes.md` + the live-deploy learnings (it had been the one bare
+skeleton while its Azure SQL sibling was fully fleshed); welcome from D6 + the agenda (kept
+**format-focused**, not pinned to timings still being finalised); resources with a "coming soon"
+Downloads placeholder (bundles = #12) and a generic FabCon-survey feedback line. The **wrap-up
+migrations/drift/teardown** page is the honest exception: its migrations-reference (Flyway,
+dbatools/dbops are README-only, links per decision B) and teardown parts are writable, but **there
+is no drift demo anywhere in the repo** (grep confirms "drift" only appears in prose). Rather than
+write a drift section describing a demo that doesn't exist — against the repo's "everything is real,
+runnable code" rule — we **hold the page and build the demo first** (new task #29). Also captured a
+standing hygiene task: **sweep for `coming soon`/`TODO`/skeleton placeholders before any reveal**
+(#30).
+**Action:** Fleshed the three pages (PR on branch `docs/fabric-page-verified-status`); `--strict`
+full-site build green. Tasks: #22 Phase-3 progress noted, **#29** (drift demo) and **#30**
+(placeholder sweep) added.
+
 ## 2026-08-28 — Preview the full site locally while the pushed site stays teaser: an INHERIT overlay
 **Context:** Wanted to author/preview the held content pages on a laptop while keeping the
 **published** site in teaser mode (`exclude_docs` in `mkdocs.yml`). The published config can't

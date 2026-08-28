@@ -39,8 +39,8 @@ The flow is identical on both — only the publish profile changes.
     The live-verified path (`AzureSql.publish.xml`).
 
 === "Fabric SQL"
-    The same flow with `FabricSql.publish.xml`. The cross-tenant plan is verified; the first live
-    apply is pending — see the [Fabric SQL](../infra/fabric-sql.md) page.
+    The same flow with `FabricSql.publish.xml`, verified live end-to-end on the cross-tenant Fabric
+    capacity — see the [Fabric SQL](../infra/fabric-sql.md) page.
 
 ## The code
 
