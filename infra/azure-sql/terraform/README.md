@@ -67,12 +67,21 @@ Locally (local state, for iterating on the module itself):
 
 ```powershell
 Copy-Item terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
+Copy-Item backend_local_override.tf.example backend_local_override.tf   # local state, no remote backend
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 
-terraform init -backend=false
+terraform init
 terraform plan
 terraform apply
 ```
+
+The `backend_local_override.tf` swaps the committed remote `azurerm` backend (see **State**
+below) for **local** state — Terraform auto-merges `*_override.tf` files and a `backend` block
+in an override replaces the primary one. Without it, a bare `terraform init` tries to
+initialize the remote backend and prompts for a container name; `terraform init -backend=false`
+only unblocks `fmt`/`validate` (a subsequent `plan`/`apply` errors with *"Backend
+initialization required"*). The override file and `terraform.tfstate*` are gitignored, so local
+iteration never touches the shared remote backend.
 
 Via GitHub Actions, against the shared remote state (see **State** below):
 [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) (manual) and

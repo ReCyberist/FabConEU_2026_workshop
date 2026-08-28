@@ -798,4 +798,28 @@ tree to paste into `mkdocs.yml` at the real reveal.
 [`../CLAUDE.md`](../CLAUDE.md) §5. Doesn't change the reveal (#22) — just makes held pages
 previewable while writing them.
 
+## 2026-08-28 — Local Terraform demo needs a local-backend override, not `-backend=false`
+**Context:** Attendee/presenter runs `terraform init` in `infra/azure-sql/terraform` on a laptop
+and gets prompted for a **container name**. `providers.tf` declares a remote **`azurerm`** backend
+(D5) with only `use_oidc`/`use_azuread_auth` inline — the storage account/container/key come from
+`-backend-config` in CI, so a bare local `init` tries to initialize the real remote backend
+interactively.
+**Learning:** `terraform init -backend=false` (what the README used to say) is **not** a working
+local demo path — it only unblocks `fmt`/`validate`. A subsequent `plan`/`apply` errors with
+*"Backend initialization required, please run terraform init"* because the `backend "azurerm"`
+block is present but uninitialized (verified on TF v1.12.0). The clean fix: Terraform
+**auto-merges any `*_override.tf` file**, and a `backend` block in an override **replaces** the
+primary. A one-line `backend_local_override.tf` (`terraform { backend "local" {} }`) makes local
+`init` → `plan` → `apply` run with **local state, no Azure Storage account, no prompts**, while the
+committed `azurerm` backend stays intact for CI. Shipped as `.example` (mirrors
+`terraform.tfvars.example`); `.gitignore` adds `*_override.tf` + `!*_override.tf.example` so the
+activated copy never gets committed and can't clobber the remote backend.
+**Action:** Added
+[`../infra/azure-sql/terraform/backend_local_override.tf.example`](../infra/azure-sql/terraform/backend_local_override.tf.example);
+fixed the local snippets in
+[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md) and the
+Terraform tab in [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md); gitignore rule added.
+The *attendee-facing* backend/sandbox strategy (#1) is still the broader open question — this just
+makes the module runnable on a laptop today.
+
 <!-- Add new entries above this line -->
