@@ -37,10 +37,22 @@ no admin password, fully repeatable.
 
     ```powershell
     $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
+
+    # Local demo: use local state instead of the remote Azure Storage backend
+    Copy-Item backend_local_override.tf.example backend_local_override.tf
+
     terraform init
     terraform plan     # see exactly what will be created
     terraform apply
     ```
+
+    !!! note "Why the override?"
+        The module ships with a remote **`azurerm`** backend (Azure Storage, AAD/OIDC)
+        for CI and shared state. On a laptop that backend has no storage account to talk
+        to, so a bare `terraform init` prompts for a container name. Copying
+        `backend_local_override.tf.example` swaps in a **local** backend for the demo —
+        no Azure Storage account, no prompts. The file is gitignored, so it never
+        disturbs the remote backend CI relies on.
 
 === "Bicep"
     The same infrastructure is mirrored in **Bicep** for the ARM-native crowd — a subscription-scoped
