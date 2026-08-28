@@ -779,4 +779,23 @@ Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packagi
 downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
 "all as code" (fine as pointers if we decide that consciously — worth a decision).
 
+## 2026-08-28 — Preview the full site locally while the pushed site stays teaser: an INHERIT overlay
+**Context:** Wanted to author/preview the held content pages on a laptop while keeping the
+**published** site in teaser mode (`exclude_docs` in `mkdocs.yml`). The published config can't
+just un-hide the pages, and MkDocs has a single config per build.
+**Learning:** MkDocs' **`INHERIT:`** key lets a second config layer on top of the first, and
+**scalars/lists in the child replace the parent's** (dicts deep-merge). So `mkdocs.local.yml`
+does `INHERIT: mkdocs.yml`, sets `exclude_docs: ""` (clears the teaser exclusions) and supplies
+the **full `nav`** (replacing the teaser nav wholesale — necessary because a page that's in nav
+*and* excluded errors under `--strict`, so the parent's nav can't just list everything). Preview
+with **`mkdocs serve -f mkdocs.local.yml`**; the overlay is only ever used when you pass `-f`, so
+CI (`ci.yml`) and Pages (`pages.yml`) — both plain `mkdocs build` on the default `mkdocs.yml` —
+still publish teaser-only. Verified both `--strict` builds: default emits **2** pages
+(`index` + `prerequisites`), the overlay emits all **14**. Bonus: the overlay's nav is the exact
+tree to paste into `mkdocs.yml` at the real reveal.
+**Action:** Added [`../mkdocs.local.yml`](../mkdocs.local.yml); pointers in
+[`../mkdocs.yml`](../mkdocs.yml) teaser header, [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and
+[`../CLAUDE.md`](../CLAUDE.md) §5. Doesn't change the reveal (#22) — just makes held pages
+previewable while writing them.
+
 <!-- Add new entries above this line -->
