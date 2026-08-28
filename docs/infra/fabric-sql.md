@@ -4,10 +4,11 @@
 
 <!-- INTRO: the side-by-side partner to Azure SQL — provision Fabric SQL as code. -->
 
-!!! warning "Code ready — live-verification pending (task #20)"
-    The Fabric module is written and validated offline, but the end-to-end pipeline run is
-    blocked on a Fabric capacity + a tenant admin setting. Treat this page's flow as authoritative
-    and the "verified" badge as pending.
+!!! success "Verified end-to-end (task #20, 2026-08-20)"
+    The Fabric module has been deployed live: one pipeline run provisions the capacity binding →
+    workspace → SQL database, publishes the DACPAC, and passes a data smoke test — passwordless,
+    side by side with Azure SQL. Open follow-ups (none block this flow): nightly clean-slate
+    teardown (#26) and a least-privilege capacity-access refactor (#27).
 
 !!! note "Follow along — or just watch"
     Needs your own Azure subscription **and** a Fabric capacity. See [Prerequisites](../setup/prerequisites.md).
