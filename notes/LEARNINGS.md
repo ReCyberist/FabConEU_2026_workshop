@@ -802,4 +802,23 @@ filtered grep only proves it's *present*. Verified the fixes with a `--strict` b
 accuracy — task #22):** `fabric-sql.md` is a bare skeleton while its Azure SQL sibling is fully
 fleshed, and `welcome.md` / both `wrap-up/` pages / `reference/other-tooling.md` are still stubs.
 
+## 2026-08-28 — Content Phase 3: fleshed the skeleton pages, and where "as code" honesty forced a hold
+**Context:** Fleshing the remaining stub pages (#22): `infra/fabric-sql.md`, `setup/welcome.md`,
+`wrap-up/resources.md`, `wrap-up/migrations-drift-teardown.md`.
+**Learning:** Three wrote cleanly from material already in the repo — the Fabric page from the
+Terraform module + `fabric-sql-notes.md` + the live-deploy learnings (it had been the one bare
+skeleton while its Azure SQL sibling was fully fleshed); welcome from D6 + the agenda (kept
+**format-focused**, not pinned to timings still being finalised); resources with a "coming soon"
+Downloads placeholder (bundles = #12) and a generic FabCon-survey feedback line. The **wrap-up
+migrations/drift/teardown** page is the honest exception: its migrations-reference (Flyway,
+dbatools/dbops are README-only, links per decision B) and teardown parts are writable, but **there
+is no drift demo anywhere in the repo** (grep confirms "drift" only appears in prose). Rather than
+write a drift section describing a demo that doesn't exist — against the repo's "everything is real,
+runnable code" rule — we **hold the page and build the demo first** (new task #29). Also captured a
+standing hygiene task: **sweep for `coming soon`/`TODO`/skeleton placeholders before any reveal**
+(#30).
+**Action:** Fleshed the three pages (PR on branch `docs/fabric-page-verified-status`); `--strict`
+full-site build green. Tasks: #22 Phase-3 progress noted, **#29** (drift demo) and **#30**
+(placeholder sweep) added.
+
 <!-- Add new entries above this line -->
