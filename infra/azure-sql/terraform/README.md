@@ -35,6 +35,16 @@ admin login or password, so nothing secret is committed or needs rotating. Suppl
 admin identity (a **group** is recommended) via `entra_admin_login` +
 `entra_admin_object_id`. The deploy pipeline authenticates with its own Entra identity.
 
+Get the `entra_admin_object_id` with the Azure CLI — for a security group (recommended,
+matching the example) or an individual user:
+
+```powershell
+az ad group show --group "fabcon26-sql-admins" --query id -o tsv   # a group
+az ad user  show --id    "you@contoso.com"      --query id -o tsv   # or a user
+```
+
+`entra_admin_login` is the identity's display name (group name or user principal name).
+
 ## Firewall access (and a secret IP)
 
 Public network access is gated by firewall rules. Two ways to allow a client through:

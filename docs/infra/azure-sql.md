@@ -74,6 +74,16 @@ default. The Bicep reference is in
 [`infra/azure-sql/bicep`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/bicep).
 Download the module bundle and run it from code — nothing is clicked.
 
+!!! tip "Finding `entra_admin_object_id`"
+    `entra_admin_login` is the identity's display name; `entra_admin_object_id` is its
+    object (principal) id. Grab the id with the Azure CLI — a security **group** is
+    recommended:
+
+    ```powershell
+    az ad group show --group "fabcon26-sql-admins" --query id -o tsv   # a group
+    az ad user  show --id    "you@contoso.com"      --query id -o tsv   # or a user
+    ```
+
 ## Checkpoint
 
 `terraform apply` created the resource group, the logical server, and the serverless database — and
