@@ -1,0 +1,62 @@
+name: Shared endpoint — Terraform destroy
+
+# Tears down the shared attendee endpoint (infra/azure-sql/shared-endpoint) nightly at 21:00
+# UTC and on demand — the endpoint is a same-day, throwaway target, so nothing should bill
+# overnight. If it wasn't stood up that day, destroy runs against empty state and is a no-op.
+#
+# 21:00 UTC (not UK-local): GitHub Actions cron has no timezone support; 21:00 UTC is 9pm GMT
+# in winter / 10pm BST in summer. Matches the taught module's azure-sql-destroy.yml house style.
+#
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. Uses the same remote state key as the
+# attendee-endpoint apply job (in azure-sql-apply.yml), and the SAME concurrency group, so
+# destroy knows exactly what apply created and the two never overlap. The mssql provider
+# drops the logins/users first (server still up), then azurerm removes the server/pool/RG.
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 21:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+
+concurrency:
+  group: azure-sql-shared-endpoint-terraform
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    name: terraform destroy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/azure-sql/shared-endpoint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/shared-endpoint.terraform.tfstate"
+
+      - name: Terraform destroy
+        run: |
+          terraform destroy -auto-approve \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

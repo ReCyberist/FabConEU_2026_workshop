@@ -13,6 +13,7 @@ theme:
     - navigation.top
     - content.code.copy
     - content.code.annotate
+    - content.tooltips   # style abbr/title hovers as proper tooltips (see includes/glossary.md)
     - content.tabs.link   # keep Azure SQL / Fabric SQL tabs in sync across pages
   palette:
     - scheme: default
@@ -26,6 +27,13 @@ theme:
 
 markdown_extensions:
   - admonition
+  # `abbr` + `snippets.auto_append` give every page the shared glossary in
+  # includes/glossary.md, so acronyms and British idioms get a hover translation
+  # without any per-page markup. See CLAUDE.md §5 (Voice).
+  - abbr
+  - pymdownx.snippets:
+      auto_append:
+        - includes/glossary.md
   - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
@@ -71,8 +79,12 @@ nav:
   - Getting started:
       - Prerequisites: setup/prerequisites.md
   # --- Held until reveal: delete remaining exclude_docs entries AND uncomment below ---
-  # - Getting started (full):
+  # On reveal, `Welcome & how the day works` moves ABOVE `Prerequisites` in the
+  # `Getting started` section above — Welcome sets up the day and ends by sending
+  # the reader to Prerequisites, so it has to come first.
+  # - Getting started:
   #     - Welcome & how the day works: setup/welcome.md
+  #     - Prerequisites: setup/prerequisites.md
   # - Foundations:
   #     - Source control for databases: foundations/source-control.md
   # - Infrastructure as code:

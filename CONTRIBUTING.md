@@ -11,6 +11,16 @@ canonical working guide for both humans and AI agents.
    not optional — it's how the workshop gets better each pass.
 
 ## Preview the attendee site
+
+Note, if in a virtual environment you may need to
+
+```bash
+cd /path/to/FabConEU_2026_workshop
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 ```powershell
 pip install -r requirements.txt
 mkdocs serve                        # published (teaser) site — what attendees see today

@@ -30,6 +30,164 @@ the event" comment — a reproducibility risk for a 200-attendee follow-along.
 — in [`../requirements.txt`](../requirements.txt), verified with `mkdocs build --strict`.
 (Earlier entries — 2026-07-18, 2026-07-04 — already noted the banner is informational; this
 consolidates it and closes the pinning gap.)
+## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
+**Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
+10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
+the delta. That needs local Terraform to read the **same remote state** CI writes, not local state.
+**Learning:** Two distinct local modes, easy to conflate: (a) the `backend_local_override.tf`
+(local state) is for standing the module up *standalone*; (b) to interact with what the workflow
+deployed you must init the **remote** backend locally. The committed backend block has
+`use_oidc = true`, which has no token on a laptop — so init with the real `-backend-config` values
+**plus `-backend-config="use_oidc=false"`**, and `az login`; `use_azuread_auth = true` (already in
+the block) then authenticates the state blob via the Azure CLI identity (needs *Storage Blob Data
+Contributor* on the state account). Second gotcha (general, though now defused for THIS module):
+a local plan shows a **spurious full destroy/recreate** if it runs in a different **region** than
+the deploy — the module names include the region token, so a region mismatch rewrites every
+resource. The taught module keeps a West Europe default and overrides to UK South via the
+`AZURE_LOCATION` repo var, so a laptop run there must set `location`/`location_abbreviation` to
+match. For the shared-endpoint module we instead **changed the default to UK South** (it only ever
+runs in this sandbox — see the follow-up entry), so a bare local run already matches and needs no
+tfvars. With state + region matched, `terraform plan` reports *"No changes"*; bumping the count
+then shows a clean **"5 to add"** (against the recorded 10) rather than "15 to add" (a fresh build).
+**Action:** Documented the recipe in the module README ("Run locally against the shared state").
+Companion to the apply/destroy workflows below.
+
+## 2026-08-29 — Shared-endpoint module defaults to UK South (it only runs in the sandbox)
+**Context:** The shared endpoint always deploys to the personal sandbox subscription, which is
+region-restricted to UK South. The `location`/`location_abbreviation` defaults were West Europe
+(copied from the taught module), so every local run needed a region override to avoid spurious
+region-rewrite diffs.
+**Learning:** The taught module deliberately keeps `westeurope` as its *documented/taught* default
+and treats UK South as a sandbox-specific override (LEARNINGS 2026-07-22). The shared endpoint is
+**ops tooling, not taught content**, and it only ever runs in that one sandbox — so the honest
+default there is **`uksouth`/`uks`**, not a value nothing uses. Flipping it removes the local-run
+footgun (no tfvars region override) and doesn't change CI, which still passes `AZURE_LOCATION`
+(`=uksouth`) explicitly. Only the shared-endpoint module changed; the taught module's WEU default
+stands. (Rob, 2026-08-29.)
+**Action:** `location`→`uksouth`, `location_abbreviation`→`uks` in the module's `variables.tf`;
+README examples now show `…-shared-uks-…` (the state RG stays `rg-fabcon26-state-weu` — really in
+WEU) and the local-run steps drop the region override; `terraform.tfvars.example` region note
+inverted.
+
+## 2026-08-29 — Shared-endpoint apply + nightly destroy (auto-provision, small + torn down daily)
+**Context:** Closing the demo loop: after plan-on-PR, a way to actually build the endpoint and to
+guarantee it doesn't bill overnight. Auto-provisioning was OK'd because the pool is small and the
+thing is destroyed daily.
+**Learning:** Mirrored the taught module's apply/destroy shape but simpler — the shared endpoint has
+**no DACPAC publish/smoke job** (attendees publish their own schemas into their own DBs), so apply is
+just init → plan → apply against its own state key (`azure-sql/shared-endpoint.terraform.tfstate`).
+Two deliberate choices: (1) apply **does not** pass `attendee_count` as a `-var` — it takes the
+committed `variables.tf` default, so *committing a count change and running the workflow* is what
+deploys the new count (the second half of the demo). (2) A **dedicated concurrency group**
+(`azure-sql-shared-endpoint-terraform`, separate from the taught module's `azure-sql-terraform`) so
+the two modules never block each other, while this module's own apply/destroy still serialise (never
+run over the same state). The apply writes the **attendee handout** (server, shared password,
+per-attendee connection strings — all giveaways; admin password stays a sensitive output, unprinted)
+to `$GITHUB_STEP_SUMMARY` via `terraform output -json … | jq`. Destroy is nightly 21:00 UTC (house
+style) and a no-op against empty state on days the endpoint wasn't stood up.
+
+**Consolidated into `azure-sql-apply.yml` (Rob's steer, same day):** rather than a separate
+`shared-endpoint-apply.yml`, the standup became the **`attendee-endpoint` job** inside the existing
+apply workflow — one workflow, two Terraform flows (mirroring the two-job plan workflow). A
+**`workflow_dispatch` choice input `target` (demo/attendee/both, default both)** gates the jobs via
+`if:`; the `publish` (DACPAC) job `needs: apply`, so it's auto-skipped when `target=attendee`. Key
+mechanic that makes independent flows safe in one workflow: **move concurrency from workflow-level to
+JOB-level** — the demo `apply` job keeps `group: azure-sql-terraform`, the `attendee-endpoint` job
+takes `group: azure-sql-shared-endpoint-terraform` (matching each flow's own destroy), so a run isn't
+globally serialised and each flow only blocks against its own destroy. (GitHub Actions supports
+`concurrency` at both workflow and job scope; job-level is what you want when one workflow drives
+multiple independent state files.) The nightly destroy stays a separate file (only apply was
+consolidated).
+**Action:** Folded the standup into [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+(deleted the standalone apply); kept [`shared-endpoint-destroy.yml`](../.github/workflows/shared-endpoint-destroy.yml); README Status +
+demo sections updated; task #19 advanced. **Not yet run live** — first apply is the verification.
+
+## 2026-08-29 — "Bump the count" IaC demo: a second plan flow in one workflow, refresh off
+**Context:** Turning the shared endpoint into a teaching prop — change `attendee_count`, push,
+and let a GitHub Actions plan show the exact "+N databases". Rob wanted it as a **second job in
+the existing azure-sql workflow**, not a new workflow file.
+**Learning:** Two independent Terraform flows live happily as **two jobs in one workflow** —
+added `plan-shared-endpoint` alongside `plan` in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)
+(each with its own `working-directory` + state key), and widened the `paths:` filter so a change
+to either module triggers the PR. Two gotchas that shaped it: (1) **a CI plan needs remote state
+to show the *incremental* change** — with local state CI has no record that 10 DBs exist, so it'd
+plan "everything to add". So the module moved from local to the **remote azurerm backend** (own
+key `azure-sql/shared-endpoint.terraform.tfstate`), keeping a `backend_local_override.tf.example`
+so presenters still run it locally. (2) **`terraform plan` refreshes state by default, and the
+`betr-io/mssql` provider connects to the server to refresh existing logins/users** — which fails
+whenever the endpoint is torn down between sessions. Fix: run the PR plan with **`-refresh=false`**
+(plus `-lock=false`), so the diff is computed from state+config only, never touching SQL — the
+plan still works when the DB is down and still shows the bumped-count delta. Caveat: the crisp
+"+5" needs the initial 10 already seeded in the remote state (one prior apply).
+**Action:** Second job added; module → remote state + local override; added to `ci.yml` validate
+loop; demo beat written into [`../agenda/agenda.md`](../agenda/agenda.md) Morning 2 and the module
+README. `init`/`validate`/`fmt` clean offline. Apply/destroy workflow for this module still to come
+(task #19).
+
+## 2026-08-29 — Shared attendee endpoint: Azure SQL elastic pool beats a VM
+**Context:** Rob asked how we actually build the shared "run against this" endpoint (D6),
+sketching an Azure SQL server with a database per attendee. D6 had said "SQL Server on a VM."
+**Learning:** The VM was justified by "a database per attendee so DACPACs don't collide" — but
+that's not a VM feature: an **Azure SQL logical server hosts many databases on one endpoint too**,
+so per-attendee isolation needs no VM. Azure SQL wins on all the axes that matter here — it's the
+platform we teach, it reuses the module we already have, and there's no VM to patch/back up/NSG on
+a target we've said we won't support. An **elastic pool** caps the day's cost across N databases.
+The real design forks are (1) **auth** — you can't hand a room of strangers Entra identities, so
+this endpoint runs **SQL authentication** (per-attendee login, shared throwaway password), a
+deliberate departure from the taught module's Entra-only design; and (2) **logins/users aren't ARM
+resources** — azurerm makes the server/pool/DBs, but `CREATE LOGIN`/`CREATE USER`/role membership
+run *inside* SQL, so they need the **`betr-io/mssql`** provider (connects per-resource with the
+generated SQL admin) — which in turn needs the firewall open before it runs.
+**Action:** Drafted a **separate** module [`../infra/azure-sql/shared-endpoint/`](../infra/azure-sql/shared-endpoint/)
+(server + elastic pool + DB/login/user per attendee, local state, `Taylor==Metallica` shared password,
+open firewall for the day) so the taught module stays pristine. Recorded the reversal as a
+[decisions.md](decisions.md) **D6 update**; ordering + task #19 updated. **Untested** — no live
+apply in the authoring env; first-run checks listed in the module README.
+
+## 2026-08-29 — Fabric SQL module needed the same local-backend override as Azure SQL; infra diagrams added
+**Context:** Bringing the Fabric SQL Terraform "Run it" steps in line with Azure SQL, and
+adding infrastructure diagrams to the docs.
+**Learning:** The Fabric SQL module declares the **same committed remote `azurerm` backend**
+as Azure SQL (`providers.tf`), so a bare `terraform init` on a laptop prompts for a container
+name — but it had **no `backend_local_override.tf.example`** and its README/docs jumped
+straight into `init`. The gitignore already covers `*_override.tf` + `!*_override.tf.example`
+repo-wide, so the override pattern drops into any module folder with no gitignore change.
+Also: **Mermaid is already enabled** in `mkdocs.yml` (Material bundles Mermaid.js via
+`pymdownx.superfences`), so ` ```mermaid ` fenced blocks render on the site and on GitHub with
+no extra plugin — the right way to ship infra diagrams as version-controlled code. Note
+`mkdocs build` does **not** validate Mermaid syntax (it renders client-side); verify diagrams
+by rendering (e.g. an Artifact renders `<pre class="mermaid">` natively).
+**Action:** Added `infra/fabric-sql/terraform/backend_local_override.tf.example`, the
+`cd`/copy-override/open-tfvars steps to the Fabric README + `docs/infra/fabric-sql.md`, and
+Mermaid diagrams to both infra docs pages. Reminder: `docs/infra/fabric-sql.md` is still held
+from the published site by `exclude_docs`, so its diagram shows only in the local full
+preview (`mkdocs serve -f mkdocs.local.yml`) until the page is un-excluded.
+
+## 2026-08-29 — `terraform plan` "AccountUnusable" on Windows = WAM broker, fix with device-code login
+**Context:** Running `terraform plan` for the Azure SQL module, every plan failed at the
+`azurerm` provider block with *"Account has previously been signed out of this application…
+Status: Response_Status.Status_AccountUnusable, Error code: 0, Tag: 540940121"*.
+**Learning:** The `azurerm` provider fetches a **Microsoft Graph** token to parse identity
+claims. ARM auth was fine (`az account get-access-token` with the default scope returned a
+token), but the **Graph** scope (`--scope https://graph.microsoft.com/.default`) threw
+`AccountUnusable`. A plain `az login` did **not** fix it — even `az login` failed at
+"Retrieving tenants and subscriptions". Root cause on Windows: the **WAM broker** holds a
+poisoned account outside `~/.azure`, so deleting `msal_token_cache.*` alone isn't enough.
+**Action:** Fixed by disabling the broker + clearing + **device-code** login:
+```powershell
+az config set core.enable_broker_on_windows=false
+az account clear
+Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+az login --use-device-code
+az account set --subscription $env:ARM_SUBSCRIPTION_ID
+# verify GRAPH scope specifically:
+az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+```
+Diagnostic tell: ARM token works but the Graph-scoped `get-access-token` errors ⇒ it's the
+CLI/broker, not Terraform. Attendees on managed Windows laptops will likely hit this.
+Documented as a gotcha in
+[`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) and
+[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md).
 
 ## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
 **Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
@@ -891,5 +1049,29 @@ fixed the local snippets in
 Terraform tab in [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md); gitignore rule added.
 The *attendee-facing* backend/sandbox strategy (#1) is still the broader open question — this just
 makes the module runnable on a laptop today.
+
+## 2026-08-29 — Attendee voice: two registers, with hover translations for the idioms
+**Context:** Doing a voice pass on the attendee site, starting with the home page. The room at
+FabCon Europe is international, and a lot of attendees will not have English as a first language —
+so the dry British humour we want in the prose is a genuine comprehension risk in the steps.
+**Learning:** One blanket "voice" rule does not work. The useful line is between **talking about
+a thing** and **doing the thing**, so `docs/` now has two registers: **discussion** (relaxed, dry
+humour, idioms permitted) and **step** (numbered, one action per step, no idioms, no hedging, say
+what success looks like). The idioms are then made safe by MkDocs Material's abbreviation
+tooltips: `abbr` + `pymdownx.snippets.auto_append` pointed at a single `includes/glossary.md`
+gives a hover translation for a term **on every page with zero per-page markup** — verified on the
+existing home page, which picked up `CI/CD`, `DACPAC`, `teardown` and `kit` without being edited.
+Two constraints worth knowing: the glossary file must live **outside `docs/`** (inside it, the
+teaser-mode `exclude_docs` and the `mkdocs.local.yml` overlay that clears it fight each other and
+`--strict` fails on a page missing from the nav), and matching is **exact and case-sensitive and
+site-wide** — a word added for the prose will also underline itself inside a step. Tooltips also
+do not appear on touch devices, which is why the standing rule is that humour and idiom must never
+carry meaning: the sentence has to survive the tooltip never showing.
+**Action:** Rewrote [`../CLAUDE.md`](../CLAUDE.md) §5 into 5a/5b/5c (sections 5–8 renumbered to
+6–9); added [`../includes/glossary.md`](../includes/glossary.md); enabled `abbr`,
+`pymdownx.snippets` and the `content.tooltips` feature in [`../mkdocs.yml`](../mkdocs.yml);
+voice-passed [`../docs/index.md`](../docs/index.md) only. Both `mkdocs build --strict` (teaser)
+and `-f mkdocs.local.yml` (full) pass. The remaining 13 pages are **deliberately untouched** —
+we are working through them one at a time.
 
 <!-- Add new entries above this line -->
