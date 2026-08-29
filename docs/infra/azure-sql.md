@@ -59,6 +59,29 @@ no admin password, fully repeatable.
         no Azure Storage account, no prompts. The file is gitignored, so it never
         disturbs the remote backend CI relies on.
 
+    !!! warning "`terraform plan` fails with *"Account has previously been signed out of this application"* (Windows)"
+        The `azurerm` provider fetches a **Microsoft Graph** token to parse your identity
+        claims. If the CLI's Graph token goes stale, every `plan` fails at the provider
+        block — even though `az account get-access-token` (ARM scope) succeeds. On Windows
+        the culprit is usually the **WAM broker** silently reusing a poisoned account, so a
+        plain `az login` doesn't fix it. Disable the broker, clear the cache, and log in
+        with **device code** (which bypasses WAM):
+
+        ```powershell
+        az config set core.enable_broker_on_windows=false
+        az account clear
+        Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+        az login --use-device-code
+        az account set --subscription $env:ARM_SUBSCRIPTION_ID
+        ```
+
+        Verify the **Graph** scope specifically returns an expiry (not the error) before
+        re-running `plan`:
+
+        ```powershell
+        az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+        ```
+
 === "Bicep"
     The same infrastructure is mirrored in **Bicep** for the ARM-native crowd — a subscription-scoped
     `main.bicep` creates the RG and calls `sql.bicep` (server + serverless DB + firewall, Entra-only).

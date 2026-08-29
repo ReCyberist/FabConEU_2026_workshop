@@ -15,6 +15,32 @@ Format:
 
 ---
 
+## 2026-08-29 — `terraform plan` "AccountUnusable" on Windows = WAM broker, fix with device-code login
+**Context:** Running `terraform plan` for the Azure SQL module, every plan failed at the
+`azurerm` provider block with *"Account has previously been signed out of this application…
+Status: Response_Status.Status_AccountUnusable, Error code: 0, Tag: 540940121"*.
+**Learning:** The `azurerm` provider fetches a **Microsoft Graph** token to parse identity
+claims. ARM auth was fine (`az account get-access-token` with the default scope returned a
+token), but the **Graph** scope (`--scope https://graph.microsoft.com/.default`) threw
+`AccountUnusable`. A plain `az login` did **not** fix it — even `az login` failed at
+"Retrieving tenants and subscriptions". Root cause on Windows: the **WAM broker** holds a
+poisoned account outside `~/.azure`, so deleting `msal_token_cache.*` alone isn't enough.
+**Action:** Fixed by disabling the broker + clearing + **device-code** login:
+```powershell
+az config set core.enable_broker_on_windows=false
+az account clear
+Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+az login --use-device-code
+az account set --subscription $env:ARM_SUBSCRIPTION_ID
+# verify GRAPH scope specifically:
+az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+```
+Diagnostic tell: ARM token works but the Graph-scoped `get-access-token` errors ⇒ it's the
+CLI/broker, not Terraform. Attendees on managed Windows laptops will likely hit this.
+Documented as a gotcha in
+[`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) and
+[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md).
+
 ## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
 **Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
 `docs/infra/azure-sql.md` demo block jumped into `Copy-Item`/`terraform init` without

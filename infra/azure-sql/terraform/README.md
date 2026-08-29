@@ -89,6 +89,23 @@ terraform plan
 terraform apply
 ```
 
+**Troubleshooting — `plan` fails with *"Account has previously been signed out of this
+application"* (Windows).** The `azurerm` provider fetches a **Microsoft Graph** token to
+parse your identity claims, so a `plan` can fail here even when `az account
+get-access-token` (ARM scope) succeeds. On Windows the usual cause is the **WAM broker**
+silently reusing a poisoned account, which a plain `az login` won't clear. Disable the
+broker, clear the cache, and log in with **device code**:
+
+```powershell
+az config set core.enable_broker_on_windows=false
+az account clear
+Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+az login --use-device-code
+az account set --subscription $env:ARM_SUBSCRIPTION_ID
+# verify the GRAPH scope returns an expiry (not the error) before re-running plan:
+az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+```
+
 The `backend_local_override.tf` swaps the committed remote `azurerm` backend (see **State**
 below) for **local** state — Terraform auto-merges `*_override.tf` files and a `backend` block
 in an override replaces the primary one. Without it, a bare `terraform init` tries to
