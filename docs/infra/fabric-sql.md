@@ -63,9 +63,35 @@ already run** — see the gotchas):
 
 The module lives in
 [`infra/fabric-sql/terraform`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/fabric-sql/terraform).
-Run it just like the Azure SQL module — `terraform init` / `plan` / `apply`. Bicep can only
-provision the **capacity** (the workspace + SQL database have no ARM resource type), so the full
-stack is Terraform-only — see
+Run it just like the Azure SQL module, from the module folder:
+
+```powershell
+cd infra/fabric-sql/terraform   # from the repo root
+
+Copy-Item terraform.tfvars.example terraform.tfvars   # optional — all values have defaults
+code terraform.tfvars                                 # open it to review/edit the variables
+
+# Local demo: use local state instead of the remote Azure Storage backend
+Copy-Item backend_local_override.tf.example backend_local_override.tf
+
+az login
+$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"   # for the Fabric capacity
+
+terraform init
+terraform plan     # see exactly what will be created
+terraform apply
+```
+
+!!! note "Why the override?"
+    Same as Azure SQL: the module ships with a remote **`azurerm`** backend (Azure Storage,
+    AAD/OIDC) for CI and shared state. On a laptop that backend has no storage account to
+    talk to, so a bare `terraform init` prompts for a container name. Copying
+    `backend_local_override.tf.example` swaps in a **local** backend for the demo — no Azure
+    Storage account, no prompts. The file is gitignored, so it never disturbs the remote
+    backend CI relies on.
+
+Bicep can only provision the **capacity** (the workspace + SQL database have no ARM resource
+type), so the full stack is Terraform-only — see
 [`infra/fabric-sql/bicep`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/fabric-sql/bicep).
 
 ## Checkpoint

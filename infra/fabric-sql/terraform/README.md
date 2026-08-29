@@ -46,8 +46,15 @@ it defaults to your own signed-in principal, so the module runs with no required
 
 ## Run it
 
+Run from this module folder, `infra/fabric-sql/terraform`:
+
 ```powershell
+cd infra/fabric-sql/terraform   # from the repo root
+
 Copy-Item terraform.tfvars.example terraform.tfvars   # optional — all values have defaults
+code terraform.tfvars                                 # open it to review/edit the variables
+Copy-Item backend_local_override.tf.example backend_local_override.tf   # local state, no remote backend
+
 az login
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"   # for the Fabric capacity
 # optional: $env:FABRIC_TENANT_ID = "<your-tenant-id>"
@@ -56,6 +63,13 @@ terraform init
 terraform plan
 terraform apply
 ```
+
+Like the Azure SQL module, `backend_local_override.tf` swaps the committed remote `azurerm`
+backend (see **State** below) for **local** state — Terraform auto-merges `*_override.tf`
+files and a `backend` block in an override replaces the primary one. Without it, a bare
+`terraform init` tries to initialize the remote backend and prompts for a container name. The
+override file and `terraform.tfstate*` are gitignored, so local iteration never touches the
+shared remote backend.
 
 > **Cost:** a Fabric capacity bills while it runs. F2 is the smallest SKU; **pause the
 > capacity** (az CLI / portal) when idle to stop billing. Terraform manages the capacity's
