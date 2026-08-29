@@ -18,6 +18,25 @@ no admin password, fully repeatable.
 | SQL database | `sqldb-football-dev` | Serverless, auto-pause 60 min, 2 GB — a cost-aware lab default |
 | Firewall rule | `AllowAzureServices` | Lets the pipeline runner reach the server |
 
+```mermaid
+flowchart LR
+    Entra(["Microsoft Entra admin<br/>(security group)"])
+    DACPAC["SQL project<br/>DACPAC"]
+
+    subgraph SUB["Azure subscription"]
+        subgraph RG["Resource group · rg-fabcon26-dev-weu"]
+            FW["Firewall rules<br/>AllowAzureServices + client IPs"]
+            SRV["Logical SQL server<br/>sql-fabcon26-dev-weu-·<br/>Entra-only · TLS 1.2"]
+            DB[("SQL database<br/>sqldb-football-dev<br/>GP serverless · auto-pause")]
+            FW --> SRV
+            SRV --> DB
+        end
+    end
+
+    Entra -. "admin (passwordless)" .-> SRV
+    DACPAC -- "sqlpackage publish" --> DB
+```
+
 ## The concept
 
 **Infrastructure as code**: the server and database are declared, not clicked. Terraform reads the

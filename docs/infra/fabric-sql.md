@@ -33,6 +33,30 @@ already run** — see the gotchas):
 | Workspace | `ws-fabcon26-dev-weu` | microsoft/fabric | The container for Fabric items, bound to the capacity |
 | SQL database | `football-dev` | microsoft/fabric | The **SQL database in Fabric** the DACPAC publishes into |
 
+```mermaid
+flowchart LR
+    DACPAC["SQL project<br/>DACPAC"]
+
+    subgraph SUB["Azure subscription — azurerm provider"]
+        subgraph RG["Resource group · rg-fabcon26-dev-weu"]
+            CAP["Fabric capacity<br/>capfabcon26dev·<br/>Microsoft.Fabric/capacities · F2"]
+        end
+    end
+
+    subgraph FAB["Microsoft Fabric — microsoft/fabric provider"]
+        WS["Workspace<br/>ws-fabcon26-dev-weu"]
+        DB[("SQL database in Fabric<br/>football-dev")]
+        WS --> DB
+    end
+
+    CAP -- "bound to (gives compute)" --> WS
+    DACPAC -- "sqlpackage publish" --> DB
+```
+
+The extra moving part versus Azure SQL is the **capacity**, and the dashed boundary is the
+provider split: `azurerm` builds the capacity (an Azure resource), `microsoft/fabric` builds the
+workspace and database (Fabric items) — one `terraform apply` authenticates to both.
+
 ## The concept
 
 **Infrastructure as code**, one provider heavier than Azure SQL:
