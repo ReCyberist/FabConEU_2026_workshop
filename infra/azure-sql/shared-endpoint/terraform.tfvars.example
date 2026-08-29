@@ -3,7 +3,7 @@
 # touch are attendee_count, the region, and pool sizing.
 
 # --- Attendees ------------------------------------------------------------------------
-attendee_count = 30 # attendee01 .. attendee30 (each gets a DB + a login)
+attendee_count = 10 # attendee01 .. attendee10 (each gets a DB + a login)
 
 # The shared, printed-on-a-slide password. Public by design — change per event if you like.
 # attendee_password = "Taylor==Metallica"
