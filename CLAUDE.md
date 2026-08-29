@@ -51,6 +51,7 @@ and for our own credibility.
 ├── CONTRIBUTING.md        ← human quick-start, points back here
 ├── README.md              ← public overview + abstract
 ├── mkdocs.yml             ← attendee site config (MkDocs Material)
+├── includes/glossary.md   ← hover translations (acronyms + British idioms) — see §5c
 ├── agenda/                ← the run-of-day
 ├── notes/
 │   ├── Ideas.md           ← brain-dump, anything goes
@@ -79,10 +80,11 @@ and for our own credibility.
   Rewrite it as a command, a template, or a pipeline step.
 - **Content vs. code separation.** Prose that teaches lives in `docs/` (becomes web
   pages). The code it references lives in `infra/` and `database/` and is shipped to
-  attendees as downloads (see §6). Don't paste large code blocks into `docs/` — link to
+  attendees as downloads (see §7). Don't paste large code blocks into `docs/` — link to
   the real file and show short excerpts.
 - **Two audiences, two registers.** Planning files are for us — terse, honest, TODO-heavy.
-  `docs/` is for attendees — polished, tested, friendly.
+  `docs/` is for attendees — polished, tested, friendly. The attendee register is set out in
+  full in **§5 (Voice)**; follow it for anything that ships to the site.
 - **Naming.** Prefix workshop resources so they're easy to find and tear down, e.g.
   `fabcon26-*`. Never commit secrets, connection strings, or subscription IDs — use
   variables and document them.
@@ -104,7 +106,66 @@ and for our own credibility.
   both matter to attendees, add a tabbed bash alternative, but PowerShell is the default and
   the one we test.
 
-## 5. Editing the attendee site (MkDocs Material)
+## 5. Voice — how attendee content reads
+
+This applies to everything in `docs/`. The room in Barcelona will contain **many attendees who do
+not have English as a first language**, and that single fact shapes every rule below.
+
+Attendee pages have **two registers**, and the line between them is the line between *talking
+about a thing* and *doing the thing*. Know which one you are writing before you write it.
+
+### 5a. Discussion register — the prose around the work
+
+Intros, "why this matters", section openers, asides, wrap-ups. Here we can relax.
+
+- **Tone: gentle, professional, quietly British.** Warm and calm — never breathless, never
+  salesy, never patronising.
+- **Dry humour is welcome here**, and only here. Keep it to an aside or a closing line.
+- **Idioms and informal British words are allowed here**, on one condition: give them a hover
+  translation (see §5c). "Kit", "faff", "sorted" are fine. In a step, they are not.
+- **Reassure rather than caveat.** "Both are entirely respectable choices" beats "or just watch,
+  I suppose".
+- **Humour never carries meaning.** Every sentence must stay correct and complete if the joke
+  lands flat or the tooltip never appears.
+
+### 5b. Step register — anything the attendee follows to make something happen
+
+Numbered procedures, commands, configuration, troubleshooting. Here we are precise and plain.
+
+- **Numbered list. One action per step**, in the order it is performed. No paragraph-shaped
+  instructions.
+- **Say *where* before *what*:** "In the `infra/azure-sql/terraform` folder, run:".
+- **Say what success looks like** — the expected output, the resource that now exists, the row
+  count. An attendee must be able to tell the step worked without asking.
+- **No vagueness.** Not "configure the provider", but "set `subscription_id` in
+  `terraform.tfvars`".
+- **No hedging.** Cut "should", "hopefully", "might", "we think", "basically", "just". If a
+  command works, say it works. If it can fail, say exactly when and what to do about it.
+- **No humour, no idioms, no phrasal verbs, no cultural references.** Plain words: "use" not
+  "leverage", "set up" not "spin up", "delete" not "nuke".
+- **Short sentences, one idea each.** Prefer full stops to semicolons and nested clauses.
+- **The same word for the same thing, every time.** Pick "folder" or "directory" and never swap.
+- **Watch the length.** Clarity earns words; padding does not. When a step grows long, rewrite
+  it — do not pile on caveats.
+- **Never promise what we have not tested.** Untested content is marked as such (see §4).
+
+### 5c. Hover translations (how the tooltips work)
+
+`includes/glossary.md` is auto-appended to every page by `pymdownx.snippets`, so any term defined
+there gets a dotted underline and a hover tooltip **everywhere it appears** — no per-page markup:
+
+```markdown
+*[kit]: British informal — equipment. Here it means your own laptop, subscription and tools
+```
+
+- Use it for **acronyms** (expanded on first use in the text as well, per page) and for
+  **British idioms** used in the discussion register.
+- Matching is exact and case-sensitive, and applies to every page — so only add words we are
+  content to see underlined inside a step, too.
+- For a one-off phrase, inline HTML is fine: `<abbr title="plain English">the phrase</abbr>`.
+- **Tooltips do not appear on touch devices.** They are a courtesy, never the meaning.
+
+## 6. Editing the attendee site (MkDocs Material)
 
 - Content is Markdown in `docs/`. Navigation is defined in `mkdocs.yml`.
 - Preview locally: `pip install -r requirements.txt` then `mkdocs serve` (published/teaser
@@ -116,7 +177,7 @@ and for our own credibility.
 - Use Material features: admonitions (`!!! note`), tabbed content (great for
   Azure SQL vs Fabric SQL, or Terraform vs Bicep), and code annotations.
 
-## 6. Code delivery to attendees
+## 7. Code delivery to attendees
 
 - **Prose = pages, code = downloads.** Attendees read the steps on the site and download
   the code to run it.
@@ -124,7 +185,7 @@ and for our own credibility.
   linked from the relevant `docs/` page. The packaging step is a pipeline job (to be
   added) — do not hand-zip and commit binaries.
 
-## 7. 🔁 The learnings loop (do not skip)
+## 8. 🔁 The learnings loop (do not skip)
 
 At the **end of every working session**, before you stop:
 1. Add an entry to [`notes/LEARNINGS.md`](notes/LEARNINGS.md) — even a one-liner.
@@ -136,7 +197,7 @@ Good learnings: a Terraform provider quirk, an Azure/Fabric quota surprise, a de
 that ran long, a lab step that confused a tester, a command that's better than the one we
 documented.
 
-## 8. Personality (tasteful, not distracting)
+## 9. Personality (tasteful, not distracting)
 
 Jess is a **Taylor Swift** fan, Rob is a **Metallica** fan, and both love
 **football (soccer)**. A little themed flavour in sample data, database names, or example

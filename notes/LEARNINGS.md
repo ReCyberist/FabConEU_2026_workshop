@@ -921,4 +921,28 @@ Terraform tab in [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md); git
 The *attendee-facing* backend/sandbox strategy (#1) is still the broader open question — this just
 makes the module runnable on a laptop today.
 
+## 2026-08-29 — Attendee voice: two registers, with hover translations for the idioms
+**Context:** Doing a voice pass on the attendee site, starting with the home page. The room at
+FabCon Europe is international, and a lot of attendees will not have English as a first language —
+so the dry British humour we want in the prose is a genuine comprehension risk in the steps.
+**Learning:** One blanket "voice" rule does not work. The useful line is between **talking about
+a thing** and **doing the thing**, so `docs/` now has two registers: **discussion** (relaxed, dry
+humour, idioms permitted) and **step** (numbered, one action per step, no idioms, no hedging, say
+what success looks like). The idioms are then made safe by MkDocs Material's abbreviation
+tooltips: `abbr` + `pymdownx.snippets.auto_append` pointed at a single `includes/glossary.md`
+gives a hover translation for a term **on every page with zero per-page markup** — verified on the
+existing home page, which picked up `CI/CD`, `DACPAC`, `teardown` and `kit` without being edited.
+Two constraints worth knowing: the glossary file must live **outside `docs/`** (inside it, the
+teaser-mode `exclude_docs` and the `mkdocs.local.yml` overlay that clears it fight each other and
+`--strict` fails on a page missing from the nav), and matching is **exact and case-sensitive and
+site-wide** — a word added for the prose will also underline itself inside a step. Tooltips also
+do not appear on touch devices, which is why the standing rule is that humour and idiom must never
+carry meaning: the sentence has to survive the tooltip never showing.
+**Action:** Rewrote [`../CLAUDE.md`](../CLAUDE.md) §5 into 5a/5b/5c (sections 5–8 renumbered to
+6–9); added [`../includes/glossary.md`](../includes/glossary.md); enabled `abbr`,
+`pymdownx.snippets` and the `content.tooltips` feature in [`../mkdocs.yml`](../mkdocs.yml);
+voice-passed [`../docs/index.md`](../docs/index.md) only. Both `mkdocs build --strict` (teaser)
+and `-f mkdocs.local.yml` (full) pass. The remaining 13 pages are **deliberately untouched** —
+we are working through them one at a time.
+
 <!-- Add new entries above this line -->
