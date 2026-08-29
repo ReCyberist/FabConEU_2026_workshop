@@ -15,6 +15,21 @@ Format:
 
 ---
 
+## 2026-08-29 — Presenter firewall IPs are GitHub secrets that go stale
+**Context:** Reviewing the morning-of checklist (PR #43) before the workshop — specifically
+what has to be true before dispatching `azure-sql-apply`.
+**Learning:** The rules that let our laptops reach the Azure SQL server aren't hand-added on
+the day — Terraform builds them as code from the `ROB_CLIENT_IP` / `JESS_CLIENT_IP` GitHub
+**secrets** (`presenter_client_ips` in
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)). They were set from home,
+so in Barcelona they're stale, and apply won't re-open the firewall if you fix them *after*
+running it. Secret **values can't be read back** — you can only `gh secret list` (names +
+timestamps) — so "check they're current" really means "re-set them to today's egress IP."
+**Action:** Added a "refresh the presenter IP secrets first" step to
+[`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) §1 and cross-linked
+it from the §3 manual-firewall fallback (that manual `az` rule is now only for a skipped step
+or a one-off third machine).
+
 ## 2026-07-01 — Repo scaffolded and decisions locked
 **Context:** First pass setting up the repo as the source of truth for the workshop.
 **Learning:** Agreed the "all as code, focus in content" rule — the repo carries every

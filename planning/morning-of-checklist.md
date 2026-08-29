@@ -21,6 +21,25 @@ authenticate from `main` — OIDC federated credentials don't trust branches.)*
 - [ ] **Resume the Fabric capacity** (`cappymccapface`, `fabcon-demo-rg`, Tenant B) and wait for
       state `Active`. It auto-pauses every 2h, and both `data.fabric_capacity` **and** the SQL DB
       are unreachable while it's suspended.
+- [ ] **Refresh the presenter IP secrets _before_ you dispatch apply.** The firewall rules that let
+      Jess & Rob's laptops reach the Azure SQL server are built as code by Terraform from the
+      `ROB_CLIENT_IP` / `JESS_CLIENT_IP` GitHub **secrets** (fed into `presenter_client_ips` by
+      [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)). They were last set from
+      home, so on the day in Barcelona they're stale — and secret **values can't be read back**, so
+      don't try to "check" them, just re-set them to today's egress IP. Apply won't re-open the
+      firewall if you fix them afterwards, so this comes first.
+
+      ```powershell
+      # your current public egress IP (run on each laptop, on the venue WiFi)
+      Invoke-RestMethod https://api.ipify.org
+
+      # push it — Rob on his laptop, Jess on hers
+      gh secret set ROB_CLIENT_IP  --body "<rob-ip>"
+      gh secret set JESS_CLIENT_IP --body "<jess-ip>"
+
+      # confirm both exist (shows names + last-updated, not values)
+      gh secret list
+      ```
 - [ ] Dispatch **`azure-sql-apply`** from `main` → confirm `apply` + DACPAC `publish` + smoke test
       all green.
 - [ ] Dispatch **`fabric-sql-apply`** from `main` → confirm workspace + SQL DB recreated, publish +
@@ -46,9 +65,12 @@ authenticate from `main` — OIDC federated credentials don't trust branches.)*
       ```
 
       Then eyeball it against the FabCon speaker template.
-- [ ] For any demo that hits a DB **from a laptop** (not a GitHub-hosted runner), add a temporary
-      firewall rule for the room's egress IP — external clients are blocked even with a valid Entra
-      token, because only the "allow Azure services" rule is open:
+- [ ] For any demo that hits a DB **from a laptop** (not a GitHub-hosted runner), make sure the
+      laptop's egress IP is allowed. If you refreshed `ROB_CLIENT_IP` / `JESS_CLIENT_IP` in §1
+      before applying, your laptops are already allowed **as code** — nothing to do here. Only if
+      you skipped that, or need a one-off IP (a third machine, a changed venue address), add a
+      temporary rule by hand — external clients are blocked even with a valid Entra token, because
+      only the "allow Azure services" rule is open:
 
       ```powershell
       az sql server firewall-rule create `
