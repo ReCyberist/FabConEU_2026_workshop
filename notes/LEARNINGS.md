@@ -122,6 +122,7 @@ the event" comment — a reproducibility risk for a 200-attendee follow-along.
 — in [`../requirements.txt`](../requirements.txt), verified with `mkdocs build --strict`.
 (Earlier entries — 2026-07-18, 2026-07-04 — already noted the banner is informational; this
 consolidates it and closes the pinning gap.)
+
 ## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
 **Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
 10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
