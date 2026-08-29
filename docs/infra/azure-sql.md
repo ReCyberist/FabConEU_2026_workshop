@@ -18,6 +18,25 @@ no admin password, fully repeatable.
 | SQL database | `sqldb-football-dev` | Serverless, auto-pause 60 min, 2 GB — a cost-aware lab default |
 | Firewall rule | `AllowAzureServices` | Lets the pipeline runner reach the server |
 
+```mermaid
+flowchart LR
+    Entra(["Microsoft Entra admin<br/>(security group)"])
+    DACPAC["SQL project<br/>DACPAC"]
+
+    subgraph SUB["Azure subscription"]
+        subgraph RG["Resource group · rg-fabcon26-dev-weu"]
+            FW["Firewall rules<br/>AllowAzureServices + client IPs"]
+            SRV["Logical SQL server<br/>sql-fabcon26-dev-weu-·<br/>Entra-only · TLS 1.2"]
+            DB[("SQL database<br/>sqldb-football-dev<br/>GP serverless · auto-pause")]
+            FW --> SRV
+            SRV --> DB
+        end
+    end
+
+    Entra -. "admin (passwordless)" .-> SRV
+    DACPAC -- "sqlpackage publish" --> DB
+```
+
 ## The concept
 
 **Infrastructure as code**: the server and database are declared, not clicked. Terraform reads the
@@ -59,6 +78,29 @@ no admin password, fully repeatable.
         no Azure Storage account, no prompts. The file is gitignored, so it never
         disturbs the remote backend CI relies on.
 
+    !!! warning "`terraform plan` fails with *"Account has previously been signed out of this application"* (Windows)"
+        The `azurerm` provider fetches a **Microsoft Graph** token to parse your identity
+        claims. If the CLI's Graph token goes stale, every `plan` fails at the provider
+        block — even though `az account get-access-token` (ARM scope) succeeds. On Windows
+        the culprit is usually the **WAM broker** silently reusing a poisoned account, so a
+        plain `az login` doesn't fix it. Disable the broker, clear the cache, and log in
+        with **device code** (which bypasses WAM):
+
+        ```powershell
+        az config set core.enable_broker_on_windows=false
+        az account clear
+        Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+        az login --use-device-code
+        az account set --subscription $env:ARM_SUBSCRIPTION_ID
+        ```
+
+        Verify the **Graph** scope specifically returns an expiry (not the error) before
+        re-running `plan`:
+
+        ```powershell
+        az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+        ```
+
 === "Bicep"
     The same infrastructure is mirrored in **Bicep** for the ARM-native crowd — a subscription-scoped
     `main.bicep` creates the RG and calls `sql.bicep` (server + serverless DB + firewall, Entra-only).
@@ -73,6 +115,16 @@ The module lives in
 default. The Bicep reference is in
 [`infra/azure-sql/bicep`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/bicep).
 Download the module bundle and run it from code — nothing is clicked.
+
+!!! tip "Finding `entra_admin_object_id`"
+    `entra_admin_login` is the identity's display name; `entra_admin_object_id` is its
+    object (principal) id. Grab the id with the Azure CLI — a security **group** is
+    recommended:
+
+    ```powershell
+    az ad group show --group "fabcon26-sql-admins" --query id -o tsv   # a group
+    az ad user  show --id    "you@contoso.com"      --query id -o tsv   # or a user
+    ```
 
 ## Checkpoint
 
