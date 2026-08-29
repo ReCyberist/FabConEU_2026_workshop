@@ -34,3 +34,6 @@
 *[CLI]: Command-Line Interface — a tool you use by typing commands rather than clicking
 *[SDK]: Software Development Kit — the tools needed to build and run code
 *[Contributor]: The Azure role that allows creating and deleting resources, but not granting access to others
+
+*[PR]: Pull request — a proposed change to a repository, reviewed and discussed before it is merged
+*[YAML]: A plain-text file format, used here to describe pipelines and configuration
