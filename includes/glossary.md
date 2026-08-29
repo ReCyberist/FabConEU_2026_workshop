@@ -27,6 +27,7 @@
 *[kit]: British informal — equipment. Here it means your own laptop, subscription and tools
 *[faff]: British informal — fiddly, tedious work
 *[sorted]: British informal — done, finished, working
+*[carries the can]: British informal — takes the blame, is held responsible
 *[football]: This is proper football, Association Football, known also as soccer by some.  British informal — soccer
 *[a good deal more]: much more
 

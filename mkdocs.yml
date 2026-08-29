@@ -25,6 +25,14 @@ theme:
         icon: material/weather-sunny
         name: Switch to light mode
 
+# The session-clock timing strip at the top of every teaching-section page.
+# Markup: includes/clock-*.md · Styling: docs/stylesheets · Live fill: docs/javascripts
+extra_css:
+  - stylesheets/session-clock.css
+
+extra_javascript:
+  - javascripts/session-clock.js
+
 markdown_extensions:
   - admonition
   # `abbr` + `snippets.auto_append` give every page the shared glossary in
@@ -61,6 +69,7 @@ markdown_extensions:
 exclude_docs: |
   database/sample-database.md
   setup/welcome.md
+  foundations/hardest-part-of-it.md
   foundations/source-control.md
   infra/azure-sql.md
   infra/fabric-sql.md
@@ -86,6 +95,7 @@ nav:
   #     - Welcome & how the day works: setup/welcome.md
   #     - Prerequisites: setup/prerequisites.md
   # - Foundations:
+  #     - The hardest part of IT: foundations/hardest-part-of-it.md
   #     - Source control for databases: foundations/source-control.md
   # - Infrastructure as code:
   #     - Azure SQL (Terraform): infra/azure-sql.md
