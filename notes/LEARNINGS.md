@@ -15,6 +15,18 @@ Format:
 
 ---
 
+## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
+**Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
+`docs/infra/azure-sql.md` demo block jumped into `Copy-Item`/`terraform init` without
+saying which directory to be in.
+**Learning:** Both left the working directory implicit. The docs demo block also never
+copied `terraform.tfvars` at all, so attendees had no prompt to review the variables.
+**Action:** Added `cd infra/azure-sql/terraform` (from repo root) to both, added a
+`Copy-Item terraform.tfvars.example …` + `code terraform.tfvars` step so the variables get
+opened for review, and kept README and docs in step. Files:
+[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md),
+[`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md).
+
 ## 2026-07-01 — Repo scaffolded and decisions locked
 **Context:** First pass setting up the repo as the source of truth for the workshop.
 **Learning:** Agreed the "all as code, focus in content" rule — the repo carries every
