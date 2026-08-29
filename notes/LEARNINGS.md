@@ -15,6 +15,26 @@ Format:
 
 ---
 
+## 2026-08-29 — Shared attendee endpoint: Azure SQL elastic pool beats a VM
+**Context:** Rob asked how we actually build the shared "run against this" endpoint (D6),
+sketching an Azure SQL server with a database per attendee. D6 had said "SQL Server on a VM."
+**Learning:** The VM was justified by "a database per attendee so DACPACs don't collide" — but
+that's not a VM feature: an **Azure SQL logical server hosts many databases on one endpoint too**,
+so per-attendee isolation needs no VM. Azure SQL wins on all the axes that matter here — it's the
+platform we teach, it reuses the module we already have, and there's no VM to patch/back up/NSG on
+a target we've said we won't support. An **elastic pool** caps the day's cost across N databases.
+The real design forks are (1) **auth** — you can't hand a room of strangers Entra identities, so
+this endpoint runs **SQL authentication** (per-attendee login, shared throwaway password), a
+deliberate departure from the taught module's Entra-only design; and (2) **logins/users aren't ARM
+resources** — azurerm makes the server/pool/DBs, but `CREATE LOGIN`/`CREATE USER`/role membership
+run *inside* SQL, so they need the **`betr-io/mssql`** provider (connects per-resource with the
+generated SQL admin) — which in turn needs the firewall open before it runs.
+**Action:** Drafted a **separate** module [`../infra/azure-sql/shared-endpoint/`](../infra/azure-sql/shared-endpoint/)
+(server + elastic pool + DB/login/user per attendee, local state, `F@bc0n2026!` shared password,
+open firewall for the day) so the taught module stays pristine. Recorded the reversal as a
+[decisions.md](decisions.md) **D6 update**; ordering + task #19 updated. **Untested** — no live
+apply in the authoring env; first-run checks listed in the module README.
+
 ## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
 **Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
 `docs/infra/azure-sql.md` demo block jumped into `Copy-Item`/`terraform init` without
