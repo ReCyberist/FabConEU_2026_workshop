@@ -15,6 +15,15 @@ Format:
 
 ---
 
+## 2026-08-29 — Terraform directory renames merge cleanly with subsequent module edits
+**Context:** The Azure SQL Terraform modules moved under `terraform/demo` and
+`terraform/shared-endpoint`; the current `main` branch then changed the demo module's
+auto-pause default.
+**Learning:** Git's rename detection mapped the subsequent edit to the relocated demo module,
+so merging the current base produced no conflict and retained the updated default.
+**Action:** Merged current `main` into the restructuring branch and checked the resulting
+`infra/azure-sql/terraform/demo/variables.tf` change.
+
 ## 2026-08-29 — Azure SQL Terraform split into `terraform/{demo,shared-endpoint}`
 **Context:** The taught module lived at `infra/azure-sql/terraform` and the shared attendee
 endpoint at a sibling `infra/azure-sql/shared-endpoint`. Post-merge feedback: put both under
