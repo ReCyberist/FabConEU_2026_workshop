@@ -15,6 +15,25 @@ Format:
 
 ---
 
+## 2026-08-29 — Fabric SQL module needed the same local-backend override as Azure SQL; infra diagrams added
+**Context:** Bringing the Fabric SQL Terraform "Run it" steps in line with Azure SQL, and
+adding infrastructure diagrams to the docs.
+**Learning:** The Fabric SQL module declares the **same committed remote `azurerm` backend**
+as Azure SQL (`providers.tf`), so a bare `terraform init` on a laptop prompts for a container
+name — but it had **no `backend_local_override.tf.example`** and its README/docs jumped
+straight into `init`. The gitignore already covers `*_override.tf` + `!*_override.tf.example`
+repo-wide, so the override pattern drops into any module folder with no gitignore change.
+Also: **Mermaid is already enabled** in `mkdocs.yml` (Material bundles Mermaid.js via
+`pymdownx.superfences`), so ` ```mermaid ` fenced blocks render on the site and on GitHub with
+no extra plugin — the right way to ship infra diagrams as version-controlled code. Note
+`mkdocs build` does **not** validate Mermaid syntax (it renders client-side); verify diagrams
+by rendering (e.g. an Artifact renders `<pre class="mermaid">` natively).
+**Action:** Added `infra/fabric-sql/terraform/backend_local_override.tf.example`, the
+`cd`/copy-override/open-tfvars steps to the Fabric README + `docs/infra/fabric-sql.md`, and
+Mermaid diagrams to both infra docs pages. Reminder: `docs/infra/fabric-sql.md` is still held
+from the published site by `exclude_docs`, so its diagram shows only in the local full
+preview (`mkdocs serve -f mkdocs.local.yml`) until the page is un-excluded.
+
 ## 2026-08-29 — `terraform plan` "AccountUnusable" on Windows = WAM broker, fix with device-code login
 **Context:** Running `terraform plan` for the Azure SQL module, every plan failed at the
 `azurerm` provider block with *"Account has previously been signed out of this application…
