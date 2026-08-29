@@ -1114,8 +1114,8 @@ which is why only the Fabric path trips on this.
 **Action:** Added the `TF_VAR_fabric_subscription_id` line to the Fabric steps in
 [`../docs/infra/demo.md`](../docs/infra/demo.md) and the "The code" snippet in
 [`../docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md), plus a gotcha on demo.md so it does
-not regress. Follow-up worth considering: add a commented `fabric_subscription_id` line to
-`infra/fabric-sql/terraform/terraform.tfvars.example`, which currently never mentions the one
-required variable.
+not regress. Also surfaced `fabric_subscription_id` in
+`infra/fabric-sql/terraform/terraform.tfvars.example` (previously it never mentioned the one
+required variable, and its header wrongly claimed the module "runs with no tfvars at all").
 
 <!-- Add new entries above this line -->

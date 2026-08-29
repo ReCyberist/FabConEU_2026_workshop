@@ -1,11 +1,19 @@
-# Copy to terraform.tfvars and adjust. Every value here has a sensible default, so the
-# file is optional — the module runs with no tfvars at all (the capacity admin then
-# defaults to your own signed-in principal).
+# Copy to terraform.tfvars and adjust. Apart from the one required value below, every
+# setting has a sensible default (the capacity admin defaults to your own signed-in
+# principal).
 #
 # Auth is passwordless. Before running:
 #   az login
-#   $env:ARM_SUBSCRIPTION_ID = "<your-subscription-guid>"   # for the Fabric capacity
+#   $env:ARM_SUBSCRIPTION_ID = "<your-subscription-guid>"   # state backend / CLI
 #   # optional: $env:FABRIC_TENANT_ID = "<your-tenant-guid>"
+
+# --- Required: subscription for the Fabric capacity (azurerm provider) ---
+# This has NO default. The module's azurerm provider builds the capacity here. It is a
+# separate value from ARM_SUBSCRIPTION_ID (which feeds the state backend / CLI), so setting
+# ARM_SUBSCRIPTION_ID alone leaves this unset and `terraform plan` prompts for it. For a
+# local single-tenant demo it is the same subscription. Set it here, or via the environment:
+#   $env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID
+fabric_subscription_id = "<your-subscription-guid>"
 
 # --- Naming (matches the Azure SQL module) ---
 workload              = "fabcon26"
