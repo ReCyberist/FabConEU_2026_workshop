@@ -5,7 +5,7 @@ changes automatically.
 
 Landed workflows:
 - **[`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml)** —
-  manual (`workflow_dispatch`): `terraform apply` for `infra/azure-sql/terraform` against
+  manual (`workflow_dispatch`): `terraform apply` for `infra/azure-sql/terraform/demo` against
   the personal sandbox subscription. OIDC auth, remote `azurerm` state.
 - **[`azure-sql-destroy.yml`](../../../.github/workflows/azure-sql-destroy.yml)** —
   nightly at 21:00 UTC + manual: `terraform destroy` for the same module,

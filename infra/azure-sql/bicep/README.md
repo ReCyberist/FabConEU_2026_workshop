@@ -10,8 +10,8 @@ Same shape as the Terraform module (`fmt`/`validate`-clean, `az bicep build`-cle
 
 | Resource | Name (defaults) | Notes |
 |----------|-----------------|-------|
-| Resource group | `rg-fabcon26-dev-weu` | created by the subscription-scoped `main.bicep`. |
-| Logical SQL server | `sql-fabcon26-dev-weu-<uniq>` | globally unique (`uniqueString` suffix); TLS 1.2 min; **Entra-only auth**. |
+| Resource group | `rg-fabcon26-dev-uks` | created by the subscription-scoped `main.bicep`. |
+| Logical SQL server | `sql-fabcon26-dev-uks-<uniq>` | globally unique (`uniqueString` suffix); TLS 1.2 min; **Entra-only auth**. |
 | SQL database | `sqldb-football-dev` | GP serverless, auto-pause 60 min, 2 GB — cost-aware lab default. |
 | Firewall rule(s) | `AllowAzureServices` (+ any client IPs) | lets the pipeline runner reach the server. |
 
@@ -43,7 +43,7 @@ Copy-Item main.bicepparam my.bicepparam   # then fill in the Entra admin identit
 
 az deployment sub create `
   --name azure-sql-dev `
-  --location westeurope `
+  --location uksouth `
   --template-file main.bicep `
   --parameters my.bicepparam
 ```
@@ -53,7 +53,7 @@ Validate without deploying:
 ```powershell
 az bicep build --file main.bicep          # compile to ARM JSON (offline)
 az deployment sub what-if `
-  --location westeurope `
+  --location uksouth `
   --template-file main.bicep `
   --parameters my.bicepparam              # preview changes against Azure
 ```

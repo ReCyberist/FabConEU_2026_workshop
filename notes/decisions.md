@@ -59,7 +59,7 @@ path, not a deferral.
 **Consequence:** Need the bootstrap script + `-backend-config` wiring (backend blocks can't
 take variables). **Who** creates and owns the state storage account depends on the attendee
 sandbox model, so this is gated on **task #1**. Tracked as **task #17**; the initial
-`infra/azure-sql/terraform` module ships with local state until #17 lands. Also revisit the
+`infra/azure-sql/terraform/demo` module ships with local state until #17 lands. Also revisit the
 repo's gitignore of `.terraform.lock.hcl` (HashiCorp recommends committing it).
 
 **Update 2026-07-22:** Landed for J's **personal sandbox** subscription — storage account
@@ -126,7 +126,7 @@ design: you can't provision Entra identities for a room of strangers on the day.
 password is public by design (printed on a slide) for an endpoint that is open to the internet and
 **destroyed the same day** — the one intentional exception to the "never commit secrets" rule; the
 server *admin* password is generated and never handed out. Built as a **separate** module
-[`../infra/azure-sql/shared-endpoint/`](../infra/azure-sql/shared-endpoint/) (local state — a
+[`../infra/azure-sql/terraform/shared-endpoint/`](../infra/azure-sql/terraform/shared-endpoint/) (local state — a
 one-shot, throwaway stand-up) so the taught module stays pristine. Task **#19** changes from
 "provision a VM" to "extend the Azure SQL path with the pooled, per-attendee endpoint." (Rob +
 Jess, 2026-08-29.)

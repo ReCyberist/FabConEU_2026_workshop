@@ -30,7 +30,7 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       addSpnToEnvironment: true
-      workingDirectory: infra/azure-sql/terraform
+      workingDirectory: infra/azure-sql/terraform/demo
       inlineScript: |
         set -euo pipefail
         export ARM_CLIENT_ID="$servicePrincipalId"

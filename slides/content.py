@@ -284,7 +284,7 @@ DECK = [
 ], "plan/apply is the same shape as the DeployReport/publish pair we use for the database this afternoon. Plant that now."),
 
 (CMD, "Run it on your own kit", [
-    "cd infra/azure-sql/terraform",
+    "cd infra/azure-sql/terraform/demo",
     "",
     "Copy-Item terraform.tfvars.example terraform.tfvars",
     "# fill in the Entra admin identity",

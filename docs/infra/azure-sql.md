@@ -13,8 +13,8 @@ no admin password, fully repeatable.
 
 | Resource | Name (default) | Notes |
 |---|---|---|
-| Resource group | `rg-fabcon26-dev-weu` | |
-| Logical SQL server | `sql-fabcon26-dev-weu-<rnd>` | Globally unique; TLS 1.2 min; **Entra-only auth** |
+| Resource group | `rg-fabcon26-dev-uks` | |
+| Logical SQL server | `sql-fabcon26-dev-uks-<rnd>` | Globally unique; TLS 1.2 min; **Entra-only auth** |
 | SQL database | `sqldb-football-dev` | Serverless, auto-pause 60 min, 2 GB — a cost-aware lab default |
 | Firewall rule | `AllowAzureServices` | Lets the pipeline runner reach the server |
 
@@ -24,9 +24,9 @@ flowchart LR
     DACPAC["SQL project<br/>DACPAC"]
 
     subgraph SUB["Azure subscription"]
-        subgraph RG["Resource group · rg-fabcon26-dev-weu"]
+        subgraph RG["Resource group · rg-fabcon26-dev-uks"]
             FW["Firewall rules<br/>AllowAzureServices + client IPs"]
-            SRV["Logical SQL server<br/>sql-fabcon26-dev-weu-·<br/>Entra-only · TLS 1.2"]
+            SRV["Logical SQL server<br/>sql-fabcon26-dev-uks-·<br/>Entra-only · TLS 1.2"]
             DB[("SQL database<br/>sqldb-football-dev<br/>GP serverless · auto-pause")]
             FW --> SRV
             SRV --> DB
@@ -52,10 +52,10 @@ flowchart LR
 ## Terraform (focus) / Bicep (reference)
 
 === "Terraform"
-    The taught path. Run from the module folder, `infra/azure-sql/terraform`:
+    The taught path. Run from the module folder, `infra/azure-sql/terraform/demo`:
 
     ```powershell
-    cd infra/azure-sql/terraform   # from the repo root
+    cd infra/azure-sql/terraform/demo   # from the repo root
 
     $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 
@@ -110,7 +110,7 @@ flowchart LR
 ## The code
 
 The module lives in
-[`infra/azure-sql/terraform`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/terraform)
+[`infra/azure-sql/terraform/demo`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/terraform/demo)
 — only `entra_admin_login` + `entra_admin_object_id` are required; everything else has a cost-aware
 default. The Bicep reference is in
 [`infra/azure-sql/bicep`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/bicep).
