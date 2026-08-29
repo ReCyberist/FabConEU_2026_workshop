@@ -71,6 +71,7 @@ exclude_docs: |
   cicd/build-validate.md
   cicd/deploy-infra.md
   cicd/ship-database-changes.md
+  cicd/demo.md
   wrap-up/migrations-drift-teardown.md
   wrap-up/resources.md
   reference/other-tooling.md
@@ -103,6 +104,7 @@ nav:
   #     - Build & validate: cicd/build-validate.md
   #     - Deploy infrastructure: cicd/deploy-infra.md
   #     - Ship database changes: cicd/ship-database-changes.md
+  #     - Demo: cicd/demo.md
   # - Wrap up:
   #     - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
   #     - Resources & next steps: wrap-up/resources.md

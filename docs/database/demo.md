@@ -606,16 +606,41 @@ the **15:15 break**. Increment 3 resumes after that break.
 
 ### Increment 3 — Retire it safely
 
-16. Open the safe-retire notes and walk through the two correct patterns.
+16. Explain the goal for Increment 3.
 
-    ```powershell
-    code ..\demo\ship-changes\increment-3_safe-retire.md
+    Keep the same objective as Increment 2 (retire `ShirtNumber`) but do it without data loss.
+    Show two safe patterns. Use either one with a deliberate approval gate.
+
+17. Option A: preserve the data first with a pre-deploy migration.
+
+    Add a pre-deploy script that runs before the schema change:
+
+    ```sql
+    -- database/sql-projects/Scripts/PreDeployment/Migrate-ShirtNumber.sql
+    -- Idempotent: only acts while the old column still exists. Copies ShirtNumber into its new
+    -- home before the DACPAC's ALTER TABLE ... DROP COLUMN runs.
+    IF COL_LENGTH('football.Player', 'ShirtNumber') IS NOT NULL
+    BEGIN
+        UPDATE p
+        SET p.[SquadNumber] = p.[ShirtNumber]
+        FROM [football].[Player] AS p
+        WHERE p.[SquadNumber] IS NULL
+          AND p.[ShirtNumber] IS NOT NULL;
+    END;
     ```
 
-    Show the two options: move the data first with a pre-deploy script, or model the change as a
-    rename so SqlPackage emits `sp_rename` instead of drop-and-add.
+    Register it as the pre-deploy script in the SQL project. Only one pre-deploy entry is allowed,
+    so use `:r` includes if you need to compose multiple scripts.
 
-17. Show the approval-gate pattern that holds the destructive deploy for a human decision.
+18. Option B: model the change as a rename.
+
+    If the intent is `ShirtNumber` -> `SquadNumber`, use SQL project refactor tooling so the
+    intent is written to the `.refactorlog`.
+
+    The publish then emits `sp_rename` instead of drop-and-add. This keeps the data in place and
+    applies consistently across environments.
+
+19. Add an approval gate for destructive deployments.
 
     ```yaml
     jobs:
@@ -623,8 +648,21 @@ the **15:15 break**. Increment 3 resumes after that break.
         environment: test
     ```
 
-    The teaching point is that destructive changes still ship as code, but never as a blind
-    auto-apply.
+    Protect that environment with required reviewers so a human checks the deploy report before
+    approving.
+
+    !!! note "Plan and identity notes"
+        GitHub required-reviewer and wait-timer rules for private repositories require Team or
+        Enterprise plans (public repositories are different).
+
+        Adding `environment:` changes the OIDC subject to
+        `repo:<org>/<repo>:environment:<name>`. Add a matching federated credential for the deploy
+        principal in addition to any branch-based subject you already use.
+
+20. State the lesson clearly.
+
+    Destructive changes can still ship as code, but only with a data-preserving approach (migration
+    or rename) and a human approval gate. Never blind auto-apply.
 
 ## Checkpoint
 
