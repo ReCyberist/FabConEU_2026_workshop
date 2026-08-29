@@ -10,8 +10,8 @@
 # --- Naming (matches the Azure SQL module) ---
 workload              = "fabcon26"
 environment           = "dev"
-location              = "westeurope"
-location_abbreviation = "weu"
+location              = "uksouth"
+location_abbreviation = "uks"
 database_name         = "football"
 
 # --- Fabric capacity ---

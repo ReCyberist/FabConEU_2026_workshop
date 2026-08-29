@@ -37,13 +37,13 @@ variable "environment" {
 }
 
 variable "location" {
-  description = "Azure region for all resources. Defaults to UK South because the personal sandbox subscription this endpoint runs in is region-restricted to it (see LEARNINGS 2026-07-22) — unlike the taught module, which keeps West Europe as its documented default."
+  description = "Azure region for all resources. Defaults to UK South, matching the taught modules — West Europe has no capacity for this subscription (see LEARNINGS 2026-08-29)."
   type        = string
   default     = "uksouth"
 }
 
 variable "location_abbreviation" {
-  description = "Short region token used in resource names (CAF style), e.g. uks for uksouth, weu for westeurope."
+  description = "Short region token used in resource names (CAF style), e.g. uks for uksouth."
   type        = string
   default     = "uks"
 

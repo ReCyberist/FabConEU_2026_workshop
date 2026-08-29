@@ -32,6 +32,32 @@ referencing files (workflows, CI validate loop, ADO pipelines, docs, slides, age
 `terraform validate`/`fmt` clean on both; gitignore globs (`*_override.tf`, `**/.terraform/*`)
 still catch the new depths. State keys and concurrency groups unchanged.
 
+## 2026-08-29 — Default region flipped to UK South everywhere (West Europe has no capacity)
+**Context:** West Europe has no capacity for our subscription, so a deploy that lands in the
+old default region fails. Earlier the same day we had deliberately kept `westeurope` as the
+*taught* default and only overrode to UK South in CI/the shared-endpoint module (see the
+shared-endpoint entry below, and 2026-07-22).
+**Learning:** That split is no longer worth keeping — a taught default nobody can actually
+provision into is a footgun, not a teaching aid. So **UK South (`uksouth`/`uks`) is now the
+single default across every module**: the taught Azure SQL + Fabric Terraform modules, both
+Bicep templates, the Fabric automation module, and the shared-endpoint module (already there).
+CI is unaffected — it still passes `AZURE_LOCATION`/`AZURE_LOCATION_ABBREVIATION` (=uksouth/uks)
+explicitly, which is now belt-and-braces rather than a required override. **This supersedes the
+"the taught module's WEU default stands" line in the shared-endpoint entry below.** Two things
+deliberately **not** touched: the state resource group `rg-fabcon26-state-weu` (a real RG
+physically in West Europe — renaming it in code would try to recreate the state backend), and
+past dated entries in this log (history, not rewritten).
+**Action:** `location`→`uksouth`, `location_abbreviation`→`uks` in
+[`infra/azure-sql/terraform/demo/variables.tf`](../infra/azure-sql/terraform/demo/variables.tf),
+[`infra/fabric-sql/terraform/variables.tf`](../infra/fabric-sql/terraform/variables.tf),
+[`infra/fabric-sql/automation/variables.tf`](../infra/fabric-sql/automation/variables.tf), and
+both `main.bicep` files; updated every `terraform.tfvars.example`, the Bicep deploy READMEs, the
+CAF naming examples in the infra READMEs, and the attendee pages
+[`docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) /
+[`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (resource-name examples now `…-uks`).
+Reworded the shared-endpoint `location` description (the "unlike the taught module" contrast is
+gone). (Jess & Rob, 2026-08-29.)
+
 ## 2026-08-29 — The scary "MkDocs 2.0" banner is theme advocacy, not an error — and requirements.txt was unpinned
 **Context:** Running `mkdocs serve -f mkdocs.local.yml` printed a red-bordered "Warning from
 the Material for MkDocs team" about a coming **MkDocs 2.0** (plugins removed, theming

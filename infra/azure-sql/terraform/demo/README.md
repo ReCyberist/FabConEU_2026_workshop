@@ -9,8 +9,8 @@ database that the SQL project's DACPAC publishes into (see
 
 | Resource | Name (defaults) | Notes |
 |----------|-----------------|-------|
-| Resource group | `rg-fabcon26-dev-weu` | |
-| Logical SQL server | `sql-fabcon26-dev-weu-<rnd>` | Globally unique (random suffix); TLS 1.2 min; **Entra-only auth**. |
+| Resource group | `rg-fabcon26-dev-uks` | |
+| Logical SQL server | `sql-fabcon26-dev-uks-<rnd>` | Globally unique (random suffix); TLS 1.2 min; **Entra-only auth**. |
 | SQL database | `sqldb-football-dev` | GP serverless, auto-pause 60 min, 2 GB — cost-aware lab default. |
 | Firewall rule(s) | `AllowAzureServices` (+ any client IPs) | Lets the pipeline runner reach the server. |
 
@@ -25,7 +25,7 @@ Names follow the CAF convention
   down every workshop resource (CLAUDE.md §4) while the type-abbreviation leads, as CAF
   wants.
 - The logical server name must be **globally unique**, so a short random token is appended.
-- Region is abbreviated (`weu`) per CAF; override `location` + `location_abbreviation`
+- Region is abbreviated (`uks`) per CAF; override `location` + `location_abbreviation`
   together for other regions.
 
 ## Passwordless by design

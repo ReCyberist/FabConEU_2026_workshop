@@ -253,11 +253,11 @@ variable "environment" {
 }
 variable "location" {
   type    = string
-  default = "westeurope"
+  default = "uksouth"
 }
 variable "location_abbreviation" {
   type    = string
-  default = "weu"
+  default = "uks"
 }
 ```
 

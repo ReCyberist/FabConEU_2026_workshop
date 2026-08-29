@@ -28,9 +28,9 @@ already run** — see the gotchas):
 
 | Resource | Name (default) | Provider | Notes |
 |---|---|---|---|
-| Resource group | `rg-fabcon26-dev-weu` | azurerm | Holds the capacity |
+| Resource group | `rg-fabcon26-dev-uks` | azurerm | Holds the capacity |
 | Fabric capacity | `capfabcon26dev<rnd>` | azurerm | `Microsoft.Fabric/capacities`, **F2** SKU — **bills continuously** |
-| Workspace | `ws-fabcon26-dev-weu` | microsoft/fabric | The container for Fabric items, bound to the capacity |
+| Workspace | `ws-fabcon26-dev-uks` | microsoft/fabric | The container for Fabric items, bound to the capacity |
 | SQL database | `football-dev` | microsoft/fabric | The **SQL database in Fabric** the DACPAC publishes into |
 
 ```mermaid
@@ -38,13 +38,13 @@ flowchart LR
     DACPAC["SQL project<br/>DACPAC"]
 
     subgraph SUB["Azure subscription — azurerm provider"]
-        subgraph RG["Resource group · rg-fabcon26-dev-weu"]
+        subgraph RG["Resource group · rg-fabcon26-dev-uks"]
             CAP["Fabric capacity<br/>capfabcon26dev·<br/>Microsoft.Fabric/capacities · F2"]
         end
     end
 
     subgraph FAB["Microsoft Fabric — microsoft/fabric provider"]
-        WS["Workspace<br/>ws-fabcon26-dev-weu"]
+        WS["Workspace<br/>ws-fabcon26-dev-uks"]
         DB[("SQL database in Fabric<br/>football-dev")]
         WS --> DB
     end
