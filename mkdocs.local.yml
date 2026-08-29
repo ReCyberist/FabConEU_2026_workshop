@@ -27,12 +27,15 @@ nav:
       - Prerequisites: setup/prerequisites.md
   - Foundations:
       - Source control for databases: foundations/source-control.md
+      - Demo: foundations/demo.md
   - Infrastructure as code:
       - Azure SQL (Terraform): infra/azure-sql.md
       - Fabric SQL (Terraform): infra/fabric-sql.md
+      - Demo: infra/demo.md
   - Database as code:
       - The sample database: database/sample-database.md
       - SQL projects: database/sql-projects.md
+      - Demo: database/demo.md
   - CI/CD:
       - Build & validate: cicd/build-validate.md
       - Deploy infrastructure: cicd/deploy-infra.md
