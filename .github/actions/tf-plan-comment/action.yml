@@ -50,6 +50,12 @@ runs:
           const outcome = process.env.OUTCOME;
           let plan = process.env.PLAN || '';
 
+          // Terraform colours its output with ANSI escapes even in CI; they render as noise
+          // like "[0m[1m[32m" in a comment. Strip every escape sequence so the comment is clean.
+          // Anchored on the ESC byte (\x1b) so real bracketed text in the plan is left alone.
+          // (The workflow log keeps its colours — this only touches the comment copy.)
+          plan = plan.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+
           // Redact secret values the plan may have printed (see SECRET SAFETY above).
           const masks = (process.env.MASK || '').split('\n').map(s => s.trim()).filter(Boolean);
           for (const value of masks) {
