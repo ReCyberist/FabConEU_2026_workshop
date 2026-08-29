@@ -9,10 +9,10 @@ attendee_count = 10 # attendee01 .. attendee10 (each gets a DB + a login)
 # attendee_password = "Taylor==Metallica"
 
 # --- Region ---------------------------------------------------------------------------
-# Module default is West Europe. The personal sandbox subscription is region-restricted to
-# UK South (see notes/LEARNINGS.md 2026-07-22) — if you deploy there, use:
-# location              = "uksouth"
-# location_abbreviation = "uks"
+# Defaults to UK South (uksouth/uks) — where this sandbox subscription can provision SQL
+# (see notes/LEARNINGS.md 2026-07-22). Override only to deploy elsewhere:
+# location              = "westeurope"
+# location_abbreviation = "weu"
 
 # --- Elastic pool sizing (cost cap for the day) ---------------------------------------
 # Defaults: GP_Gen5, 4 vCores total, each DB may burst to 2. Bump pool_capacity for a big

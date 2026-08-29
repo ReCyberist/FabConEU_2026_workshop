@@ -7,8 +7,9 @@ name: Shared endpoint — Terraform destroy
 # 21:00 UTC (not UK-local): GitHub Actions cron has no timezone support; 21:00 UTC is 9pm GMT
 # in winter / 10pm BST in summer. Matches the taught module's azure-sql-destroy.yml house style.
 #
-# Auth: OIDC (no secrets) — see notes/decisions.md D5. Uses the same remote state key as
-# shared-endpoint-apply.yml so destroy knows exactly what apply created. The mssql provider
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. Uses the same remote state key as the
+# attendee-endpoint apply job (in azure-sql-apply.yml), and the SAME concurrency group, so
+# destroy knows exactly what apply created and the two never overlap. The mssql provider
 # drops the logins/users first (server still up), then azurerm removes the server/pool/RG.
 
 on:

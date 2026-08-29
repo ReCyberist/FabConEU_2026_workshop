@@ -25,14 +25,34 @@ deployed you must init the **remote** backend locally. The committed backend blo
 `use_oidc = true`, which has no token on a laptop — so init with the real `-backend-config` values
 **plus `-backend-config="use_oidc=false"`**, and `az login`; `use_azuread_auth = true` (already in
 the block) then authenticates the state blob via the Azure CLI identity (needs *Storage Blob Data
-Contributor* on the state account). Second gotcha: the plan will show a **spurious full
-destroy/recreate** unless the local run passes the **same region** the workflow used — this sandbox
-deploys to **UK South** via the `AZURE_LOCATION` repo-var override, while the module default is West
-Europe, so set `location`/`location_abbreviation` in a local `terraform.tfvars` to match. With
-state + region matched, `terraform plan` reports *"No changes"*; bumping the count then shows a
-clean **"5 to add"** (against the recorded 10) rather than "15 to add" (a fresh build).
+Contributor* on the state account). Second gotcha (general, though now defused for THIS module):
+a local plan shows a **spurious full destroy/recreate** if it runs in a different **region** than
+the deploy — the module names include the region token, so a region mismatch rewrites every
+resource. The taught module keeps a West Europe default and overrides to UK South via the
+`AZURE_LOCATION` repo var, so a laptop run there must set `location`/`location_abbreviation` to
+match. For the shared-endpoint module we instead **changed the default to UK South** (it only ever
+runs in this sandbox — see the follow-up entry), so a bare local run already matches and needs no
+tfvars. With state + region matched, `terraform plan` reports *"No changes"*; bumping the count
+then shows a clean **"5 to add"** (against the recorded 10) rather than "15 to add" (a fresh build).
 **Action:** Documented the recipe in the module README ("Run locally against the shared state").
 Companion to the apply/destroy workflows below.
+
+## 2026-08-29 — Shared-endpoint module defaults to UK South (it only runs in the sandbox)
+**Context:** The shared endpoint always deploys to the personal sandbox subscription, which is
+region-restricted to UK South. The `location`/`location_abbreviation` defaults were West Europe
+(copied from the taught module), so every local run needed a region override to avoid spurious
+region-rewrite diffs.
+**Learning:** The taught module deliberately keeps `westeurope` as its *documented/taught* default
+and treats UK South as a sandbox-specific override (LEARNINGS 2026-07-22). The shared endpoint is
+**ops tooling, not taught content**, and it only ever runs in that one sandbox — so the honest
+default there is **`uksouth`/`uks`**, not a value nothing uses. Flipping it removes the local-run
+footgun (no tfvars region override) and doesn't change CI, which still passes `AZURE_LOCATION`
+(`=uksouth`) explicitly. Only the shared-endpoint module changed; the taught module's WEU default
+stands. (Rob, 2026-08-29.)
+**Action:** `location`→`uksouth`, `location_abbreviation`→`uks` in the module's `variables.tf`;
+README examples now show `…-shared-uks-…` (the state RG stays `rg-fabcon26-state-weu` — really in
+WEU) and the local-run steps drop the region override; `terraform.tfvars.example` region note
+inverted.
 
 ## 2026-08-29 — Shared-endpoint apply + nightly destroy (auto-provision, small + torn down daily)
 **Context:** Closing the demo loop: after plan-on-PR, a way to actually build the endpoint and to
@@ -50,8 +70,21 @@ run over the same state). The apply writes the **attendee handout** (server, sha
 per-attendee connection strings — all giveaways; admin password stays a sensitive output, unprinted)
 to `$GITHUB_STEP_SUMMARY` via `terraform output -json … | jq`. Destroy is nightly 21:00 UTC (house
 style) and a no-op against empty state on days the endpoint wasn't stood up.
-**Action:** Added [`../.github/workflows/shared-endpoint-apply.yml`](../.github/workflows/shared-endpoint-apply.yml)
-and [`shared-endpoint-destroy.yml`](../.github/workflows/shared-endpoint-destroy.yml); README Status +
+
+**Consolidated into `azure-sql-apply.yml` (Rob's steer, same day):** rather than a separate
+`shared-endpoint-apply.yml`, the standup became the **`attendee-endpoint` job** inside the existing
+apply workflow — one workflow, two Terraform flows (mirroring the two-job plan workflow). A
+**`workflow_dispatch` choice input `target` (demo/attendee/both, default both)** gates the jobs via
+`if:`; the `publish` (DACPAC) job `needs: apply`, so it's auto-skipped when `target=attendee`. Key
+mechanic that makes independent flows safe in one workflow: **move concurrency from workflow-level to
+JOB-level** — the demo `apply` job keeps `group: azure-sql-terraform`, the `attendee-endpoint` job
+takes `group: azure-sql-shared-endpoint-terraform` (matching each flow's own destroy), so a run isn't
+globally serialised and each flow only blocks against its own destroy. (GitHub Actions supports
+`concurrency` at both workflow and job scope; job-level is what you want when one workflow drives
+multiple independent state files.) The nightly destroy stays a separate file (only apply was
+consolidated).
+**Action:** Folded the standup into [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+(deleted the standalone apply); kept [`shared-endpoint-destroy.yml`](../.github/workflows/shared-endpoint-destroy.yml); README Status +
 demo sections updated; task #19 advanced. **Not yet run live** — first apply is the verification.
 
 ## 2026-08-29 — "Bump the count" IaC demo: a second plan flow in one workflow, refresh off

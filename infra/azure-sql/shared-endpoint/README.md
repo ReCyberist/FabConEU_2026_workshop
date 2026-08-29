@@ -18,8 +18,8 @@ One logical SQL server carrying:
   else's.
 
 ```
-sql-fabcon26-shared-weu-xxxxxx.database.windows.net
-├── elastic pool  ep-fabcon26-shared-weu   (4 vCores, shared)
+sql-fabcon26-shared-uks-xxxxxx.database.windows.net
+├── elastic pool  ep-fabcon26-shared-uks   (4 vCores, shared)
 ├── sqldb-attendee01   ← login attendee01 (db_owner)
 ├── sqldb-attendee02   ← login attendee02 (db_owner)
 └── …                                       password: Taylor==Metallica
@@ -77,7 +77,7 @@ terraform output -raw admin_password                  # presenters only — NOT 
 Each attendee connects to **their** database with **their** login, e.g. attendee07:
 
 ```powershell
-Server:   sql-fabcon26-shared-weu-xxxxxx.database.windows.net
+Server:   sql-fabcon26-shared-uks-xxxxxx.database.windows.net
 Database: sqldb-attendee07
 Login:    attendee07
 Password: Taylor==Metallica
@@ -88,7 +88,7 @@ Password: Taylor==Metallica
 ```powershell
 sqlpackage /Action:Publish `
   /SourceFile:FabConFootball.dacpac `
-  /TargetServerName:"sql-fabcon26-shared-weu-xxxxxx.database.windows.net" `
+  /TargetServerName:"sql-fabcon26-shared-uks-xxxxxx.database.windows.net" `
   /TargetDatabaseName:"sqldb-attendee07" `
   /TargetUser:"attendee07" `
   /TargetPassword:"Taylor==Metallica"
@@ -118,12 +118,10 @@ terraform init `
   -backend-config="use_oidc=false"
 ```
 
-Now match the region the workflow deployed in (this sandbox runs in **UK South**, not the
-module's West Europe default) so the plan doesn't show a spurious region change — put it in
-`terraform.tfvars`:
+The module already defaults to **UK South** (where this sandbox subscription provisions), so
+there's nothing else to match — plan straight away:
 
 ```powershell
-Set-Content terraform.tfvars "location = ""uksouth""`nlocation_abbreviation = ""uks"""
 terraform plan     # => No changes. Your infrastructure matches the configuration.
 ```
 
@@ -150,7 +148,7 @@ If you ran locally (local override), keep `terraform.tfstate` with you; if you l
 never held it), delete by resource group instead — everything is prefixed for exactly this:
 
 ```powershell
-az group delete --name rg-fabcon26-shared-weu --yes --no-wait
+az group delete --name rg-fabcon26-shared-uks --yes --no-wait
 ```
 
 ## Demo: "we have more attendees → we need more databases"
@@ -181,11 +179,11 @@ job is **read-only** (`-lock=false -refresh=false`); it never provisions.
 **Then choose how to make it real:**
 
 - **From CI (the usual demo close):** merge the PR and run
-  [`shared-endpoint-apply.yml`](../../../.github/workflows/shared-endpoint-apply.yml)
-  (`Actions → Shared endpoint — Terraform apply → Run workflow`). It applies the committed
-  `attendee_count` against the shared remote state, so it creates exactly the extra
-  databases/logins the plan showed, and prints the attendee handout (server, password,
-  per-attendee connection strings) to the run summary.
+  [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) with the **`target`**
+  input set to `attendee` (or `both`) — the shared endpoint is the `attendee-endpoint` job in
+  that workflow. It applies the committed `attendee_count` against the shared remote state, so
+  it creates exactly the extra databases/logins the plan showed, and prints the attendee
+  handout (server, password, per-attendee connection strings) to the run summary.
 - **From your laptop (against the same remote state):** see *Run locally against the shared
   state* below — plan/apply the delta directly.
 
@@ -222,14 +220,15 @@ and `.terraform.lock.hcl` is committed. What's **not** yet exercised is a real
 3. the firewall is open *before* the login/user resources connect (the `depends_on` is
    there for this, but verify ordering on a cold apply).
 
-**Full pipeline now wired, but no live apply has run yet.** Three flows exist:
-plan-on-PR (second job in `azure-sql-plan.yml`),
-[`shared-endpoint-apply.yml`](../../../.github/workflows/shared-endpoint-apply.yml)
-(dispatch), and
-[`shared-endpoint-destroy.yml`](../../../.github/workflows/shared-endpoint-destroy.yml)
-(nightly 21:00 UTC + dispatch). What's unproven is a real run against Azure — the checks
-above are the things to watch on the first `apply`. For the demo's crisp `+5`, seed the
-initial 10 first (run the apply workflow once, or one local apply against the remote state).
+**Full pipeline now wired, but no live apply has run yet.** The shared endpoint rides along
+in the Azure SQL workflows as its own job: plan-on-PR (`plan-shared-endpoint` job in
+[`azure-sql-plan.yml`](../../../.github/workflows/azure-sql-plan.yml)), apply
+(`attendee-endpoint` job in [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml),
+run with `target: attendee` or `both`), and nightly teardown
+([`shared-endpoint-destroy.yml`](../../../.github/workflows/shared-endpoint-destroy.yml),
+21:00 UTC + dispatch). What's unproven is a real run against Azure — the checks above are
+the things to watch on the first `apply`. For the demo's crisp `+5`, seed the initial 10
+first (run the apply once with `target: attendee`, or one local apply against the remote state).
 
 Tracked as **task #19** in [`../../../planning/tasks.md`](../../../planning/tasks.md).
 Log anything surprising in [`../../../notes/LEARNINGS.md`](../../../notes/LEARNINGS.md).

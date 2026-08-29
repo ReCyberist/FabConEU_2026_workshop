@@ -37,15 +37,15 @@ variable "environment" {
 }
 
 variable "location" {
-  description = "Azure region for all resources. NB: the personal sandbox sub is region-restricted to UK South (uksouth/uks) — see LEARNINGS 2026-07-22."
+  description = "Azure region for all resources. Defaults to UK South because the personal sandbox subscription this endpoint runs in is region-restricted to it (see LEARNINGS 2026-07-22) — unlike the taught module, which keeps West Europe as its documented default."
   type        = string
-  default     = "westeurope"
+  default     = "uksouth"
 }
 
 variable "location_abbreviation" {
-  description = "Short region token used in resource names (CAF style), e.g. weu for westeurope, uks for uksouth."
+  description = "Short region token used in resource names (CAF style), e.g. uks for uksouth, weu for westeurope."
   type        = string
-  default     = "weu"
+  default     = "uks"
 
   validation {
     condition     = can(regex("^[a-z0-9]{2,6}$", var.location_abbreviation))
