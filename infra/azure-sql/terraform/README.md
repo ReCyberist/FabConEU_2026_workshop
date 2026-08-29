@@ -63,10 +63,14 @@ Public network access is gated by firewall rules. Two ways to allow a client thr
 
 ## Run it
 
-Locally (local state, for iterating on the module itself):
+Locally (local state, for iterating on the module itself) — run from this module folder,
+`infra/azure-sql/terraform`:
 
 ```powershell
+cd infra/azure-sql/terraform   # from the repo root
+
 Copy-Item terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
+code terraform.tfvars                                 # open it to review/edit the variables
 Copy-Item backend_local_override.tf.example backend_local_override.tf   # local state, no remote backend
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 

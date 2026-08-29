@@ -33,10 +33,15 @@ no admin password, fully repeatable.
 ## Terraform (focus) / Bicep (reference)
 
 === "Terraform"
-    The taught path. From the module folder:
+    The taught path. Run from the module folder, `infra/azure-sql/terraform`:
 
     ```powershell
+    cd infra/azure-sql/terraform   # from the repo root
+
     $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
+
+    Copy-Item terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
+    code terraform.tfvars                                 # open it to review/edit the variables
 
     # Local demo: use local state instead of the remote Azure Storage backend
     Copy-Item backend_local_override.tf.example backend_local_override.tf
