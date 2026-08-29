@@ -28,7 +28,7 @@ target SQL endpoint to deploy into.
 
 ## Everyone
 
-Whatever level you choose, do these four things before the day.
+Whatever level you choose, do these four things before the day. (If you have missed any, you can still do them right now but be quick !! You don't want to miss out on what we are saying.)
 
 1. Create a **[GitHub account](https://github.com/signup)** if you do not have one.
 
