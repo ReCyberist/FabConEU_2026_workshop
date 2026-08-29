@@ -6,7 +6,7 @@
 attendee_count = 30 # attendee01 .. attendee30 (each gets a DB + a login)
 
 # The shared, printed-on-a-slide password. Public by design — change per event if you like.
-# attendee_password = "F@bc0n2026!"
+# attendee_password = "Taylor==Metallica"
 
 # --- Region ---------------------------------------------------------------------------
 # Module default is West Europe. The personal sandbox subscription is region-restricted to

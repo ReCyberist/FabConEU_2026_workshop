@@ -91,7 +91,7 @@ variable "admin_login" {
 variable "attendee_password" {
   description = "Shared, throwaway password given to every attendee login. Public by design (printed on a slide); not a real secret."
   type        = string
-  default     = "F@bc0n2026!"
+  default     = "Taylor==Metallica"
 
   validation {
     # Azure SQL complexity: >= 8 chars and 3 of 4 categories. Keep the guard simple/honest.

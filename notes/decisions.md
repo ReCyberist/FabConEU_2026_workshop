@@ -119,7 +119,8 @@ logical server + an elastic pool + one empty database per attendee**, because it
 platform we teach (attendees deploy to *Azure SQL*, not a bare SQL Server VM), (b) reuses the
 module we already built, with no VM to patch/back up/NSG on a target we won't support, and (c) caps
 cost for the day via one pool. **Auth is SQL authentication** — one login per attendee
-(`attendee01`…), all sharing one throwaway password (`F@bc0n2026!`), each a `db_owner` in its own
+(`attendee01`…), all sharing one throwaway password (`Taylor==Metallica` — a nod to Jess's Taylor Swift and
+Rob's Metallica fandom), each a `db_owner` in its own
 database only. This is a *deliberate* departure from the taught module's Entra-only/passwordless
 design: you can't provision Entra identities for a room of strangers on the day. The shared
 password is public by design (printed on a slide) for an endpoint that is open to the internet and

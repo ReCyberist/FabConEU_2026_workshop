@@ -30,7 +30,7 @@ resources** — azurerm makes the server/pool/DBs, but `CREATE LOGIN`/`CREATE US
 run *inside* SQL, so they need the **`betr-io/mssql`** provider (connects per-resource with the
 generated SQL admin) — which in turn needs the firewall open before it runs.
 **Action:** Drafted a **separate** module [`../infra/azure-sql/shared-endpoint/`](../infra/azure-sql/shared-endpoint/)
-(server + elastic pool + DB/login/user per attendee, local state, `F@bc0n2026!` shared password,
+(server + elastic pool + DB/login/user per attendee, local state, `Taylor==Metallica` shared password,
 open firewall for the day) so the taught module stays pristine. Recorded the reversal as a
 [decisions.md](decisions.md) **D6 update**; ordering + task #19 updated. **Untested** — no live
 apply in the authoring env; first-run checks listed in the module README.

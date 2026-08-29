@@ -13,7 +13,7 @@ One logical SQL server carrying:
 - an **elastic pool** (all attendee databases share it → one predictable cost for the day),
 - **one empty database per attendee** — `sqldb-attendee01` … `sqldb-attendeeNN`,
 - **one SQL login per attendee** — `attendee01` … `attendeeNN`, every one using the **same
-  shared password** (`F@bc0n2026!` by default), each mapped to a `db_owner` **user in its
+  shared password** (`Taylor==Metallica` by default), each mapped to a `db_owner` **user in its
   own database only**. So everyone gets `db_owner` on their sandbox and cannot touch anyone
   else's.
 
@@ -22,7 +22,7 @@ sql-fabcon26-shared-weu-xxxxxx.database.windows.net
 ├── elastic pool  ep-fabcon26-shared-weu   (4 vCores, shared)
 ├── sqldb-attendee01   ← login attendee01 (db_owner)
 ├── sqldb-attendee02   ← login attendee02 (db_owner)
-└── …                                       password: F@bc0n2026!
+└── …                                       password: Taylor==Metallica
 ```
 
 ## Why it differs from the taught module
@@ -77,7 +77,7 @@ Each attendee connects to **their** database with **their** login, e.g. attendee
 Server:   sql-fabcon26-shared-weu-xxxxxx.database.windows.net
 Database: sqldb-attendee07
 Login:    attendee07
-Password: F@bc0n2026!
+Password: Taylor==Metallica
 ```
 
 …and publishes the sample DACPAC into it exactly like the taught path:
@@ -88,7 +88,7 @@ sqlpackage /Action:Publish `
   /TargetServerName:"sql-fabcon26-shared-weu-xxxxxx.database.windows.net" `
   /TargetDatabaseName:"sqldb-attendee07" `
   /TargetUser:"attendee07" `
-  /TargetPassword:"F@bc0n2026!"
+  /TargetPassword:"Taylor==Metallica"
 ```
 
 ## Tear it down (do this the same day)
@@ -113,7 +113,7 @@ simultaneously.
 
 ## Security note — the password is a giveaway, not a secret
 
-`attendee_password` defaults to `F@bc0n2026!` and is committed on purpose: it is a
+`attendee_password` defaults to `Taylor==Metallica` and is committed on purpose: it is a
 disposable credential printed on a slide for an endpoint that is open to the internet and
 gone by nightfall. This is the one deliberate exception to CLAUDE.md's "never commit
 secrets" rule. The **server admin** password is *not* handed out — it's generated and
