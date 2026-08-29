@@ -1099,4 +1099,23 @@ voice-passed [`../docs/index.md`](../docs/index.md) only. Both `mkdocs build --s
 and `-f mkdocs.local.yml` (full) pass. The remaining 13 pages are **deliberately untouched** —
 we are working through them one at a time.
 
+## 2026-08-29 — Fabric demo: `ARM_SUBSCRIPTION_ID` doesn't feed the required module variable
+**Context:** Running the Fabric `terraform plan` from the demo steps dropped into an interactive
+prompt for `var.fabric_subscription_id` — the exact thing the "no clicking / no surprises" rule
+forbids happening live in the room.
+**Learning:** The Fabric module's `azurerm` provider reads its subscription from the
+`fabric_subscription_id` **variable** (no default — it exists for the cross-tenant CI design where
+the state backend is Tenant A and the provider is Tenant B), **not** from `ARM_SUBSCRIPTION_ID`.
+`ARM_SUBSCRIPTION_ID` only feeds the state backend and the CLI, so setting it (as both demo pages
+did) leaves the variable unset and `terraform plan` prompts. For a local single-tenant demo the
+cleanest fix is one env line — `$env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID` —
+reusing the same GUID; no tfvars edit needed. The Azure SQL module has no equivalent required var,
+which is why only the Fabric path trips on this.
+**Action:** Added the `TF_VAR_fabric_subscription_id` line to the Fabric steps in
+[`../docs/infra/demo.md`](../docs/infra/demo.md) and the "The code" snippet in
+[`../docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md), plus a gotcha on demo.md so it does
+not regress. Also surfaced `fabric_subscription_id` in
+`infra/fabric-sql/terraform/terraform.tfvars.example` (previously it never mentioned the one
+required variable, and its header wrongly claimed the module "runs with no tfvars at all").
+
 <!-- Add new entries above this line -->

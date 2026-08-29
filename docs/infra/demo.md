@@ -165,10 +165,15 @@ Run one Terraform module from the repository and let it build the target platfor
 	```powershell
 	az login
 	$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
+	$env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID
 	az account show --query "{subscription:name, id:id}" --output table
 	```
 
 	The table shows the subscription you want to use for the Fabric capacity.
+
+	The second line sets the one variable the Fabric module requires: `fabric_subscription_id`,
+	which pins the `azurerm` provider that builds the capacity. For this local demo it is the same
+	subscription, so reuse the value. Without it, `terraform plan` stops and prompts for the value.
 
 3. Create a local `terraform.tfvars` file and review the variables for your Fabric path.
 
@@ -293,6 +298,9 @@ stops billing.
 	  allows one Entra admin.
 - **Fabric needs more than an Azure subscription.** A tenant admin must allow service principals to
 	  use Fabric APIs, and an F-SKU capacity bills while it exists.
+- **`ARM_SUBSCRIPTION_ID` does not set the Fabric provider subscription.** The Fabric module's
+	  `azurerm` provider reads its subscription from the `fabric_subscription_id` variable, which has
+	  no default. Set `TF_VAR_fabric_subscription_id` (step 2) or `terraform plan` prompts for it.
 - **The two platforms are similar, not identical.** Azure SQL is `server → database`; Fabric SQL is
 	  `capacity → workspace → database`, with an extra provider.
 
