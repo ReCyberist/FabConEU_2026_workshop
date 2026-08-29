@@ -1,0 +1,94 @@
+name: Shared endpoint — Terraform apply
+
+# Provisions the shared, UNSUPPORTED attendee endpoint (infra/azure-sql/shared-endpoint):
+# one logical server + elastic pool + a database/login/user per attendee. Safe to run on a
+# dispatch because it's small (one small pool) and torn down nightly (see
+# shared-endpoint-destroy.yml) — but it does create real, billed resources, so it stays
+# workflow_dispatch-only (never on push).
+#
+# It deploys whatever attendee_count is committed in variables.tf (default 10). That's the
+# "bump the count" demo's second half: change the count in a PR, merge, run this workflow,
+# and the extra databases/logins get created. See the module README.
+#
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. azurerm authenticates via OIDC; the
+# mssql provider connects to the new server as the generated SQL admin to create the
+# logins/users (the GitHub-hosted runner reaches it via the server's allow-Azure-services /
+# allow-all firewall rules). State: remote azurerm backend, key
+# azure-sql/shared-endpoint.terraform.tfstate. Region override matches azure-sql-apply.yml
+# (this sandbox subscription can't provision SQL in the module's default West Europe).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required to mint the OIDC token for passwordless ARM auth
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: true
+
+# Own group (not the taught module's) so it never blocks / is blocked by azure-sql-*; but
+# apply and destroy of THIS module share it, so they can't run over each other's state.
+concurrency:
+  group: azure-sql-shared-endpoint-terraform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: terraform apply
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/azure-sql/shared-endpoint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/shared-endpoint.terraform.tfstate"
+
+      # attendee_count is intentionally NOT passed here — it comes from the committed
+      # variables.tf default, so committing a count change and running this workflow deploys
+      # that new count. Only the region is overridden (sandbox restriction).
+      - name: Terraform plan
+        run: |
+          terraform plan -out=tfplan \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
+
+      # Attendee handout in the run summary: the server, the shared password, and a
+      # ready-to-paste connection string per attendee. All of these are giveaways by design
+      # (the admin password is a separate, sensitive output and is deliberately NOT printed).
+      - name: Publish attendee handout to the run summary
+        run: |
+          {
+            echo "## Shared endpoint — attendee handout"
+            echo ""
+            echo "- **Server:** \`$(terraform output -raw sql_server_fqdn)\`"
+            echo "- **Shared password:** \`$(terraform output -raw attendee_password)\`"
+            echo "- **Attendees:** $(terraform output -raw attendee_count)"
+            echo ""
+            echo "Each attendee uses login \`attendeeNN\` against database \`sqldb-attendeeNN\`."
+            echo ""
+            echo "### Connection strings"
+            echo '```'
+            terraform output -json attendee_connection_strings \
+              | jq -r 'to_entries[] | "\(.key): \(.value)"'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

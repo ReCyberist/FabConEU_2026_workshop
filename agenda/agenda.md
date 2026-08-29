@@ -76,7 +76,11 @@ that framing first. It hands straight off into the **source control** part of th
   Terraform flow in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)) prints
   *"+5 databases, +5 logins, +5 users — 15 to add"*. The most visceral IaC moment of the day:
   a one-line change produces a precise, reviewable plan of exactly what it will do. Ties back
-  to the plan-on-PR idea planted in Morning 1. Read-only — nothing provisions on the PR.
+  to the plan-on-PR idea planted in Morning 1. The PR plan is read-only; **close the loop** by
+  running [`shared-endpoint-apply.yml`](../.github/workflows/shared-endpoint-apply.yml) (or a
+  local apply against the same remote state) so the extra databases actually appear —
+  destroyed again nightly. Have the endpoint pre-deployed (10) so the live bump shows a clean
+  "+5", not a from-scratch build.
 - **Backup/stretch:** the Bicep equivalents ([`azure-sql/bicep`](../infra/azure-sql/bicep)),
   and the teaching point that **Fabric can't be fully done in Bicep** (workspace + DB have no
   ARM type — capacity only); ADO pipeline equivalents.

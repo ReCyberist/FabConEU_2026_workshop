@@ -15,6 +15,45 @@ Format:
 
 ---
 
+## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
+**Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
+10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
+the delta. That needs local Terraform to read the **same remote state** CI writes, not local state.
+**Learning:** Two distinct local modes, easy to conflate: (a) the `backend_local_override.tf`
+(local state) is for standing the module up *standalone*; (b) to interact with what the workflow
+deployed you must init the **remote** backend locally. The committed backend block has
+`use_oidc = true`, which has no token on a laptop — so init with the real `-backend-config` values
+**plus `-backend-config="use_oidc=false"`**, and `az login`; `use_azuread_auth = true` (already in
+the block) then authenticates the state blob via the Azure CLI identity (needs *Storage Blob Data
+Contributor* on the state account). Second gotcha: the plan will show a **spurious full
+destroy/recreate** unless the local run passes the **same region** the workflow used — this sandbox
+deploys to **UK South** via the `AZURE_LOCATION` repo-var override, while the module default is West
+Europe, so set `location`/`location_abbreviation` in a local `terraform.tfvars` to match. With
+state + region matched, `terraform plan` reports *"No changes"*; bumping the count then shows a
+clean **"5 to add"** (against the recorded 10) rather than "15 to add" (a fresh build).
+**Action:** Documented the recipe in the module README ("Run locally against the shared state").
+Companion to the apply/destroy workflows below.
+
+## 2026-08-29 — Shared-endpoint apply + nightly destroy (auto-provision, small + torn down daily)
+**Context:** Closing the demo loop: after plan-on-PR, a way to actually build the endpoint and to
+guarantee it doesn't bill overnight. Auto-provisioning was OK'd because the pool is small and the
+thing is destroyed daily.
+**Learning:** Mirrored the taught module's apply/destroy shape but simpler — the shared endpoint has
+**no DACPAC publish/smoke job** (attendees publish their own schemas into their own DBs), so apply is
+just init → plan → apply against its own state key (`azure-sql/shared-endpoint.terraform.tfstate`).
+Two deliberate choices: (1) apply **does not** pass `attendee_count` as a `-var` — it takes the
+committed `variables.tf` default, so *committing a count change and running the workflow* is what
+deploys the new count (the second half of the demo). (2) A **dedicated concurrency group**
+(`azure-sql-shared-endpoint-terraform`, separate from the taught module's `azure-sql-terraform`) so
+the two modules never block each other, while this module's own apply/destroy still serialise (never
+run over the same state). The apply writes the **attendee handout** (server, shared password,
+per-attendee connection strings — all giveaways; admin password stays a sensitive output, unprinted)
+to `$GITHUB_STEP_SUMMARY` via `terraform output -json … | jq`. Destroy is nightly 21:00 UTC (house
+style) and a no-op against empty state on days the endpoint wasn't stood up.
+**Action:** Added [`../.github/workflows/shared-endpoint-apply.yml`](../.github/workflows/shared-endpoint-apply.yml)
+and [`shared-endpoint-destroy.yml`](../.github/workflows/shared-endpoint-destroy.yml); README Status +
+demo sections updated; task #19 advanced. **Not yet run live** — first apply is the verification.
+
 ## 2026-08-29 — "Bump the count" IaC demo: a second plan flow in one workflow, refresh off
 **Context:** Turning the shared endpoint into a teaching prop — change `attendee_count`, push,
 and let a GitHub Actions plan show the exact "+N databases". Rob wanted it as a **second job in

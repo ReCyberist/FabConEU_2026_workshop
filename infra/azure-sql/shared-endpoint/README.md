@@ -94,6 +94,52 @@ sqlpackage /Action:Publish `
   /TargetPassword:"Taylor==Metallica"
 ```
 
+## Run locally against the shared (remote) state
+
+This is what makes the demo feel real: after the apply workflow has deployed the endpoint,
+point your laptop at the **same remote state** so `terraform plan` shows **no changes** —
+then edit `attendee_count` and watch the plan show only the delta. The trick is to init the
+**remote** backend (don't copy the local override) and authenticate the state account with
+your `az login` instead of CI's OIDC:
+
+```powershell
+cd infra/azure-sql/shared-endpoint
+az login
+az account set --subscription <the-workshop-subscription-id>
+
+# init the REAL remote state (same key the workflows use). use_oidc=false -> use your az login;
+# use_azuread_auth=true is already in providers.tf (needs Storage Blob Data Contributor on the
+# state account). Do NOT create backend_local_override.tf here — that would use local state.
+terraform init `
+  -backend-config="resource_group_name=rg-fabcon26-state-weu" `
+  -backend-config="storage_account_name=stfabcon26tf4766a4" `
+  -backend-config="container_name=tfstate" `
+  -backend-config="key=azure-sql/shared-endpoint.terraform.tfstate" `
+  -backend-config="use_oidc=false"
+```
+
+Now match the region the workflow deployed in (this sandbox runs in **UK South**, not the
+module's West Europe default) so the plan doesn't show a spurious region change — put it in
+`terraform.tfvars`:
+
+```powershell
+Set-Content terraform.tfvars "location = ""uksouth""`nlocation_abbreviation = ""uks"""
+terraform plan     # => No changes. Your infrastructure matches the configuration.
+```
+
+Then the demo:
+
+```powershell
+# edit attendee_count 10 -> 15 in variables.tf, then:
+terraform plan     # => Plan: 15 to add? No — 15 to add is a fresh build; against the deployed
+                   #    10 it shows "5 to add" (5 databases + 5 logins + 5 users).
+terraform apply    # apply the delta straight from your laptop, OR commit + run the workflow
+```
+
+> The crisp **"+5"** only appears because the deployed 10 are already recorded in the shared
+> state you just init'd against. If you instead used the local override (local state), the
+> plan would show all 15 as new. Same reason the CI plan job reads remote state.
+
 ## Tear it down (do this the same day)
 
 ```powershell
@@ -130,8 +176,22 @@ Plan: 15 to add, 0 to change, 0 to destroy.
 ```
 
 One reviewable number → a precise, reviewed plan of exactly the resources it creates. That
-job is **read-only** (`-lock=false -refresh=false`); it never provisions. (Merging to
-actually create them would need an apply workflow — not wired yet; see Status.)
+job is **read-only** (`-lock=false -refresh=false`); it never provisions.
+
+**Then choose how to make it real:**
+
+- **From CI (the usual demo close):** merge the PR and run
+  [`shared-endpoint-apply.yml`](../../../.github/workflows/shared-endpoint-apply.yml)
+  (`Actions → Shared endpoint — Terraform apply → Run workflow`). It applies the committed
+  `attendee_count` against the shared remote state, so it creates exactly the extra
+  databases/logins the plan showed, and prints the attendee handout (server, password,
+  per-attendee connection strings) to the run summary.
+- **From your laptop (against the same remote state):** see *Run locally against the shared
+  state* below — plan/apply the delta directly.
+
+The endpoint is torn down nightly by
+[`shared-endpoint-destroy.yml`](../../../.github/workflows/shared-endpoint-destroy.yml)
+(21:00 UTC) so nothing bills overnight.
 
 ## Cost
 
@@ -162,13 +222,14 @@ and `.terraform.lock.hcl` is committed. What's **not** yet exercised is a real
 3. the firewall is open *before* the login/user resources connect (the `depends_on` is
    there for this, but verify ordering on a cold apply).
 
-**No apply/destroy workflow yet.** Plan-on-PR is wired (the second job in
-`azure-sql-plan.yml`); actually provisioning still happens by a presenter running
-`terraform apply` locally (local override) against the remote state. Wiring a
-`shared-endpoint` apply + nightly destroy (mirroring the taught module) is the next
-increment — it also gives the demo a "merge → it really builds" payoff. Until then the
-crisp `+5` in the demo needs the initial 10 to already exist in the remote state (seed it
-with one local apply).
+**Full pipeline now wired, but no live apply has run yet.** Three flows exist:
+plan-on-PR (second job in `azure-sql-plan.yml`),
+[`shared-endpoint-apply.yml`](../../../.github/workflows/shared-endpoint-apply.yml)
+(dispatch), and
+[`shared-endpoint-destroy.yml`](../../../.github/workflows/shared-endpoint-destroy.yml)
+(nightly 21:00 UTC + dispatch). What's unproven is a real run against Azure — the checks
+above are the things to watch on the first `apply`. For the demo's crisp `+5`, seed the
+initial 10 first (run the apply workflow once, or one local apply against the remote state).
 
 Tracked as **task #19** in [`../../../planning/tasks.md`](../../../planning/tasks.md).
 Log anything surprising in [`../../../notes/LEARNINGS.md`](../../../notes/LEARNINGS.md).
