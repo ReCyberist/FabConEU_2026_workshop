@@ -1,0 +1,24 @@
+# Local demo backend override — LOCAL USE ONLY, do not commit an activated copy.
+#
+# The committed providers.tf declares a remote azurerm backend (Azure Storage,
+# AAD/OIDC) for CI and the presenter sandbox. That backend needs a storage
+# account / container / key at `terraform init`, so a bare `terraform init` on a
+# laptop prompts for a container name and can't be run offline.
+#
+# Terraform automatically merges any file ending in `_override.tf`, and a
+# `backend` block in an override *replaces* the primary one. Copy this file to
+# `backend_local_override.tf` to swap the azurerm backend for local state so you
+# can run the full init -> plan -> apply loop on your own machine with no Azure
+# Storage account and no prompts:
+#
+#   Copy-Item backend_local_override.tf.example backend_local_override.tf
+#   terraform init
+#   terraform plan
+#   terraform apply
+#
+# `backend_local_override.tf` and `terraform.tfstate*` are gitignored, so this
+# stays local and never disturbs the remote-backend config CI relies on.
+
+terraform {
+  backend "local" {}
+}

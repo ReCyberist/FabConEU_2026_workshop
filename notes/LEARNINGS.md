@@ -15,6 +15,51 @@ Format:
 
 ---
 
+## 2026-08-29 — Fabric SQL module needed the same local-backend override as Azure SQL; infra diagrams added
+**Context:** Bringing the Fabric SQL Terraform "Run it" steps in line with Azure SQL, and
+adding infrastructure diagrams to the docs.
+**Learning:** The Fabric SQL module declares the **same committed remote `azurerm` backend**
+as Azure SQL (`providers.tf`), so a bare `terraform init` on a laptop prompts for a container
+name — but it had **no `backend_local_override.tf.example`** and its README/docs jumped
+straight into `init`. The gitignore already covers `*_override.tf` + `!*_override.tf.example`
+repo-wide, so the override pattern drops into any module folder with no gitignore change.
+Also: **Mermaid is already enabled** in `mkdocs.yml` (Material bundles Mermaid.js via
+`pymdownx.superfences`), so ` ```mermaid ` fenced blocks render on the site and on GitHub with
+no extra plugin — the right way to ship infra diagrams as version-controlled code. Note
+`mkdocs build` does **not** validate Mermaid syntax (it renders client-side); verify diagrams
+by rendering (e.g. an Artifact renders `<pre class="mermaid">` natively).
+**Action:** Added `infra/fabric-sql/terraform/backend_local_override.tf.example`, the
+`cd`/copy-override/open-tfvars steps to the Fabric README + `docs/infra/fabric-sql.md`, and
+Mermaid diagrams to both infra docs pages. Reminder: `docs/infra/fabric-sql.md` is still held
+from the published site by `exclude_docs`, so its diagram shows only in the local full
+preview (`mkdocs serve -f mkdocs.local.yml`) until the page is un-excluded.
+
+## 2026-08-29 — `terraform plan` "AccountUnusable" on Windows = WAM broker, fix with device-code login
+**Context:** Running `terraform plan` for the Azure SQL module, every plan failed at the
+`azurerm` provider block with *"Account has previously been signed out of this application…
+Status: Response_Status.Status_AccountUnusable, Error code: 0, Tag: 540940121"*.
+**Learning:** The `azurerm` provider fetches a **Microsoft Graph** token to parse identity
+claims. ARM auth was fine (`az account get-access-token` with the default scope returned a
+token), but the **Graph** scope (`--scope https://graph.microsoft.com/.default`) threw
+`AccountUnusable`. A plain `az login` did **not** fix it — even `az login` failed at
+"Retrieving tenants and subscriptions". Root cause on Windows: the **WAM broker** holds a
+poisoned account outside `~/.azure`, so deleting `msal_token_cache.*` alone isn't enough.
+**Action:** Fixed by disabling the broker + clearing + **device-code** login:
+```powershell
+az config set core.enable_broker_on_windows=false
+az account clear
+Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+az login --use-device-code
+az account set --subscription $env:ARM_SUBSCRIPTION_ID
+# verify GRAPH scope specifically:
+az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+```
+Diagnostic tell: ARM token works but the Graph-scoped `get-access-token` errors ⇒ it's the
+CLI/broker, not Terraform. Attendees on managed Windows laptops will likely hit this.
+Documented as a gotcha in
+[`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) and
+[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md).
+
 ## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
 **Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
 `docs/infra/azure-sql.md` demo block jumped into `Copy-Item`/`terraform init` without

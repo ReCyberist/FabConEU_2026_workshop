@@ -5,6 +5,9 @@
 
 entra_admin_login     = "fabcon26-sql-admins"                    # display name of the Entra user/group/SP
 entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (principal) id
+# Get the object id with the Azure CLI:
+#   az ad group show --group "fabcon26-sql-admins" --query id -o tsv   # a group (recommended)
+#   az ad user  show --id    "you@contoso.com"      --query id -o tsv   # or a user
 
 # Optional overrides:
 # workload              = "fabcon26"

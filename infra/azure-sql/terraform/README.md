@@ -35,6 +35,16 @@ admin login or password, so nothing secret is committed or needs rotating. Suppl
 admin identity (a **group** is recommended) via `entra_admin_login` +
 `entra_admin_object_id`. The deploy pipeline authenticates with its own Entra identity.
 
+Get the `entra_admin_object_id` with the Azure CLI — for a security group (recommended,
+matching the example) or an individual user:
+
+```powershell
+az ad group show --group "fabcon26-sql-admins" --query id -o tsv   # a group
+az ad user  show --id    "you@contoso.com"      --query id -o tsv   # or a user
+```
+
+`entra_admin_login` is the identity's display name (group name or user principal name).
+
 ## Firewall access (and a secret IP)
 
 Public network access is gated by firewall rules. Two ways to allow a client through:
@@ -77,6 +87,23 @@ $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 terraform init
 terraform plan
 terraform apply
+```
+
+**Troubleshooting — `plan` fails with *"Account has previously been signed out of this
+application"* (Windows).** The `azurerm` provider fetches a **Microsoft Graph** token to
+parse your identity claims, so a `plan` can fail here even when `az account
+get-access-token` (ARM scope) succeeds. On Windows the usual cause is the **WAM broker**
+silently reusing a poisoned account, which a plain `az login` won't clear. Disable the
+broker, clear the cache, and log in with **device code**:
+
+```powershell
+az config set core.enable_broker_on_windows=false
+az account clear
+Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+az login --use-device-code
+az account set --subscription $env:ARM_SUBSCRIPTION_ID
+# verify the GRAPH scope returns an expiry (not the error) before re-running plan:
+az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
 ```
 
 The `backend_local_override.tf` swaps the committed remote `azurerm` backend (see **State**
