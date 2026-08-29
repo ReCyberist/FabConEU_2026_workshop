@@ -27,6 +27,7 @@
 *[kit]: British informal — equipment. Here it means your own laptop, subscription and tools
 *[faff]: British informal — fiddly, tedious work
 *[sorted]: British informal — done, finished, working
+*[football]: This is proper football, Association Football, known also as soccer by some.  British informal — soccer
 *[a good deal more]: much more
 
 *[OIDC]: OpenID Connect — it lets GitHub Actions sign in to Azure without you storing a password or secret
