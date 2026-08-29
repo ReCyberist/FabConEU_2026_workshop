@@ -79,8 +79,12 @@ nav:
   - Getting started:
       - Prerequisites: setup/prerequisites.md
   # --- Held until reveal: delete remaining exclude_docs entries AND uncomment below ---
-  # - Getting started (full):
+  # On reveal, `Welcome & how the day works` moves ABOVE `Prerequisites` in the
+  # `Getting started` section above — Welcome sets up the day and ends by sending
+  # the reader to Prerequisites, so it has to come first.
+  # - Getting started:
   #     - Welcome & how the day works: setup/welcome.md
+  #     - Prerequisites: setup/prerequisites.md
   # - Foundations:
   #     - Source control for databases: foundations/source-control.md
   # - Infrastructure as code:
