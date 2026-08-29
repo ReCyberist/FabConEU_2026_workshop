@@ -28,3 +28,9 @@
 *[faff]: British informal — fiddly, tedious work
 *[sorted]: British informal — done, finished, working
 *[a good deal more]: much more
+
+*[OIDC]: OpenID Connect — it lets GitHub Actions sign in to Azure without you storing a password or secret
+*[F-SKU]: The paid capacity sizes for Microsoft Fabric (F2, F4, F8 and so on). They bill continuously until paused or deleted
+*[CLI]: Command-Line Interface — a tool you use by typing commands rather than clicking
+*[SDK]: Software Development Kit — the tools needed to build and run code
+*[Contributor]: The Azure role that allows creating and deleting resources, but not granting access to others

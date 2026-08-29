@@ -1,124 +1,193 @@
 # Prerequisites
 
-This is a **bring-your-own** workshop — there's no lab environment handed out. You'll get the
-most from the day by following along on **your own** Azure / Fabric kit, but everything is a live
-demo you can equally **just watch** and replay later from the downloads. So the only hard
-requirement is a laptop and some curiosity — everything below is *optional*, depending on how
-hands-on you want to be.
+This is a **bring-your-own** workshop. Nothing is provisioned for you, and there is no lab
+environment handed out. You will get the most from the day by deploying along on your own Azure or
+Fabric kit — but every step is a live demo you can equally watch, then replay later from the
+downloads. The only hard requirement is a laptop and some curiosity.
 
-!!! note "Follow along — or just watch"
-    Nothing is provisioned for you. Bring what you have and follow along on your own kit, or watch
-    and replay later — every module works at all three levels.
+Everything else on this page is **optional**, and depends on how hands-on you would like to be.
 
 ## At a glance
 
-The hands-on splits into **two independent, optional parts**. Pick either, both, or neither:
+The hands-on work splits into **two independent, optional parts**. Choose either, both, or neither.
 
-| You want to… | You'll need |
+| You want to… | You will need |
 |---|---|
-| **Just watch** (and replay later) | A laptop. That's it. |
-| **Deploy infrastructure** as code (Part 1) | Your **own Azure subscription** — plus a **Fabric capacity** for the Fabric path |
-| **Ship database changes** as code (Part 2) | A reachable **target SQL** — your own, or our shared endpoint on the day |
+| **Watch** (and replay later) | A laptop. That is all. |
+| **Part 1 — deploy infrastructure** as code | Your **own Azure subscription**, plus a **Fabric capacity** for the Fabric path |
+| **Part 2 — ship database changes** as code | A reachable **target SQL endpoint** — your own, or our shared one on the day |
 
-The parts are independent: you can do the database part without the infrastructure part if you
-already have a SQL target to deploy into.
+The two parts are independent. You can do Part 2 without Part 1, as long as you already have a
+target SQL endpoint to deploy into.
 
 ## Everyone
 
-Whatever level you choose, bring:
+Whatever level you choose, do these three things before the day.
 
-- A **GitHub account**.
-- **[git](https://git-scm.com/downloads)** installed locally.
-- A **fork of the workshop template repo** —
-  [`JessAndRob/FabConEU_2026_workshop`](https://github.com/JessAndRob/FabConEU_2026_workshop). All
-  the code you'll deploy lives there; you run it from your own fork.
+1. Create a **[GitHub account](https://github.com/signup)** if you do not have one.
+2. Install **[git](https://git-scm.com/downloads)**. Confirm it is installed:
 
-```powershell
-git clone https://github.com/<your-fork>/FabConEU_2026_workshop.git
-cd FabConEU_2026_workshop
-```
+    ```powershell
+    git --version
+    ```
 
-## To do the infrastructure part (optional)
+    You should see a version number, for example `git version 2.51.0`.
 
-Provision Azure SQL and/or Fabric SQL **as code**. You bring the cloud to deploy into.
+3. Fork **[`JessAndRob/FabConEU_2026_workshop`](https://github.com/JessAndRob/FabConEU_2026_workshop)**
+   to your own GitHub account and clone the fork. All the code you deploy lives in that
+   repository, and you run it from your own copy. With the
+   **[GitHub CLI](https://cli.github.com/)**, both happen in one command:
+
+    ```powershell
+    gh repo fork JessAndRob/FabConEU_2026_workshop --clone
+    cd FabConEU_2026_workshop
+    ```
+
+    You now have a folder named `FabConEU_2026_workshop` containing the workshop code, and
+    `git remote -v` shows `origin` pointing at **your** fork.
+
+!!! tip "No GitHub CLI?"
+    Fork the repository on github.com, then clone your fork, replacing `<your-account>` with your
+    own GitHub account name:
+
+    ```powershell
+    git clone https://github.com/<your-account>/FabConEU_2026_workshop.git
+    cd FabConEU_2026_workshop
+    ```
+
+## Part 1 — deploy infrastructure (optional)
+
+Provision Azure SQL and Fabric SQL **as code**. You bring the cloud to deploy into.
 
 === "Azure SQL"
-    - An **Azure subscription** where you have **Contributor** rights (to create a resource group,
-      a logical SQL server, and a database).
-    - To run it **locally**: the
-      **[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)** (`az login`) and
-      **[Terraform](https://developer.hashicorp.com/terraform/install)** (1.8+; the workshop uses
-      ~1.12). It's all **passwordless** — Microsoft Entra auth, no SQL logins or secrets to manage.
-    - To run it **from a pipeline** (the taught path): your GitHub fork plus a one-time OIDC app
-      registration in your subscription — the [Deploy infrastructure](../cicd/deploy-infra.md) page
-      walks through it.
+    You will need:
 
-    !!! tip "No Azure subscription? Follow along."
-        You can still watch every step and grab the module bundle to run against your own kit later.
+    - An **Azure subscription** in which you hold the **Contributor** role. Part 1 creates a
+      resource group, a logical SQL server, and a database.
+    - **To run Terraform on your laptop:** the
+      **[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)** and
+      **[Terraform](https://developer.hashicorp.com/terraform/install)** version **1.8 or later**.
+      The workshop is written and tested against **1.12**.
+    - **To run it from a pipeline** (this is the path we teach): your GitHub fork, plus a one-time
+      OIDC app registration in your subscription. The
+      [Deploy infrastructure](../cicd/deploy-infra.md) page walks through creating it.
+
+    Sign in to Azure with the Azure CLI, and confirm you are in the right subscription:
+
+    ```powershell
+    az login
+    az account show --query "{subscription:name, tenant:tenantId}" --output table
+    ```
+
+    The subscription named in the output is the one Terraform will deploy into.
+
+    !!! note "Passwordless throughout"
+        Both paths authenticate with Microsoft Entra ID. There are no SQL logins, no connection
+        strings, and no secrets for you to store or rotate.
+
+    !!! tip "No Azure subscription? Deploy it later."
+        Watch every step on the day, download the module bundle, and run it against your own kit
+        when you have one.
 
 === "Fabric SQL"
-    Everything in the **Azure SQL** tab, **plus**:
+    Everything in the **Azure SQL** tab, and in addition:
 
-    - A **Microsoft Fabric capacity**. ⚠️ An **F-SKU bills real money continuously** (no serverless
-      auto-pause), and a **trial capacity can't be created by Terraform** — so weigh the cost before
-      you deploy (see **Cost and teardown** below).
-    - If you deploy from a pipeline, a **Fabric tenant admin** to enable *"Service principals can use
-      Fabric APIs"*. The [Fabric SQL](../infra/fabric-sql.md) page covers the details.
+    - A **Microsoft Fabric capacity**.
+    - If you deploy from a pipeline, a **Fabric tenant administrator** who can enable the tenant
+      setting *"Service principals can use Fabric APIs"*. The [Fabric SQL](../infra/fabric-sql.md)
+      page covers what to ask for.
 
-## To do the database-deploy part (optional)
+    !!! warning "Fabric capacity costs real money"
+        An **F-SKU capacity bills continuously** from the moment it is created. It does not pause
+        itself when idle the way the Azure SQL database in this workshop does, and Terraform
+        **cannot** create a free trial capacity. Read [Cost and teardown](#cost-and-teardown)
+        below and decide before you deploy, not afterwards.
 
-Ship the sample database's schema **as code** with a SQL project (`.sqlproj` → DACPAC). You'll need:
+## Part 2 — ship database changes (optional)
 
-- A **reachable target SQL** — your own **Azure SQL** or **Fabric SQL** endpoint (from the
-  infrastructure part, or one you already run) — **or** our **shared endpoint on the day** (below).
-- The **[.NET SDK](https://dotnet.microsoft.com/download)** (the version pinned in
-  [`global.json`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/global.json) —
-  currently **8.x**) to build the DACPAC.
-- **[SqlPackage](https://learn.microsoft.com/sql/tools/sqlpackage/sqlpackage-download)** to publish
-  it — a cross-platform `dotnet` tool:
+Ship the sample database's schema **as code** with a SQL project, which builds into a DACPAC.
 
-```powershell
-dotnet tool install -g microsoft.sqlpackage
-```
+You will need a **reachable target SQL endpoint**. That is either your own Azure SQL or Fabric SQL
+endpoint — one you created in Part 1, or one you already run — or our shared endpoint on the day.
+
+Install two tools before you travel.
+
+1. Install the **[.NET SDK](https://dotnet.microsoft.com/download)**, which builds the SQL project
+   into a DACPAC. Use the version pinned in
+   [`global.json`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/global.json),
+   currently **8.x**. Confirm it:
+
+    ```powershell
+    dotnet --version
+    ```
+
+    The output starts with `8.` — for example `8.0.404`.
+
+2. Install **[SqlPackage](https://learn.microsoft.com/sql/tools/sqlpackage/sqlpackage-download)**,
+   which publishes the DACPAC to your target. It is a cross-platform `dotnet` tool:
+
+    ```powershell
+    dotnet tool install -g microsoft.sqlpackage
+    sqlpackage /version
+    ```
+
+    The second command prints a version number. If it reports that `sqlpackage` is not
+    recognised, close and reopen your terminal so the updated `PATH` takes effect.
 
 ## The shared endpoint (unsupported)
 
-For anyone without a SQL target of their own, we'll stand up **one shared SQL Server** on the day.
-You push your database changes to it through the pipeline and get **your own database** on it — so
-there are no name collisions with the person next to you.
+For anyone without a target SQL endpoint of their own, we will run **one shared SQL Server** on the
+day. You push your database changes to it through the pipeline, and you get **your own database**
+on that server — so there are no name collisions with the person sitting next to you.
 
 !!! warning "Best-effort, and explicitly unsupported"
-    The shared endpoint exists so everyone *can* try the database part — but we **won't be able to
-    troubleshoot it** during the workshop. If it misbehaves, switch to watching. Anything you deploy
-    there is temporary and wiped after the event.
+    The shared endpoint exists so that everyone *can* try Part 2. We will not be able to
+    troubleshoot it during the workshop, so if it misbehaves, switch to watching. Everything
+    deployed to it is temporary and is deleted after the event.
 
 ## Cost and teardown
 
-!!! warning "Deploying into your own subscription costs money — tear it down"
-    - **Azure SQL** here is a **serverless** database that auto-pauses when idle, so it stays cheap —
-      but it isn't free.
-    - **Fabric** is the one to watch: an **F-SKU capacity bills continuously** until you pause or
+!!! warning "Deploying into your own subscription costs money. Tear it down when you are done."
+    - The **Azure SQL** database in this workshop is **serverless** and pauses itself when idle,
+      which keeps it cheap. It is not free.
+    - **Fabric** is the one to watch. An **F-SKU capacity bills continuously** until you pause or
       delete it.
-    - Everything you deploy, you can **destroy as code**. The repo ships nightly `*-destroy`
-      workflows, and each module page lists the teardown command — run it when you're done. Please
-      don't leave resources running after the workshop.
+    - Everything you deploy, you can **destroy as code**. The repository ships nightly `*-destroy`
+      workflows, and every module page ends with its teardown command. Run it when you have
+      finished, and please do not leave resources running after the workshop.
 
 ## Your local toolchain
 
-Everything here is cross-platform; only the shell glue changes, and we demo in **PowerShell**.
-Bring what matches the parts you want to do:
+Every tool here is cross-platform. Only the surrounding shell commands differ, and we demo in
+**PowerShell**. Bring the tools that match the parts you want to do.
 
-| Tool | For | Notes |
+| Tool | Needed for | Notes |
 |---|---|---|
-| **git** | Everyone | Fork and clone the repo. |
-| **Azure CLI** (`az`) | Infrastructure part (local) | Passwordless `az login`. |
-| **Terraform** (1.8+) | Infrastructure part (local) | The taught infrastructure-as-code tool. |
-| **.NET SDK** (8.x, per `global.json`) | Database part | Builds the `.sqlproj` into a DACPAC. |
-| **SqlPackage** | Database part | Publishes the DACPAC (`dotnet tool install -g microsoft.sqlpackage`). |
+| **git** | Everyone | Clones your fork. |
+| **GitHub CLI** (`gh`) | Everyone (optional) | Forks and clones in one command. |
+| **Azure CLI** (`az`) | Part 1, on your laptop | Passwordless sign-in with `az login`. |
+| **Terraform** 1.8+ | Part 1, on your laptop | The infrastructure-as-code tool we teach. |
+| **.NET SDK** 8.x | Part 2 | Builds the SQL project into a DACPAC. |
+| **SqlPackage** | Part 2 | Publishes the DACPAC to your target SQL endpoint. |
 
-!!! tip "Prefer the pipeline? You barely need any of this locally."
-    The taught path runs Terraform and SqlPackage **in GitHub Actions**, so to follow along you
-    mostly just need your GitHub fork and your cloud — the hosted runners bring the tools.
+To check everything at once, run:
+
+```powershell
+git --version
+gh --version
+az version --output table
+terraform version
+dotnet --version
+sqlpackage /version
+```
+
+Each command prints a version number. A command that is *"not recognised"* is not installed, or
+your terminal was open before you installed it — reopen the terminal and try again.
+
+!!! tip "Deploying from the pipeline? You need very little of this locally."
+    The path we teach runs Terraform and SqlPackage **in GitHub Actions**, where the hosted runners
+    already have the tools. To follow that path you need your GitHub fork and your cloud, and
+    nothing else.
 
 ## What's next
 
