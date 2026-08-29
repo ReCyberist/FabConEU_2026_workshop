@@ -19,10 +19,17 @@ terraform {
     }
   }
 
-  # LOCAL state, deliberately. Unlike the taught module (remote azurerm backend, D5), this
-  # is a throwaway endpoint a presenter stands up once and tears down the same day — local
-  # state keeps it self-contained (no bootstrap, no state account) and matches "local state
-  # is fine for a one-shot lab" from D6. Keep the state file off the machine when done.
+  # Remote azurerm backend (Azure Storage), same pattern as the taught module (D5) — so the
+  # plan-on-PR job in azure-sql-plan.yml can read state and show the *incremental* change
+  # (e.g. "+5 databases" when attendee_count goes 10 -> 15), which is the whole point of the
+  # bump-the-count demo. AAD/OIDC auth (no storage keys). The storage account / container /
+  # key come from -backend-config at `terraform init` (see the workflow). A presenter running
+  # locally swaps this for local state via backend_local_override.tf.example (no state
+  # account needed) — see README.
+  backend "azurerm" {
+    use_oidc         = true
+    use_azuread_auth = true
+  }
 }
 
 provider "azurerm" {

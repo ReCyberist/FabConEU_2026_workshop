@@ -15,6 +15,28 @@ Format:
 
 ---
 
+## 2026-08-29 — "Bump the count" IaC demo: a second plan flow in one workflow, refresh off
+**Context:** Turning the shared endpoint into a teaching prop — change `attendee_count`, push,
+and let a GitHub Actions plan show the exact "+N databases". Rob wanted it as a **second job in
+the existing azure-sql workflow**, not a new workflow file.
+**Learning:** Two independent Terraform flows live happily as **two jobs in one workflow** —
+added `plan-shared-endpoint` alongside `plan` in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)
+(each with its own `working-directory` + state key), and widened the `paths:` filter so a change
+to either module triggers the PR. Two gotchas that shaped it: (1) **a CI plan needs remote state
+to show the *incremental* change** — with local state CI has no record that 10 DBs exist, so it'd
+plan "everything to add". So the module moved from local to the **remote azurerm backend** (own
+key `azure-sql/shared-endpoint.terraform.tfstate`), keeping a `backend_local_override.tf.example`
+so presenters still run it locally. (2) **`terraform plan` refreshes state by default, and the
+`betr-io/mssql` provider connects to the server to refresh existing logins/users** — which fails
+whenever the endpoint is torn down between sessions. Fix: run the PR plan with **`-refresh=false`**
+(plus `-lock=false`), so the diff is computed from state+config only, never touching SQL — the
+plan still works when the DB is down and still shows the bumped-count delta. Caveat: the crisp
+"+5" needs the initial 10 already seeded in the remote state (one prior apply).
+**Action:** Second job added; module → remote state + local override; added to `ci.yml` validate
+loop; demo beat written into [`../agenda/agenda.md`](../agenda/agenda.md) Morning 2 and the module
+README. `init`/`validate`/`fmt` clean offline. Apply/destroy workflow for this module still to come
+(task #19).
+
 ## 2026-08-29 — Shared attendee endpoint: Azure SQL elastic pool beats a VM
 **Context:** Rob asked how we actually build the shared "run against this" endpoint (D6),
 sketching an Azure SQL server with a database per attendee. D6 had said "SQL Server on a VM."

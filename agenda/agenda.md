@@ -70,6 +70,13 @@ that framing first. It hands straight off into the **source control** part of th
   Azure SQL; Fabric is faster here because the **capacity is pre-provisioned** —
   `use_existing_capacity`, so only workspace + DB apply). Have a completed run open as a
   fallback if a live apply stalls. **This is the section most at risk of overrun — flag for #13.**
+- **The "one number → a reviewed plan" beat (change = plan).** On a branch, bump
+  `attendee_count` in [`infra/azure-sql/shared-endpoint`](../infra/azure-sql/shared-endpoint)
+  from 10 to 15, commit, push — the PR's **`terraform plan (shared endpoint)`** job (a second
+  Terraform flow in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)) prints
+  *"+5 databases, +5 logins, +5 users — 15 to add"*. The most visceral IaC moment of the day:
+  a one-line change produces a precise, reviewable plan of exactly what it will do. Ties back
+  to the plan-on-PR idea planted in Morning 1. Read-only — nothing provisions on the PR.
 - **Backup/stretch:** the Bicep equivalents ([`azure-sql/bicep`](../infra/azure-sql/bicep)),
   and the teaching point that **Fabric can't be fully done in Bicep** (workspace + DB have no
   ARM type — capacity only); ADO pipeline equivalents.

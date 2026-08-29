@@ -31,7 +31,7 @@ sql-fabcon26-shared-weu-xxxxxx.database.windows.net
 |---|---|---|
 | Auth | Entra-only, passwordless | **SQL logins** (can't hand a room Entra identities) |
 | Shape | server → 1 database | server → **pool → N databases** |
-| State | remote azurerm backend (D5) | **local** (throwaway, one-shot) |
+| State | remote azurerm backend (D5) | **remote** backend too (so the PR plan sees real state) + a local override for laptop runs |
 | Network | firewall by IP | **open to the internet** for the day |
 | Lifespan | managed | **destroyed same day**, unsupported |
 
@@ -50,10 +50,13 @@ publishes into their own DB (D6).
 
 ## Run it
 
-From the repo root:
+From the repo root. The committed backend is the remote Azure Storage one (so CI's plan can
+read shared state); to stand it up from your own machine, drop in the local-state override
+first so `terraform init` needs no state account:
 
 ```powershell
 cd infra/azure-sql/shared-endpoint
+Copy-Item backend_local_override.tf.example backend_local_override.tf   # local state, laptop runs
 Copy-Item terraform.tfvars.example terraform.tfvars
 code terraform.tfvars          # set attendee_count, region, pool size
 
@@ -97,12 +100,38 @@ sqlpackage /Action:Publish `
 terraform destroy
 ```
 
-State is local, so keep `terraform.tfstate` with you; if you lose it, delete by resource
-group instead — everything is prefixed for exactly this:
+If you ran locally (local override), keep `terraform.tfstate` with you; if you lose it (or
+never held it), delete by resource group instead — everything is prefixed for exactly this:
 
 ```powershell
 az group delete --name rg-fabcon26-shared-weu --yes --no-wait
 ```
+
+## Demo: "we have more attendees → we need more databases"
+
+This module is also a **teaching prop for infrastructure as code**. The count of databases
+is one number in [`variables.tf`](variables.tf) (`attendee_count`, default **10**). Change
+it, open a PR, and the **plan job proves what will happen** before anything runs:
+
+```powershell
+# on a branch, edit attendee_count 10 -> 15 in variables.tf, then:
+git commit -am "more attendees: 10 -> 15 databases"
+git push
+```
+
+The PR triggers [`azure-sql-plan.yml`](../../../.github/workflows/azure-sql-plan.yml), whose
+**`terraform plan (shared endpoint)`** job prints the exact delta:
+
+```
++ 5 azurerm_mssql_database
++ 5 mssql_login
++ 5 mssql_user
+Plan: 15 to add, 0 to change, 0 to destroy.
+```
+
+One reviewable number → a precise, reviewed plan of exactly the resources it creates. That
+job is **read-only** (`-lock=false -refresh=false`); it never provisions. (Merging to
+actually create them would need an apply workflow — not wired yet; see Status.)
 
 ## Cost
 
@@ -132,6 +161,14 @@ and `.terraform.lock.hcl` is committed. What's **not** yet exercised is a real
    your region and pooled DBs create with `sku_name = "ElasticPool"`;
 3. the firewall is open *before* the login/user resources connect (the `depends_on` is
    there for this, but verify ordering on a cold apply).
+
+**No apply/destroy workflow yet.** Plan-on-PR is wired (the second job in
+`azure-sql-plan.yml`); actually provisioning still happens by a presenter running
+`terraform apply` locally (local override) against the remote state. Wiring a
+`shared-endpoint` apply + nightly destroy (mirroring the taught module) is the next
+increment — it also gives the demo a "merge → it really builds" payoff. Until then the
+crisp `+5` in the demo needs the initial 10 to already exist in the remote state (seed it
+with one local apply).
 
 Tracked as **task #19** in [`../../../planning/tasks.md`](../../../planning/tasks.md).
 Log anything surprising in [`../../../notes/LEARNINGS.md`](../../../notes/LEARNINGS.md).
