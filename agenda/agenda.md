@@ -57,7 +57,7 @@ that framing first. It hands straight off into the **source control** part of th
 *11:00 – 12:15 · 75 min · the content-focus IaC block.* Concept (~10) → live apply (~50) → recap.
 
 **Demos (Terraform + GitHub Actions lead):**
-- **Azure SQL:** walk [`infra/azure-sql/terraform`](../infra/azure-sql/terraform) (RG →
+- **Azure SQL:** walk [`infra/azure-sql/terraform/demo`](../infra/azure-sql/terraform/demo) (RG →
   server → serverless DB → firewall, CAF naming, **passwordless/Entra-only**), then dispatch
   [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) live.
 - **Fabric SQL, side by side:** walk [`infra/fabric-sql/terraform`](../infra/fabric-sql/terraform)
@@ -71,7 +71,7 @@ that framing first. It hands straight off into the **source control** part of th
   `use_existing_capacity`, so only workspace + DB apply). Have a completed run open as a
   fallback if a live apply stalls. **This is the section most at risk of overrun — flag for #13.**
 - **The "one number → a reviewed plan" beat (change = plan).** On a branch, bump
-  `attendee_count` in [`infra/azure-sql/shared-endpoint`](../infra/azure-sql/shared-endpoint)
+  `attendee_count` in [`infra/azure-sql/terraform/shared-endpoint`](../infra/azure-sql/terraform/shared-endpoint)
   from 10 to 15, commit, push — the PR's **`terraform plan (shared endpoint)`** job (a second
   Terraform flow in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)) prints
   *"+5 databases, +5 logins, +5 users — 15 to add"*. The most visceral IaC moment of the day:

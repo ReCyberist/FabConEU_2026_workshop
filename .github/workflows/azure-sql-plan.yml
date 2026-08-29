@@ -7,8 +7,8 @@ name: Azure SQL — Terraform plan (PR)
 # which is workflow_dispatch-only and named "apply" on purpose).
 #
 # TWO Terraform flows run here as separate jobs:
-#   1. plan               — the taught module (infra/azure-sql/terraform).
-#   2. plan-shared-endpoint — the shared attendee endpoint (infra/azure-sql/shared-endpoint).
+#   1. plan               — the taught module (infra/azure-sql/terraform/demo).
+#   2. plan-shared-endpoint — the shared attendee endpoint (infra/azure-sql/terraform/shared-endpoint).
 # The second one powers the "bump attendee_count" demo: change the count in a PR, push, and
 # the plan job prints exactly the databases/logins/users it would add.
 #
@@ -21,8 +21,8 @@ name: Azure SQL — Terraform plan (PR)
 on:
   pull_request:
     paths:
-      - 'infra/azure-sql/terraform/**'
-      - 'infra/azure-sql/shared-endpoint/**'
+      - 'infra/azure-sql/terraform/demo/**'
+      - 'infra/azure-sql/terraform/shared-endpoint/**'
       - '.github/workflows/azure-sql-plan.yml'
 
 permissions:
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/azure-sql/terraform
+        working-directory: infra/azure-sql/terraform/demo
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/azure-sql/shared-endpoint
+        working-directory: infra/azure-sql/terraform/shared-endpoint
     steps:
       - name: Checkout
         uses: actions/checkout@v7

@@ -9,5 +9,5 @@ fabric_subscription_id = "00000000-0000-0000-0000-000000000000"
 # Naming — MUST match the Fabric module so the workload resource group is found.
 workload              = "fabcon26"
 environment           = "dev"
-location              = "westeurope"
-location_abbreviation = "weu"
+location              = "uksouth"
+location_abbreviation = "uks"

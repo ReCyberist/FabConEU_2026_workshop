@@ -61,7 +61,7 @@ and for our own credibility.
 │   ├── ordering.md        ← services, labs, assets, prerequisites to order
 │   └── tasks.md           ← ownership, status, deadlines
 ├── infra/                 ← infrastructure as code (Azure SQL + Fabric SQL)
-│   ├── azure-sql/{terraform,bicep}
+│   ├── azure-sql/{terraform/{demo,shared-endpoint},bicep}
 │   ├── fabric-sql/{terraform,bicep}
 │   └── pipelines/{github-actions,azure-devops}
 ├── database/              ← database as code
@@ -134,7 +134,7 @@ Numbered procedures, commands, configuration, troubleshooting. Here we are preci
 
 - **Numbered list. One action per step**, in the order it is performed. No paragraph-shaped
   instructions.
-- **Say *where* before *what*:** "In the `infra/azure-sql/terraform` folder, run:".
+- **Say *where* before *what*:** "In the `infra/azure-sql/terraform/demo` folder, run:".
 - **Say what success looks like** — the expected output, the resource that now exists, the row
   count. An attendee must be able to tell the step worked without asking.
 - **No vagueness.** Not "configure the provider", but "set `subscription_id` in

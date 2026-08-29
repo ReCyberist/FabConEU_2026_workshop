@@ -55,6 +55,73 @@ Format:
 **Learning:** The clearest first source-control exercise is one complete PR loop against the attendee's own fork: clean status, branch, tiny edit, review the diff, commit, push, open PR. Using an existing harmless text file (`notes/Ideas.md`) keeps the exercise concrete without touching infra or database code too early.
 **Action:** Added the step-by-step flow to [`../docs/foundations/demo.md`](../docs/foundations/demo.md).
 
+## 2026-08-29 — Terraform directory renames merge cleanly with subsequent module edits
+**Context:** The Azure SQL Terraform modules moved under `terraform/demo` and
+`terraform/shared-endpoint`; the current `main` branch then changed the demo module's
+auto-pause default.
+**Learning:** Git's rename detection mapped the subsequent edit to the relocated demo module,
+so merging the current base produced no conflict and retained the updated default.
+**Action:** Merged current `main` into the restructuring branch and checked the resulting
+`infra/azure-sql/terraform/demo/variables.tf` change.
+
+## 2026-08-29 — Azure SQL Terraform split into `terraform/{demo,shared-endpoint}`
+**Context:** The taught module lived at `infra/azure-sql/terraform` and the shared attendee
+endpoint at a sibling `infra/azure-sql/shared-endpoint`. Post-merge feedback: put both under
+one `terraform/` parent with `demo` and `shared-endpoint` children.
+**Learning:** Two gotchas when relocating Terraform modules. (1) A blanket path rewrite is
+unsafe once one new path is a prefix of another — rewrite the more specific path
+(`shared-endpoint`) **first**, then rewrite `terraform` with a negative lookahead
+(`terraform(?!/demo|/shared-endpoint)`) so you don't double-apply. (2) The remote-state
+**blob key** (`azure-sql/shared-endpoint.terraform.tfstate`) is *not* a filesystem path —
+it must stay put or you orphan state; anchoring the rewrite to the `infra/` prefix leaves it
+alone. Also: a moved README's relative links all shift by one `../` level, and cross-module
+links change target (`../terraform` → `../demo`).
+**Action:** `git mv` into `terraform/demo` and `terraform/shared-endpoint`; updated all 20
+referencing files (workflows, CI validate loop, ADO pipelines, docs, slides, agenda, tasks).
+`terraform validate`/`fmt` clean on both; gitignore globs (`*_override.tf`, `**/.terraform/*`)
+still catch the new depths. State keys and concurrency groups unchanged.
+
+## 2026-08-29 — Default region flipped to UK South everywhere (West Europe has no capacity)
+**Context:** West Europe has no capacity for our subscription, so a deploy that lands in the
+old default region fails. Earlier the same day we had deliberately kept `westeurope` as the
+*taught* default and only overrode to UK South in CI/the shared-endpoint module (see the
+shared-endpoint entry below, and 2026-07-22).
+**Learning:** That split is no longer worth keeping — a taught default nobody can actually
+provision into is a footgun, not a teaching aid. So **UK South (`uksouth`/`uks`) is now the
+single default across every module**: the taught Azure SQL + Fabric Terraform modules, both
+Bicep templates, the Fabric automation module, and the shared-endpoint module (already there).
+CI is unaffected — it still passes `AZURE_LOCATION`/`AZURE_LOCATION_ABBREVIATION` (=uksouth/uks)
+explicitly, which is now belt-and-braces rather than a required override. **This supersedes the
+"the taught module's WEU default stands" line in the shared-endpoint entry below.** Two things
+deliberately **not** touched: the state resource group `rg-fabcon26-state-weu` (a real RG
+physically in West Europe — renaming it in code would try to recreate the state backend), and
+past dated entries in this log (history, not rewritten).
+**Action:** `location`→`uksouth`, `location_abbreviation`→`uks` in
+[`infra/azure-sql/terraform/demo/variables.tf`](../infra/azure-sql/terraform/demo/variables.tf),
+[`infra/fabric-sql/terraform/variables.tf`](../infra/fabric-sql/terraform/variables.tf),
+[`infra/fabric-sql/automation/variables.tf`](../infra/fabric-sql/automation/variables.tf), and
+both `main.bicep` files; updated every `terraform.tfvars.example`, the Bicep deploy READMEs, the
+CAF naming examples in the infra READMEs, and the attendee pages
+[`docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) /
+[`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (resource-name examples now `…-uks`).
+Reworded the shared-endpoint `location` description (the "unlike the taught module" contrast is
+gone). (Jess & Rob, 2026-08-29.)
+
+## 2026-08-29 — The scary "MkDocs 2.0" banner is theme advocacy, not an error — and requirements.txt was unpinned
+**Context:** Running `mkdocs serve -f mkdocs.local.yml` printed a red-bordered "Warning from
+the Material for MkDocs team" about a coming **MkDocs 2.0** (plugins removed, theming
+rewritten, "unlicensed", "unsuitable for production"). Looked like a build error.
+**Learning:** It's a **banner the Material theme prints itself** on every `serve`/`build`
+(seen here on `mkdocs-material==9.7.7`) — pure advocacy about a *forecasted* fork/rewrite the
+squidfunk team disagrees with. It is **not** an error, is unrelated to our config, and the
+build completes normally right after it (`mkdocs build --strict` → *"Documentation built in
+1.52 seconds"*, exit 0). MkDocs 2.0 is not something installed here. The only real finding:
+`requirements.txt` pinned nothing (`mkdocs-material` bare) despite its own "Pin versions before
+the event" comment — a reproducibility risk for a 200-attendee follow-along.
+**Action:** Pinned the toolchain to the tested combo — `mkdocs-material==9.7.7` + `mkdocs==1.6.1`
+— in [`../requirements.txt`](../requirements.txt), verified with `mkdocs build --strict`.
+(Earlier entries — 2026-07-18, 2026-07-04 — already noted the banner is informational; this
+consolidates it and closes the pinning gap.)
 ## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
 **Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
 10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
@@ -163,7 +230,7 @@ deliberate departure from the taught module's Entra-only design; and (2) **login
 resources** — azurerm makes the server/pool/DBs, but `CREATE LOGIN`/`CREATE USER`/role membership
 run *inside* SQL, so they need the **`betr-io/mssql`** provider (connects per-resource with the
 generated SQL admin) — which in turn needs the firewall open before it runs.
-**Action:** Drafted a **separate** module [`../infra/azure-sql/shared-endpoint/`](../infra/azure-sql/shared-endpoint/)
+**Action:** Drafted a **separate** module [`../infra/azure-sql/terraform/shared-endpoint/`](../infra/azure-sql/terraform/shared-endpoint/)
 (server + elastic pool + DB/login/user per attendee, local state, `Taylor==Metallica` shared password,
 open firewall for the day) so the taught module stays pristine. Recorded the reversal as a
 [decisions.md](decisions.md) **D6 update**; ordering + task #19 updated. **Untested** — no live
@@ -212,7 +279,7 @@ Diagnostic tell: ARM token works but the Graph-scoped `get-access-token` errors 
 CLI/broker, not Terraform. Attendees on managed Windows laptops will likely hit this.
 Documented as a gotcha in
 [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) and
-[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md).
+[`../infra/azure-sql/terraform/demo/README.md`](../infra/azure-sql/terraform/demo/README.md).
 
 ## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
 **Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
@@ -220,10 +287,10 @@ Documented as a gotcha in
 saying which directory to be in.
 **Learning:** Both left the working directory implicit. The docs demo block also never
 copied `terraform.tfvars` at all, so attendees had no prompt to review the variables.
-**Action:** Added `cd infra/azure-sql/terraform` (from repo root) to both, added a
+**Action:** Added `cd infra/azure-sql/terraform/demo` (from repo root) to both, added a
 `Copy-Item terraform.tfvars.example …` + `code terraform.tfvars` step so the variables get
 opened for review, and kept README and docs in step. Files:
-[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md),
+[`../infra/azure-sql/terraform/demo/README.md`](../infra/azure-sql/terraform/demo/README.md),
 [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md).
 
 ## 2026-07-01 — Repo scaffolded and decisions locked
@@ -335,7 +402,7 @@ SKU won't error. Verified offline: `terraform fmt/validate` clean and `plan` pro
 coherent **5-to-add** plan (picked up cached az-CLI auth; no live apply — that's #14).
 Best-practice flag: this repo **gitignores `.terraform.lock.hcl`**; HashiCorp recommends
 **committing** it so CI/teammates resolve identical provider versions — worth revisiting.
-**Action:** New module [`../infra/azure-sql/terraform/`](../infra/azure-sql/terraform/)
+**Action:** New module [`../infra/azure-sql/terraform/demo/`](../infra/azure-sql/terraform/demo/)
 (`providers/variables/main/outputs.tf` + `terraform.tfvars.example`); README rewritten with
 the naming + passwordless rationale. Task #4 → DONE; unblocks the deploy pipeline (#9). The
 Fabric mirror (#5) and Bicep reference (#6) should follow the same naming.
@@ -461,7 +528,7 @@ subject `repo:<owner>/<repo>:ref:refs/heads/main` covers both `schedule` events 
 `environment:` subject needed for this simple case.
 **Action:** Added [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
 and [`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
-Backend + OIDC wired into `infra/azure-sql/terraform/providers.tf`; `.terraform.lock.hcl`
+Backend + OIDC wired into `infra/azure-sql/terraform/demo/providers.tf`; `.terraform.lock.hcl`
 un-ignored and committed. Repo variables set (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
 `AZURE_SUBSCRIPTION_ID`, `TF_STATE_*`, `SQL_ENTRA_ADMIN_*`) — all non-secret with OIDC, so
 `vars` not `secrets`. Recorded in `notes/decisions.md` D5 (update) and `planning/tasks.md`
@@ -1052,7 +1119,7 @@ tree to paste into `mkdocs.yml` at the real reveal.
 previewable while writing them.
 
 ## 2026-08-28 — Local Terraform demo needs a local-backend override, not `-backend=false`
-**Context:** Attendee/presenter runs `terraform init` in `infra/azure-sql/terraform` on a laptop
+**Context:** Attendee/presenter runs `terraform init` in `infra/azure-sql/terraform/demo` on a laptop
 and gets prompted for a **container name**. `providers.tf` declares a remote **`azurerm`** backend
 (D5) with only `use_oidc`/`use_azuread_auth` inline — the storage account/container/key come from
 `-backend-config` in CI, so a bare local `init` tries to initialize the real remote backend
@@ -1068,9 +1135,9 @@ committed `azurerm` backend stays intact for CI. Shipped as `.example` (mirrors
 `terraform.tfvars.example`); `.gitignore` adds `*_override.tf` + `!*_override.tf.example` so the
 activated copy never gets committed and can't clobber the remote backend.
 **Action:** Added
-[`../infra/azure-sql/terraform/backend_local_override.tf.example`](../infra/azure-sql/terraform/backend_local_override.tf.example);
+[`../infra/azure-sql/terraform/demo/backend_local_override.tf.example`](../infra/azure-sql/terraform/demo/backend_local_override.tf.example);
 fixed the local snippets in
-[`../infra/azure-sql/terraform/README.md`](../infra/azure-sql/terraform/README.md) and the
+[`../infra/azure-sql/terraform/demo/README.md`](../infra/azure-sql/terraform/demo/README.md) and the
 Terraform tab in [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md); gitignore rule added.
 The *attendee-facing* backend/sandbox strategy (#1) is still the broader open question — this just
 makes the module runnable on a laptop today.

@@ -9,7 +9,7 @@ stack. **Reference material — not the taught path** (that's
 | File | Mirrors | Trigger | What it does |
 |------|---------|---------|--------------|
 | [`ci.yml`](ci.yml) | `ci.yml` | push to `main` + PR | Build the SQL project + T-SQL static analysis (`-warnaserror`); publish the DACPAC as a pipeline artifact. No Azure auth. |
-| [`azure-sql-plan.yml`](azure-sql-plan.yml) | `azure-sql-plan.yml` | PR touching `infra/azure-sql/terraform/**` | Read-only `fmt`/`validate`/`plan` (`-lock=false`). Never applies. |
+| [`azure-sql-plan.yml`](azure-sql-plan.yml) | `azure-sql-plan.yml` | PR touching `infra/azure-sql/terraform/demo/**` | Read-only `fmt`/`validate`/`plan` (`-lock=false`). Never applies. |
 | [`azure-sql-apply.yml`](azure-sql-apply.yml) | `azure-sql-apply.yml` | manual | `terraform apply`, then publish the DACPAC into the new DB + smoke-test it. Two stages (Apply → Publish). |
 | [`azure-sql-destroy.yml`](azure-sql-destroy.yml) | `azure-sql-destroy.yml` | schedule 21:00 UTC + manual | `terraform destroy` so nothing bills overnight. |
 
