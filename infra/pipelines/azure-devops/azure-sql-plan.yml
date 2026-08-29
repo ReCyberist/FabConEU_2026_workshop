@@ -22,7 +22,7 @@ pr:
     include: [ '*' ]
   paths:
     include:
-      - infra/azure-sql/terraform/**
+      - infra/azure-sql/terraform/demo/**
       - infra/pipelines/azure-devops/azure-sql-plan.yml
 
 pool:
@@ -39,7 +39,7 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       addSpnToEnvironment: true
-      workingDirectory: infra/azure-sql/terraform
+      workingDirectory: infra/azure-sql/terraform/demo
       inlineScript: |
         set -euo pipefail
 

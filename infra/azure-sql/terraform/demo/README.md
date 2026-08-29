@@ -3,7 +3,7 @@
 Provision Azure SQL (logical server + database + firewall + Entra auth) with Terraform.
 This is the **taught path** for the Azure SQL infra module. It produces the server and
 database that the SQL project's DACPAC publishes into (see
-[`../../../database/sql-projects/PublishProfiles/`](../../../database/sql-projects/PublishProfiles/)).
+[`../../../../database/sql-projects/PublishProfiles/`](../../../../database/sql-projects/PublishProfiles/)).
 
 ## What it creates
 
@@ -63,7 +63,7 @@ Public network access is gated by firewall rules. Two ways to allow a client thr
   gh secret set JESS_CLIENT_IP --repo JessAndRob/FabConEU_2026_workshop --body "<jess.static.ip>"
   ```
 
-  Then run [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) to create a
+  Then run [`azure-sql-apply.yml`](../../../../.github/workflows/azure-sql-apply.yml) to create a
   `presenter-<hash>` firewall rule per IP. The variable is `sensitive`, so Terraform prints the
   rule value as `(sensitive value)` and names the rule after a one-way hash — the IP appears
   **nowhere** in the plan/apply output, with GitHub Actions' secret masking as a second layer.
@@ -74,10 +74,10 @@ Public network access is gated by firewall rules. Two ways to allow a client thr
 ## Run it
 
 Locally (local state, for iterating on the module itself) — run from this module folder,
-`infra/azure-sql/terraform`:
+`infra/azure-sql/terraform/demo`:
 
 ```powershell
-cd infra/azure-sql/terraform   # from the repo root
+cd infra/azure-sql/terraform/demo   # from the repo root
 
 Copy-Item terraform.tfvars.example terraform.tfvars   # fill in the Entra admin identity
 code terraform.tfvars                                 # open it to review/edit the variables
@@ -115,12 +115,12 @@ initialization required"*). The override file and `terraform.tfstate*` are gitig
 iteration never touches the shared remote backend.
 
 Via GitHub Actions, against the shared remote state (see **State** below):
-[`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) (manual) and
-[`azure-sql-destroy.yml`](../../../.github/workflows/azure-sql-destroy.yml) (nightly at
+[`azure-sql-apply.yml`](../../../../.github/workflows/azure-sql-apply.yml) (manual) and
+[`azure-sql-destroy.yml`](../../../../.github/workflows/azure-sql-destroy.yml) (nightly at
 21:00 UTC + manual).
 
 **State.** Uses a **remote `azurerm` backend** (Azure Storage, AAD/OIDC auth — no storage
-keys), per [`notes/decisions.md`](../../../notes/decisions.md) **D5**. The state account
+keys), per [`notes/decisions.md`](../../../../notes/decisions.md) **D5**. The state account
 (`stfabcon26tf4766a4`) lives in its own persistent resource group
 (`rg-fabcon26-state-weu`), kept separate from the workload resource group so the nightly
 destroy workflow never touches the state store. This is the presenter's **personal sandbox**
@@ -130,7 +130,7 @@ identical provider versions.
 
 > **Status:** `fmt`, `init`, `validate` all run clean. Remote backend + OIDC auth wired up
 > and GitHub Actions apply/destroy workflows added — first live `apply` still to be run;
-> tracked with the runtime deploy in [`planning/tasks.md`](../../../planning/tasks.md) #14.
+> tracked with the runtime deploy in [`planning/tasks.md`](../../../../planning/tasks.md) #14.
 
 ## Inputs
 
@@ -138,5 +138,5 @@ Only `entra_admin_login` and `entra_admin_object_id` are required; everything el
 cost-aware default. See [`variables.tf`](variables.tf) for the full list and validation
 rules, and [`terraform.tfvars.example`](terraform.tfvars.example) for a starting point.
 
-Keep in step with the Bicep reference in [`../bicep/`](../bicep/) and the Fabric SQL
-equivalent in [`../../fabric-sql/terraform/`](../../fabric-sql/terraform/).
+Keep in step with the Bicep reference in [`../../bicep/`](../../bicep/) and the Fabric SQL
+equivalent in [`../../../fabric-sql/terraform/`](../../../fabric-sql/terraform/).

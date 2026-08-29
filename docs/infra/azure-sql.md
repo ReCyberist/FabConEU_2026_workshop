@@ -52,10 +52,10 @@ flowchart LR
 ## Terraform (focus) / Bicep (reference)
 
 === "Terraform"
-    The taught path. Run from the module folder, `infra/azure-sql/terraform`:
+    The taught path. Run from the module folder, `infra/azure-sql/terraform/demo`:
 
     ```powershell
-    cd infra/azure-sql/terraform   # from the repo root
+    cd infra/azure-sql/terraform/demo   # from the repo root
 
     $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 
@@ -110,7 +110,7 @@ flowchart LR
 ## The code
 
 The module lives in
-[`infra/azure-sql/terraform`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/terraform)
+[`infra/azure-sql/terraform/demo`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/terraform/demo)
 — only `entra_admin_login` + `entra_admin_object_id` are required; everything else has a cost-aware
 default. The Bicep reference is in
 [`infra/azure-sql/bicep`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/bicep).

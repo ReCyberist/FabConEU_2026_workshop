@@ -2,8 +2,8 @@ name: Azure SQL — Terraform apply
 
 # Manually provisions Azure SQL infra into the personal sandbox subscription. TWO independent
 # Terraform flows live here as separate jobs; the `target` input picks which run:
-#   • demo     — the taught module (infra/azure-sql/terraform) + DACPAC publish/smoke test.
-#   • attendee — the shared, unsupported attendee endpoint (infra/azure-sql/shared-endpoint):
+#   • demo     — the taught module (infra/azure-sql/terraform/demo) + DACPAC publish/smoke test.
+#   • attendee — the shared, unsupported attendee endpoint (infra/azure-sql/terraform/shared-endpoint):
 #                elastic pool + a database/login per attendee, for the "bump the count" demo.
 #   • both     — both flows (default).
 # workflow_dispatch-only — these create real, billed resources, so nothing runs on a push.
@@ -53,7 +53,7 @@ jobs:
       database_name: ${{ steps.tf.outputs.database_name }}
     defaults:
       run:
-        working-directory: infra/azure-sql/terraform
+        working-directory: infra/azure-sql/terraform/demo
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -222,7 +222,7 @@ jobs:
 
   # -------------------------------------------------------------------------------------
   # Second Terraform flow: the shared, UNSUPPORTED attendee endpoint
-  # (infra/azure-sql/shared-endpoint) — one server + elastic pool + a database/login per
+  # (infra/azure-sql/terraform/shared-endpoint) — one server + elastic pool + a database/login per
   # attendee. Independent of the demo jobs above (own state key, own concurrency group). No
   # DACPAC publish here: attendees publish their own schemas into their own databases.
   #
@@ -240,7 +240,7 @@ jobs:
       cancel-in-progress: false
     defaults:
       run:
-        working-directory: infra/azure-sql/shared-endpoint
+        working-directory: infra/azure-sql/terraform/shared-endpoint
     steps:
       - name: Checkout
         uses: actions/checkout@v7

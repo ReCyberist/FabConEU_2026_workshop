@@ -1,6 +1,6 @@
 name: Shared endpoint — Terraform destroy
 
-# Tears down the shared attendee endpoint (infra/azure-sql/shared-endpoint) nightly at 21:00
+# Tears down the shared attendee endpoint (infra/azure-sql/terraform/shared-endpoint) nightly at 21:00
 # UTC and on demand — the endpoint is a same-day, throwaway target, so nothing should bill
 # overnight. If it wasn't stood up that day, destroy runs against empty state and is a no-op.
 #
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/azure-sql/shared-endpoint
+        working-directory: infra/azure-sql/terraform/shared-endpoint
     steps:
       - name: Checkout
         uses: actions/checkout@v7
