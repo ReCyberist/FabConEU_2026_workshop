@@ -40,7 +40,7 @@ Copy-Item main.bicepparam my.bicepparam   # then fill in capacityAdminMembers
 
 az deployment sub create `
   --name fabric-capacity-dev `
-  --location westeurope `
+  --location uksouth `
   --template-file main.bicep `
   --parameters my.bicepparam
 ```

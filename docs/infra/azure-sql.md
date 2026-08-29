@@ -13,8 +13,8 @@ no admin password, fully repeatable.
 
 | Resource | Name (default) | Notes |
 |---|---|---|
-| Resource group | `rg-fabcon26-dev-weu` | |
-| Logical SQL server | `sql-fabcon26-dev-weu-<rnd>` | Globally unique; TLS 1.2 min; **Entra-only auth** |
+| Resource group | `rg-fabcon26-dev-uks` | |
+| Logical SQL server | `sql-fabcon26-dev-uks-<rnd>` | Globally unique; TLS 1.2 min; **Entra-only auth** |
 | SQL database | `sqldb-football-dev` | Serverless, auto-pause 60 min, 2 GB — a cost-aware lab default |
 | Firewall rule | `AllowAzureServices` | Lets the pipeline runner reach the server |
 
@@ -24,9 +24,9 @@ flowchart LR
     DACPAC["SQL project<br/>DACPAC"]
 
     subgraph SUB["Azure subscription"]
-        subgraph RG["Resource group · rg-fabcon26-dev-weu"]
+        subgraph RG["Resource group · rg-fabcon26-dev-uks"]
             FW["Firewall rules<br/>AllowAzureServices + client IPs"]
-            SRV["Logical SQL server<br/>sql-fabcon26-dev-weu-·<br/>Entra-only · TLS 1.2"]
+            SRV["Logical SQL server<br/>sql-fabcon26-dev-uks-·<br/>Entra-only · TLS 1.2"]
             DB[("SQL database<br/>sqldb-football-dev<br/>GP serverless · auto-pause")]
             FW --> SRV
             SRV --> DB
