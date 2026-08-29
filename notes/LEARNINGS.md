@@ -15,6 +15,21 @@ Format:
 
 ---
 
+## 2026-08-29 — The scary "MkDocs 2.0" banner is theme advocacy, not an error — and requirements.txt was unpinned
+**Context:** Running `mkdocs serve -f mkdocs.local.yml` printed a red-bordered "Warning from
+the Material for MkDocs team" about a coming **MkDocs 2.0** (plugins removed, theming
+rewritten, "unlicensed", "unsuitable for production"). Looked like a build error.
+**Learning:** It's a **banner the Material theme prints itself** on every `serve`/`build`
+(seen here on `mkdocs-material==9.7.7`) — pure advocacy about a *forecasted* fork/rewrite the
+squidfunk team disagrees with. It is **not** an error, is unrelated to our config, and the
+build completes normally right after it (`mkdocs build --strict` → *"Documentation built in
+1.52 seconds"*, exit 0). MkDocs 2.0 is not something installed here. The only real finding:
+`requirements.txt` pinned nothing (`mkdocs-material` bare) despite its own "Pin versions before
+the event" comment — a reproducibility risk for a 200-attendee follow-along.
+**Action:** Pinned the toolchain to the tested combo — `mkdocs-material==9.7.7` + `mkdocs==1.6.1`
+— in [`../requirements.txt`](../requirements.txt), verified with `mkdocs build --strict`.
+(Earlier entries — 2026-07-18, 2026-07-04 — already noted the banner is informational; this
+consolidates it and closes the pinning gap.)
 ## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
 **Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
 10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
