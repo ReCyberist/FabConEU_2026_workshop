@@ -1171,5 +1171,39 @@ Related: the source-control page describes `azure-sql-plan.yml` as *surfacing th
 request* rather than naming checks-vs-comment, because #60 is actively moving it to a sticky PR
 comment. Pitch a page above a mechanism that is still in flight.
 
+## 2026-08-29 — Non-Windows attendees: OS install tabs, and a repo-setup step that keeps them short
+**Context:** Issue #52 — the prerequisites page only ever showed `winget`, which leaves every
+attendee not on Windows to work it out themselves. The room is international; a lot of them will
+be on a Mac.
+**Learning:** Three things worth keeping.
+(1) **`content.tabs.link` syncs tab sets by their *label list***, not by page position. A
+`Windows`/`macOS`/`Debian & Ubuntu` set therefore syncs with every other copy of itself while
+leaving the existing `Azure SQL`/`Fabric SQL` and `Terraform`/`Bicep` sets completely alone — so
+the attendee picks their OS once and the page follows them. Verified: 8 OS sets and 1 platform set
+on the page, and the OS sets **nest cleanly inside** the Azure SQL tab (confirmed at nesting depth
+1 by parsing the built HTML, not by eye — indentation is 4 spaces per level, so a tab inside a
+numbered step inside a tab puts the fence at 12 spaces).
+(2) **The apt keyring dance belongs in one collapsed block at the top, not in every step.** Four of
+the six tools come from vendor repositories (GitHub CLI, HashiCorp, Microsoft ×2). Repeating the
+keyring commands per tool would have added ~60 lines to an already long page; hoisting them into a
+run-once `??? note` makes every later Linux tab a single `sudo apt install x` that sits level with
+the winget and brew one-liners. Using `$(lsb_release -cs)` and `$(dpkg --print-architecture)` makes
+that block identical on Debian and Ubuntu — the **only** genuine split is .NET, where Ubuntu 22.04+
+ships `dotnet-sdk-8.0` in its own archive and adding Microsoft's repo there causes a package
+conflict.
+(3) **A glossary entry only fires in prose.** `winget` and `Homebrew` picked up tooltips; `keyring`
+did not, because the word appeared solely inside code blocks — `abbr` never matches inside `<code>`.
+Worth checking the built HTML after adding an entry rather than assuming it took.
+**Testing:** The Debian path is genuinely tested — this is a Debian 12 box. All five packages
+resolve under `apt-get install --simulate`, all 14 bash blocks pass `bash -n`, and all three
+keyring commands were checked against the keys actually installed here (GitHub and Microsoft match
+byte-for-byte; HashiCorp matches on both fingerprints). **macOS is not tested by either of us**, so
+the page says so plainly in a short note and points at the vendor link as the authority — per
+CLAUDE.md §4.
+**Action:** Rewrote [`../docs/setup/prerequisites.md`](../docs/setup/prerequisites.md) with OS tabs
+throughout (including the summary table); added `winget` and `Homebrew` to
+[`../includes/glossary.md`](../includes/glossary.md) — deliberately **not** `apt`, since matching is
+exact and site-wide and "apt" is an ordinary English word that would underline itself in prose. No
+`mkdocs.yml` change needed; `pymdownx.tabbed` and `content.tabs.link` were already on.
 
 <!-- Add new entries above this line -->

@@ -37,5 +37,8 @@
 *[SDK]: Software Development Kit — the tools needed to build and run code
 *[Contributor]: The Azure role that allows creating and deleting resources, but not granting access to others
 
+*[winget]: The package manager built into Windows. It installs a tool from one command instead of a download-and-click
+*[Homebrew]: The package manager most people use on macOS. It installs a tool from one command instead of a download-and-click
+
 *[PR]: Pull request — a proposed change to a repository, reviewed and discussed before it is merged
 *[YAML]: A plain-text file format, used here to describe pipelines and configuration

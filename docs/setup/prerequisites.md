@@ -7,11 +7,74 @@ downloads. The only hard requirement is a laptop and some curiosity.
 
 Everything else on this page is **optional**, and depends on how hands-on you would like to be.
 
-!!! note "The install commands on this page use winget"
-    We demo on Windows in **PowerShell**, so each install step shows
-    **[winget](https://learn.microsoft.com/windows/package-manager/winget/)**, which ships with
-    Windows 11 and Windows 10 (from version 1809). On macOS or Linux, follow the vendor link in
-    the same step instead. Every tool here is cross-platform; only the install command differs.
+## Choose your operating system
+
+Every install step on this page is tabbed. Pick your operating system **once**, in any tab below,
+and the whole page follows you — including the tabs tucked inside Part 1.
+
+=== "Windows"
+    Install commands use **[winget](https://learn.microsoft.com/windows/package-manager/winget/)**,
+    which ships with Windows 11 and with Windows 10 from version 1809. Run them in **PowerShell**.
+    This is what we demo on.
+
+=== "macOS"
+    Install commands use **[Homebrew](https://brew.sh/)**. If you do not have it yet, install it
+    first with the one-line command on [brew.sh](https://brew.sh/). Run everything in **Terminal**.
+
+=== "Debian & Ubuntu"
+    Install commands use **apt**. Four of the tools live in vendor repositories rather than in the
+    distribution archive, so **add those repositories once** using the block below before you
+    install anything.
+
+    ??? note "Add the package repositories — run this once"
+        This block adds three repositories — GitHub, HashiCorp and Microsoft — and the signing
+        keys your machine uses to check that their packages are genuine. Every install step
+        later on this page is then a single `apt install`.
+
+        ```bash
+        # Prerequisites for adding repositories
+        sudo apt update && sudo apt install -y curl gpg lsb-release
+        sudo mkdir -p -m 755 /etc/apt/keyrings
+
+        # GitHub CLI
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+          | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+        sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+          | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+
+        # HashiCorp (Terraform)
+        curl -fsSL https://apt.releases.hashicorp.com/gpg \
+          | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+          | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+
+        # Microsoft (Azure CLI)
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+          | sudo gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" \
+          | sudo tee /etc/apt/sources.list.d/azure-cli.list > /dev/null
+
+        sudo apt update
+        ```
+
+        **On Debian only**, add one more repository for the .NET SDK. Ubuntu 22.04 and later ship
+        the .NET SDK in their own archive, and adding this repository on Ubuntu causes a package
+        conflict — so skip it there.
+
+        ```bash
+        curl -fsSL -O https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb
+        sudo dpkg -i packages-microsoft-prod.deb
+        rm packages-microsoft-prod.deb
+        sudo apt update
+        ```
+
+!!! note "A word on the macOS commands"
+    We demo on Windows and test on Debian, so the Homebrew commands here are the vendors' own
+    formulae rather than something we have run ourselves. They are the documented way to install
+    each tool. If one has drifted since we wrote this, the vendor link in the same step is the
+    authority — and every tool on this page is genuinely cross-platform, so only the install
+    command differs.
 
 ## At a glance
 
@@ -34,9 +97,23 @@ Whatever level you choose, do these four things before the day. (If you have mis
 
 2. Install **[git](https://git-scm.com/downloads)**:
 
-    ```powershell
-    winget install --exact --id Git.Git
-    ```
+    === "Windows"
+
+        ```powershell
+        winget install --exact --id Git.Git
+        ```
+
+    === "macOS"
+
+        ```bash
+        brew install git
+        ```
+
+    === "Debian & Ubuntu"
+
+        ```bash
+        sudo apt install git
+        ```
 
     Close and reopen your terminal, then confirm it is installed:
 
@@ -50,9 +127,23 @@ Whatever level you choose, do these four things before the day. (If you have mis
     you fork the repository, and later how you set the secrets your pipeline needs — all without
     leaving the terminal.
 
-    ```powershell
-    winget install --exact --id GitHub.cli
-    ```
+    === "Windows"
+
+        ```powershell
+        winget install --exact --id GitHub.cli
+        ```
+
+    === "macOS"
+
+        ```bash
+        brew install gh
+        ```
+
+    === "Debian & Ubuntu"
+
+        ```bash
+        sudo apt install gh
+        ```
 
     Close and reopen your terminal, then confirm it is installed:
 
@@ -113,9 +204,23 @@ Provision Azure SQL and Fabric SQL **as code**. You bring the cloud to deploy in
 
     1. Install the **[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)**:
 
-        ```powershell
-        winget install --exact --id Microsoft.AzureCLI
-        ```
+        === "Windows"
+
+            ```powershell
+            winget install --exact --id Microsoft.AzureCLI
+            ```
+
+        === "macOS"
+
+            ```bash
+            brew install azure-cli
+            ```
+
+        === "Debian & Ubuntu"
+
+            ```bash
+            sudo apt install azure-cli
+            ```
 
         Close and reopen your terminal, then confirm it is installed:
 
@@ -126,9 +231,24 @@ Provision Azure SQL and Fabric SQL **as code**. You bring the cloud to deploy in
     2. Install **[Terraform](https://developer.hashicorp.com/terraform/install)**, version **1.8 or
         later**. The workshop is written and tested against **1.12**.
 
-        ```powershell
-        winget install --exact --id Hashicorp.Terraform
-        ```
+        === "Windows"
+
+            ```powershell
+            winget install --exact --id Hashicorp.Terraform
+            ```
+
+        === "macOS"
+
+            ```bash
+            brew tap hashicorp/tap
+            brew install hashicorp/tap/terraform
+            ```
+
+        === "Debian & Ubuntu"
+
+            ```bash
+            sudo apt install terraform
+            ```
 
         Close and reopen your terminal, then confirm it is installed:
 
@@ -196,9 +316,26 @@ Install two tools before you travel.
     [`global.json`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/global.json),
     currently **8.x**.
 
-    ```powershell
-    winget install --exact --id Microsoft.DotNet.SDK.8
-    ```
+    === "Windows"
+
+        ```powershell
+        winget install --exact --id Microsoft.DotNet.SDK.8
+        ```
+
+    === "macOS"
+
+        ```bash
+        brew install --cask dotnet-sdk@8
+        ```
+
+    === "Debian & Ubuntu"
+
+        ```bash
+        sudo apt install dotnet-sdk-8.0
+        ```
+
+        On Debian this comes from the Microsoft repository added at the top of the page. On
+        Ubuntu 22.04 and later it comes from the Ubuntu archive, and no extra repository is needed.
 
     Close and reopen your terminal, then confirm it is installed:
 
@@ -217,8 +354,31 @@ Install two tools before you travel.
     sqlpackage /version
     ```
 
-    The second command prints a version number. If it reports that `sqlpackage` is not recognised,
-    close and reopen your terminal so the updated `PATH` takes effect.
+    The second command prints a version number. If instead it reports that `sqlpackage` cannot be
+    found, the tools folder is not on your `PATH`:
+
+    === "Windows"
+
+        Close and reopen your terminal so the updated `PATH` takes effect, then run
+        `sqlpackage /version` again.
+
+    === "macOS"
+
+        Add the tools folder to your `PATH`, then run `sqlpackage /version` again:
+
+        ```bash
+        echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> ~/.zshrc
+        source ~/.zshrc
+        ```
+
+    === "Debian & Ubuntu"
+
+        Add the tools folder to your `PATH`, then run `sqlpackage /version` again:
+
+        ```bash
+        echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> ~/.bashrc
+        source ~/.bashrc
+        ```
 
 ## The shared endpoint (unsupported)
 
@@ -246,14 +406,41 @@ on that server — so there are no name collisions with the person sitting next 
 
 Here is everything above in one table. Bring the tools that match the parts you want to do.
 
-| Tool | Needed for | Install | Check |
-|---|---|---|---|
-| **git** | Everyone | `winget install --exact --id Git.Git` | `git --version` |
-| **GitHub CLI** (`gh`) | Everyone | `winget install --exact --id GitHub.cli` | `gh auth status` |
-| **Azure CLI** (`az`) | Part 1, on your laptop | `winget install --exact --id Microsoft.AzureCLI` | `az version` |
-| **Terraform** 1.8+ | Part 1, on your laptop | `winget install --exact --id Hashicorp.Terraform` | `terraform version` |
-| **.NET SDK** 8.x | Part 2 | `winget install --exact --id Microsoft.DotNet.SDK.8` | `dotnet --version` |
-| **SqlPackage** | Part 2 | `dotnet tool install -g microsoft.sqlpackage` | `sqlpackage /version` |
+=== "Windows"
+
+    | Tool | Needed for | Install | Check |
+    |---|---|---|---|
+    | **git** | Everyone | `winget install --exact --id Git.Git` | `git --version` |
+    | **GitHub CLI** (`gh`) | Everyone | `winget install --exact --id GitHub.cli` | `gh auth status` |
+    | **Azure CLI** (`az`) | Part 1, on your laptop | `winget install --exact --id Microsoft.AzureCLI` | `az version` |
+    | **Terraform** 1.8+ | Part 1, on your laptop | `winget install --exact --id Hashicorp.Terraform` | `terraform version` |
+    | **.NET SDK** 8.x | Part 2 | `winget install --exact --id Microsoft.DotNet.SDK.8` | `dotnet --version` |
+    | **SqlPackage** | Part 2 | `dotnet tool install -g microsoft.sqlpackage` | `sqlpackage /version` |
+
+=== "macOS"
+
+    | Tool | Needed for | Install | Check |
+    |---|---|---|---|
+    | **git** | Everyone | `brew install git` | `git --version` |
+    | **GitHub CLI** (`gh`) | Everyone | `brew install gh` | `gh auth status` |
+    | **Azure CLI** (`az`) | Part 1, on your laptop | `brew install azure-cli` | `az version` |
+    | **Terraform** 1.8+ | Part 1, on your laptop | `brew install hashicorp/tap/terraform` | `terraform version` |
+    | **.NET SDK** 8.x | Part 2 | `brew install --cask dotnet-sdk@8` | `dotnet --version` |
+    | **SqlPackage** | Part 2 | `dotnet tool install -g microsoft.sqlpackage` | `sqlpackage /version` |
+
+=== "Debian & Ubuntu"
+
+    Add the package repositories first — see [Choose your operating
+    system](#choose-your-operating-system) at the top of this page.
+
+    | Tool | Needed for | Install | Check |
+    |---|---|---|---|
+    | **git** | Everyone | `sudo apt install git` | `git --version` |
+    | **GitHub CLI** (`gh`) | Everyone | `sudo apt install gh` | `gh auth status` |
+    | **Azure CLI** (`az`) | Part 1, on your laptop | `sudo apt install azure-cli` | `az version` |
+    | **Terraform** 1.8+ | Part 1, on your laptop | `sudo apt install terraform` | `terraform version` |
+    | **.NET SDK** 8.x | Part 2 | `sudo apt install dotnet-sdk-8.0` | `dotnet --version` |
+    | **SqlPackage** | Part 2 | `dotnet tool install -g microsoft.sqlpackage` | `sqlpackage /version` |
 
 To check everything at once, run:
 
@@ -267,8 +454,8 @@ sqlpackage /version
 ```
 
 Each command prints a version number, and `gh auth status` confirms you are signed in. A command
-that is *"not recognised"* is not installed, or your terminal was open before you installed it —
-reopen the terminal and try again.
+that reports it cannot be found is not installed, or your terminal was open before you installed
+it — reopen the terminal and try again.
 
 !!! tip "Deploying from the pipeline? You need very little of this locally."
     The path we teach runs Terraform and SqlPackage **in GitHub Actions**, where the hosted runners
