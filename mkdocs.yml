@@ -77,6 +77,7 @@ exclude_docs: |
   infra/demo.md
   database/sql-projects.md
   database/demo.md
+  lunch.md
   cicd/build-validate.md
   cicd/deploy-infra.md
   cicd/ship-database-changes.md
@@ -110,6 +111,7 @@ nav:
   #     - The sample database: database/sample-database.md
   #     - SQL projects: database/sql-projects.md
   #     - Demo: database/demo.md
+  # - Lunch: lunch.md
   # - CI/CD:
   #     - Build & validate: cicd/build-validate.md
   #     - Deploy infrastructure: cicd/deploy-infra.md
