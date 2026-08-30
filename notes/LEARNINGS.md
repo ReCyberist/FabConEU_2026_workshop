@@ -15,6 +15,46 @@ Format:
 
 ---
 
+## 2026-08-29 — Database demo page should split at lunch, then pause again before increment 3
+**Context:** Writing `docs/database/demo.md` as an attendee-facing step-by-step walkthrough from the existing SQL-project and ship-changes notes.
+**Learning:** The clearest demo structure follows the agenda rather than the code folders: **Part 1** ends before lunch with the DACPAC built, and **Part 2** resumes after lunch for increments 1 and 2, with a second explicit pause at the 15:15 break before increment 3. That keeps the page aligned with how the room actually experiences the day.
+**Action:** Added [`../docs/database/demo.md`](../docs/database/demo.md) as a two-part, step-by-step database demo page aligned to the agenda breaks.
+
+## 2026-08-29 — Azure SQL local demo deploy to `test` in `uksouth` took 4m31s
+**Context:** Running the Azure SQL Terraform module locally with the demo overrides (`environment=test`, `location=uksouth`) and local backend.
+**Learning:** Jess's measured `terraform apply` completed in **4m31s** and created 4 resources: the resource group, logical SQL server, serverless database, and firewall rule. Example outputs were `rg-fabcon26-test-uks`, `sqldb-football-test`, and `sql-fabcon26-test-uks-myw0ki.database.windows.net`. This is a useful attendee expectation-setting datapoint for the infra demo page.
+**Action:** Added the runtime note and sample output to [`../docs/infra/demo.md`](../docs/infra/demo.md).
+
+## 2026-08-29 — Suppress the Material MkDocs 2.0 banner in local preview
+**Context:** Running local attendee-site preview with `mkdocs serve -f mkdocs.local.yml` printed the new Material warning banner every run.
+**Learning:** Material documents an opt-out env var for local runs. Setting `NO_MKDOCS_2_WARNING=1` in the PowerShell session suppresses the banner without changing the published site build.
+**Action:** Updated [`../CLAUDE.md`](../CLAUDE.md) §6 with the local preview instruction: `$env:NO_MKDOCS_2_WARNING = '1'` before serving/building.
+
+## 2026-08-29 — Infra demo page works best as one shared Terraform flow split by platform
+**Context:** Writing `docs/infra/demo.md` to mirror the source-control demo while covering both Azure SQL and Fabric SQL.
+**Learning:** The cleanest attendee demo format is one shared top-level structure (`What you'll do` → `The concept` → `Checkpoint` → `Gotchas`) with separate Azure and Fabric run sections underneath. The two paths are similar enough to teach side by side, but the provider split and cost warnings belong inside the Fabric subsection rather than in a generic flow.
+**Action:** Added [`../docs/infra/demo.md`](../docs/infra/demo.md) as a step-by-step attendee walkthrough with Azure SQL and Fabric SQL subheadings.
+
+## 2026-08-29 — The source-control demo should stay on the happy path
+**Context:** Simplifying `docs/foundations/demo.md` after the PR step picked up fork and closed-PR edge cases.
+**Learning:** This page works best as a first-run attendee exercise, not as a full GitHub CLI troubleshooting guide. Keep the flow on the happy path: branch, new file, staged diff, commit, push, `gh pr create --fill --base main`. Handle edge cases separately if they matter later.
+**Action:** Restored [`../docs/foundations/demo.md`](../docs/foundations/demo.md) to the simpler working PR flow and removed the extra PR edge-case guidance.
+
+## 2026-08-29 — Closed PR on the same branch needs reopen or a new commit
+**Context:** Retesting the source-control demo after opening, closing and trying to recreate the same pull request.
+**Learning:** `gh pr create` works for the first PR on a branch, but if that PR is later closed and the branch has no new commits, GitHub will not create a second PR for the same head/base comparison. The practical rule for the workshop is: reopen the closed PR with `gh pr reopen <number>`, or add another commit before creating a new PR.
+**Action:** Updated [`../docs/foundations/demo.md`](../docs/foundations/demo.md) to explain the retry behaviour in the PR step and gotchas.
+
+## 2026-08-29 — `gh pr create` needs the fork repo named explicitly in this demo
+**Context:** Testing the source-control demo after switching it to create a new file and open a PR from a cloned fork.
+**Learning:** In a clone created from `gh repo fork --clone`, `gh pr create` can target the upstream repo by default even though the working branch only exists in the attendee's fork. That produces `No commits between main and demo/source-control` and `Head ref must be a branch`. For this workshop flow, the reliable command is to name the fork explicitly with `--repo <your-account>/FabConEU_2026_workshop` and set `--head demo/source-control`.
+**Action:** Updated [`../docs/foundations/demo.md`](../docs/foundations/demo.md) to target the attendee's fork explicitly and documented the gotcha on the page.
+
+## 2026-08-29 — Source-control demo works best as one tiny PR from a harmless existing file
+**Context:** Writing the attendee-facing demo page that sits after the source-control concepts page.
+**Learning:** The clearest first source-control exercise is one complete PR loop against the attendee's own fork: clean status, branch, tiny edit, review the diff, commit, push, open PR. Using an existing harmless text file (`notes/Ideas.md`) keeps the exercise concrete without touching infra or database code too early.
+**Action:** Added the step-by-step flow to [`../docs/foundations/demo.md`](../docs/foundations/demo.md).
+
 ## 2026-08-29 — Terraform directory renames merge cleanly with subsequent module edits
 **Context:** The Azure SQL Terraform modules moved under `terraform/demo` and
 `terraform/shared-endpoint`; the current `main` branch then changed the demo module's
@@ -82,6 +122,7 @@ the event" comment — a reproducibility risk for a 200-attendee follow-along.
 — in [`../requirements.txt`](../requirements.txt), verified with `mkdocs build --strict`.
 (Earlier entries — 2026-07-18, 2026-07-04 — already noted the banner is informational; this
 consolidates it and closes the pinning gap.)
+
 ## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
 **Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
 10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
@@ -1170,6 +1211,25 @@ a five-line include, so nothing is lost by waiting.
 Related: the source-control page describes `azure-sql-plan.yml` as *surfacing the plan on the pull
 request* rather than naming checks-vs-comment, because #60 is actively moving it to a sticky PR
 comment. Pitch a page above a mechanism that is still in flight.
+
+## 2026-08-29 — Fabric demo: `ARM_SUBSCRIPTION_ID` doesn't feed the required module variable
+**Context:** Running the Fabric `terraform plan` from the demo steps dropped into an interactive
+prompt for `var.fabric_subscription_id` — the exact thing the "no clicking / no surprises" rule
+forbids happening live in the room.
+**Learning:** The Fabric module's `azurerm` provider reads its subscription from the
+`fabric_subscription_id` **variable** (no default — it exists for the cross-tenant CI design where
+the state backend is Tenant A and the provider is Tenant B), **not** from `ARM_SUBSCRIPTION_ID`.
+`ARM_SUBSCRIPTION_ID` only feeds the state backend and the CLI, so setting it (as both demo pages
+did) leaves the variable unset and `terraform plan` prompts. For a local single-tenant demo the
+cleanest fix is one env line — `$env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID` —
+reusing the same GUID; no tfvars edit needed. The Azure SQL module has no equivalent required var,
+which is why only the Fabric path trips on this.
+**Action:** Added the `TF_VAR_fabric_subscription_id` line to the Fabric steps in
+[`../docs/infra/demo.md`](../docs/infra/demo.md) and the "The code" snippet in
+[`../docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md), plus a gotcha on demo.md so it does
+not regress. Also surfaced `fabric_subscription_id` in
+`infra/fabric-sql/terraform/terraform.tfvars.example` (previously it never mentioned the one
+required variable, and its header wrongly claimed the module "runs with no tfvars at all").
 
 ## 2026-08-29 — Non-Windows attendees: OS install tabs, and a repo-setup step that keeps them short
 **Context:** Issue #52 — the prerequisites page only ever showed `winget`, which leaves every
