@@ -25,6 +25,21 @@ entries, remove the markers, and verify the PR diff still contains only the inte
 `notes/LEARNINGS.md` entries, and confirmed the PR changed-files list stayed scoped to the Morning 1
 work.
 
+## 2026-08-29 — Presenter firewall IPs are GitHub secrets that go stale
+**Context:** Reviewing the morning-of checklist (PR #43) before the workshop — specifically
+what has to be true before dispatching `azure-sql-apply`.
+**Learning:** The rules that let our laptops reach the Azure SQL server aren't hand-added on
+the day — Terraform builds them as code from the `ROB_CLIENT_IP` / `JESS_CLIENT_IP` GitHub
+**secrets** (`presenter_client_ips` in
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)). They were set from home,
+so in Barcelona they're stale, and apply won't re-open the firewall if you fix them *after*
+running it. Secret **values can't be read back** — you can only `gh secret list` (names +
+timestamps) — so "check they're current" really means "re-set them to today's egress IP."
+**Action:** Added a "refresh the presenter IP secrets first" step to
+[`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) §1 and cross-linked
+it from the §3 manual-firewall fallback (that manual `az` rule is now only for a skipped step
+or a one-off third machine).
+
 ## 2026-08-29 — Database demo page should split at lunch, then pause again before increment 3
 **Context:** Writing `docs/database/demo.md` as an attendee-facing step-by-step walkthrough from the existing SQL-project and ship-changes notes.
 **Learning:** The clearest demo structure follows the agenda rather than the code folders: **Part 1** ends before lunch with the DACPAC built, and **Part 2** resumes after lunch for increments 1 and 2, with a second explicit pause at the 15:15 break before increment 3. That keeps the page aligned with how the room actually experiences the day.
@@ -1067,6 +1082,22 @@ each naming the driving workflow/module); stale "15:30" refs fixed in
 Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packaging — attendee
 downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
 "all as code" (fine as pointers if we decide that consciously — worth a decision).
+
+## 2026-08-28 — Morning-of readiness checklist captured from the operational gotchas
+**Context:** Planning the run-of-day. Realised the demo environment is **not** standing when we
+walk in — nightly destroy (21:00 UTC) wipes the infra and the Fabric capacity auto-pauses every
+2h — so "be demo-ready" is an actual procedure, not a given.
+**Learning:** The morning setup is fully derivable from gotchas already logged, and they cluster:
+(1) both `*-apply` workflows must be re-dispatched **from `main`** (OIDC only trusts main) to
+rebuild infra + republish the DACPAC; (2) the Fabric capacity must be **resumed to `Active`**
+before anything Fabric resolves; (3) `az login` to **both tenants** (the Fabric path is
+cross-tenant); (4) the Fabric **workspace-admin grant re-applies** on every apply because the
+workspace is recreated; (5) any laptop-to-DB demo needs a **temporary firewall rule** (external
+clients are blocked). Site reveal (drop `exclude_docs` + uncomment nav) should happen **early, not
+live**.
+**Action:** Wrote [`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md);
+added task **#28**. Standalone eval flagged the real gap as **content + a timed dry run** (#13,
+#22, #24, #25), not code — the core "infra + DB as code" path is proven live on both platforms.
 
 ## 2026-08-28 — Docs-accuracy sweep: pages drift behind the code that ships underneath them
 **Context:** Asked to check the whole attendee site was up to date. Read every page and diffed
