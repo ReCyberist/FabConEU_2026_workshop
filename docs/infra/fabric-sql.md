@@ -99,7 +99,8 @@ code terraform.tfvars                                 # open it to review/edit t
 Copy-Item backend_local_override.tf.example backend_local_override.tf
 
 az login
-$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"   # for the Fabric capacity
+$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"          # state backend / CLI
+$env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID # required by the module
 
 terraform init
 terraform plan     # see exactly what will be created

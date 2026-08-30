@@ -172,6 +172,9 @@ there gets a dotted underline and a hover tooltip **everywhere it appears** — 
   site) or `mkdocs serve -f mkdocs.local.yml` to preview the **full** site including pages
   still held from publish by `exclude_docs`. The overlay is local-only — CI and Pages always
   build the default `mkdocs.yml`.
+- Local quality-of-life: Material 9.7.x shows a MkDocs 2.0 warning banner on each run. Suppress
+  it in the current PowerShell session before serving/building:
+  ` $env:NO_MKDOCS_2_WARNING = '1' `
 - Publish: GitHub Actions builds and deploys to GitHub Pages on push to `main`
   (workflow to be added under `.github/workflows/`).
 - Use Material features: admonitions (`!!! note`), tabbed content (great for
