@@ -9,12 +9,15 @@ here; this is the safety net that catches mistakes in review.
 
 ## What you'll build
 
-On every push and PR, [`ci.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/ci.yml) runs:
+On every push and PR, [`ci.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/ci.yml) runs four path-gated jobs:
 
-- **Build & analyse** — compiles the SQL project to a DACPAC and runs **T-SQL static code
+- **Database** — compiles the SQL project to a DACPAC and runs **T-SQL static code
   analysis** (`-warnaserror`, so any smell fails); uploads the DACPAC as an artifact.
-- **Docs** — `mkdocs build --strict`, but only when `docs/**` actually changes (gated by
-  `dorny/paths-filter`).
+- **Docs** — `mkdocs build --strict`, only when `docs/**`, `mkdocs.yml` or `requirements.txt` change.
+- **Terraform** — `fmt -check` + an offline `validate` (`-backend=false`) for each module, when
+  `infra/**/terraform/**` changes.
+- **Bicep** — `az bicep build` on the templates + `build-params` on the `.bicepparam` files, when
+  `infra/**/bicep/**` changes.
 
 And on a PR that touches the infra module,
 [`azure-sql-plan.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/azure-sql-plan.yml)
@@ -35,7 +38,7 @@ Jobs are **gated by paths**, so a SQL-only PR doesn't pay to build the docs, and
 
 ## The code
 
-- [`ci.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/ci.yml) — build + analyse + docs.
+- [`ci.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/ci.yml) — database build + analyse, docs, terraform, and bicep validation.
 - [`azure-sql-plan.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/azure-sql-plan.yml) — read-only plan on PR.
 
 ## Checkpoint

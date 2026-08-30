@@ -45,10 +45,13 @@ erDiagram
         nvarchar City
         nvarchar Country
         int Capacity
+        smallint Opened
     }
     CLUB {
         int ClubId PK
         nvarchar Name
+        nvarchar ShortName
+        smallint Founded
         int HomeStadiumId FK
     }
     COMPETITION {
@@ -56,6 +59,7 @@ erDiagram
         nvarchar Name
         nvarchar Category "Men / Women"
         nvarchar Country
+        tinyint Tier
     }
     SEASON {
         int SeasonId PK
@@ -75,11 +79,14 @@ erDiagram
         nvarchar FirstName
         nvarchar LastName
         char Position "GK/DF/MF/FW"
+        tinyint ShirtNumber
+        date DateOfBirth
     }
     REFEREE {
         int RefereeId PK
         nvarchar FirstName
         nvarchar LastName
+        nvarchar Country
     }
     FIXTURE {
         int FixtureId PK
@@ -140,13 +147,13 @@ across the **Premier League** and **Women's Super League**, a handful of played 
 El Clásico fixtures for `vw_UpcomingFixtures`. Re-deploying never duplicates rows.
 
 !!! tip "Try it after you deploy"
-    ```sql
-    -- Women's Super League table for 2025/26
-    EXEC football.usp_GetLeagueTable @CompetitionId = 2, @SeasonId = 1;
+```sql
+-- Women's Super League table for 2025/26
+EXEC football.usp_GetLeagueTable @CompetitionId = 2, @SeasonId = 1;
 
-    -- Who's scoring?
-    SELECT * FROM football.vw_TopScorers ORDER BY Goals DESC;
-    ```
+-- Who's scoring?
+SELECT * FROM football.vw_TopScorers ORDER BY Goals DESC;
+```
 
 ## Get the code
 

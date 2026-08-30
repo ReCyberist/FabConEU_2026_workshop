@@ -15,6 +15,9 @@ crash.log
 !*.tfvars.example
 override.tf
 override.tf.json
+# Local demo backend overrides (e.g. backend_local_override.tf); .example stays tracked
+*_override.tf
+!*_override.tf.example
 
 # Azure / secrets — never commit
 *.publishsettings

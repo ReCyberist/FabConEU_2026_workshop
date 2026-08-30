@@ -3,7 +3,7 @@
 #
 # Resource names follow the Azure Cloud Adoption Framework (CAF) convention:
 #   <resource-type-abbreviation>-<workload>-<environment>-<region>[-<unique>]
-# e.g. rg-fabcon26-dev-weu, sql-fabcon26-dev-weu-a1b2c3, sqldb-football-dev.
+# e.g. rg-fabcon26-dev-uks, sql-fabcon26-dev-uks-a1b2c3, sqldb-football-dev.
 #
 # The workload token stays "fabcon26" so a *fabcon26* filter still finds and tears down
 # every workshop resource (CLAUDE.md §4).
@@ -32,19 +32,19 @@ variable "environment" {
 }
 
 variable "location" {
-  description = "Azure region for all resources."
+  description = "Azure region for all resources. Defaults to UK South — West Europe has no capacity for this subscription (see LEARNINGS 2026-08-29)."
   type        = string
-  default     = "westeurope"
+  default     = "uksouth"
 }
 
 variable "location_abbreviation" {
-  description = "Short region token used in resource names (CAF style), e.g. weu for westeurope."
+  description = "Short region token used in resource names (CAF style), e.g. uks for uksouth."
   type        = string
-  default     = "weu"
+  default     = "uks"
 
   validation {
     condition     = can(regex("^[a-z0-9]{2,6}$", var.location_abbreviation))
-    error_message = "location_abbreviation must be 2-6 lowercase alphanumeric characters (e.g. weu, neu, eus)."
+    error_message = "location_abbreviation must be 2-6 lowercase alphanumeric characters (e.g. uks, weu, neu)."
   }
 }
 
@@ -100,6 +100,29 @@ variable "allowed_client_ips" {
   default     = {}
 }
 
+# Client IPs sourced from secrets (e.g. presenters' static IPs) — kept SEPARATE from
+# allowed_client_ips, which is for non-secret, named IPs committed in tfvars. These are passed
+# at apply time from GitHub Actions secrets (one per person, so each rotates independently),
+# so the addresses are never committed to source. Empty entries (an unset secret expands to "")
+# are dropped, so an unset secret creates no rule.
+#
+# Marked `sensitive` so Terraform prints "(sensitive value)" instead of the IP in plan/apply
+# output — belt-and-braces on top of GitHub Actions' own secret masking. A sensitive value
+# can't drive `for_each`, so main.tf keys the firewall rules on a one-way hash of each IP
+# (which reveals nothing) via nonsensitive(), keeping the IP itself sensitive. The validation
+# error_message deliberately doesn't echo the value, so a bad input can't leak it either.
+variable "presenter_client_ips" {
+  description = "Optional client IPv4s to allow through the firewall, supplied from secrets (empties dropped; empty list = no rules)."
+  type        = list(string)
+  default     = []
+  sensitive   = true
+
+  validation {
+    condition     = alltrue([for ip in var.presenter_client_ips : ip == "" || can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", ip))])
+    error_message = "each presenter_client_ips entry must be a single IPv4 address (e.g. 203.0.113.5) or an empty string."
+  }
+}
+
 # ---------------------------------------------------------------------------------------
 # Database sizing — defaults to General Purpose serverless with auto-pause (cost-aware).
 # ---------------------------------------------------------------------------------------
@@ -125,7 +148,7 @@ variable "database_min_capacity" {
 variable "database_auto_pause_delay" {
   description = "Minutes of inactivity before a serverless database auto-pauses; -1 disables auto-pause (ignored for provisioned SKUs)."
   type        = number
-  default     = 60
+  default     = 75
 }
 
 variable "tags" {

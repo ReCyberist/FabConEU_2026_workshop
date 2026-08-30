@@ -13,6 +13,7 @@ theme:
     - navigation.top
     - content.code.copy
     - content.code.annotate
+    - content.tooltips   # style abbr/title hovers as proper tooltips (see includes/glossary.md)
     - content.tabs.link   # keep Azure SQL / Fabric SQL tabs in sync across pages
   palette:
     - scheme: default
@@ -24,8 +25,23 @@ theme:
         icon: material/weather-sunny
         name: Switch to light mode
 
+# The session-clock timing strip at the top of every teaching-section page.
+# Markup: includes/clock-*.md · Styling: docs/stylesheets · Live fill: docs/javascripts
+extra_css:
+  - stylesheets/session-clock.css
+
+extra_javascript:
+  - javascripts/session-clock.js
+
 markdown_extensions:
   - admonition
+  # `abbr` + `snippets.auto_append` give every page the shared glossary in
+  # includes/glossary.md, so acronyms and British idioms get a hover translation
+  # without any per-page markup. See CLAUDE.md §5 (Voice).
+  - abbr
+  - pymdownx.snippets:
+      auto_append:
+        - includes/glossary.md
   - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
@@ -46,18 +62,25 @@ markdown_extensions:
 # versioned and building locally — but is held out of the published site via exclude_docs
 # below. `mkdocs build --strict` stays happy because excluded pages aren't in the nav.
 #
+#   👉 TO PREVIEW THE FULL SITE LOCALLY (without publishing): `mkdocs serve -f mkdocs.local.yml`
+#      — that overlay inherits this config, clears exclude_docs and supplies the full nav.
 #   👉 TO REVEAL THE FULL SITE: delete the `exclude_docs` block below AND un-comment the
-#      real nav entries. That one PR is the reveal.
+#      real nav entries (they mirror mkdocs.local.yml). That one PR is the reveal.
 exclude_docs: |
   database/sample-database.md
   setup/welcome.md
+  foundations/hardest-part-of-it.md
   foundations/source-control.md
+  foundations/demo.md
   infra/azure-sql.md
   infra/fabric-sql.md
+  infra/demo.md
   database/sql-projects.md
+  database/demo.md
   cicd/build-validate.md
   cicd/deploy-infra.md
   cicd/ship-database-changes.md
+  cicd/demo.md
   wrap-up/migrations-drift-teardown.md
   wrap-up/resources.md
   reference/other-tooling.md
@@ -69,20 +92,29 @@ nav:
   - Getting started:
       - Prerequisites: setup/prerequisites.md
   # --- Held until reveal: delete remaining exclude_docs entries AND uncomment below ---
-  # - Getting started (full):
+  # On reveal, `Welcome & how the day works` moves ABOVE `Prerequisites` in the
+  # `Getting started` section above — Welcome sets up the day and ends by sending
+  # the reader to Prerequisites, so it has to come first.
+  # - Getting started:
   #     - Welcome & how the day works: setup/welcome.md
+  #     - Prerequisites: setup/prerequisites.md
   # - Foundations:
+  #     - The hardest part of IT: foundations/hardest-part-of-it.md
   #     - Source control for databases: foundations/source-control.md
+  #     - Demo: foundations/demo.md
   # - Infrastructure as code:
   #     - Azure SQL (Terraform): infra/azure-sql.md
   #     - Fabric SQL (Terraform): infra/fabric-sql.md
+  #     - Demo: infra/demo.md
   # - Database as code:
   #     - The sample database: database/sample-database.md
   #     - SQL projects: database/sql-projects.md
+  #     - Demo: database/demo.md
   # - CI/CD:
   #     - Build & validate: cicd/build-validate.md
   #     - Deploy infrastructure: cicd/deploy-infra.md
   #     - Ship database changes: cicd/ship-database-changes.md
+  #     - Demo: cicd/demo.md
   # - Wrap up:
   #     - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
   #     - Resources & next steps: wrap-up/resources.md

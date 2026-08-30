@@ -1,7 +1,9 @@
 # "Ship database changes as code" — increment design (task #15)
 
-**Feeds:** the **15:30** agenda module — *CI/CD part 3: ship database changes automatically*
-(45 min: ~5 concept → ~40 live demo with optional follow-along). Builds on the
+**Feeds:** the **afternoon** of the [five-section agenda](../agenda/agenda.md) — the three
+increments split across **Afternoon 1** (14:00–15:15: increments 1–2, the additive change and
+the drop-`ShirtNumber` trap) and **Afternoon 2** (15:45–17:00: increment 3, the safe retire +
+approval gate, as part of "pulling it together"). Builds on the
 [blind-deploy-vs-schema-compare demo idea](../notes/Ideas.md).
 
 **The one-line thesis of the module:** a database change is a **pull request**, and the

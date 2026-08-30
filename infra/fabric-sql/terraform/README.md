@@ -9,9 +9,9 @@ project's DACPAC publishes into — the *same* DACPAC that targets Azure SQL (se
 
 | Resource | Provider | Name (defaults) | Notes |
 |----------|----------|-----------------|-------|
-| Resource group | `azurerm` | `rg-fabcon26-dev-weu` | Holds the Azure-side capacity. |
+| Resource group | `azurerm` | `rg-fabcon26-dev-uks` | Holds the Azure-side capacity. |
 | Fabric capacity | `azurerm` | `capfabcon26dev<rnd>` | `Microsoft.Fabric/capacities`, SKU **F2** (smallest). Lowercase-alphanumeric-only name. |
-| Fabric workspace | `fabric` | `ws-fabcon26-dev-weu` | Assigned to the capacity above. |
+| Fabric workspace | `fabric` | `ws-fabcon26-dev-uks` | Assigned to the capacity above. |
 | SQL database in Fabric | `fabric` | `football-dev` | `SQL_Latin1_General_CP1_CI_AS`, 7-day PITR. |
 
 ## Two providers, two planes
@@ -46,8 +46,15 @@ it defaults to your own signed-in principal, so the module runs with no required
 
 ## Run it
 
+Run from this module folder, `infra/fabric-sql/terraform`:
+
 ```powershell
+cd infra/fabric-sql/terraform   # from the repo root
+
 Copy-Item terraform.tfvars.example terraform.tfvars   # optional — all values have defaults
+code terraform.tfvars                                 # open it to review/edit the variables
+Copy-Item backend_local_override.tf.example backend_local_override.tf   # local state, no remote backend
+
 az login
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"   # for the Fabric capacity
 # optional: $env:FABRIC_TENANT_ID = "<your-tenant-id>"
@@ -56,6 +63,13 @@ terraform init
 terraform plan
 terraform apply
 ```
+
+Like the Azure SQL module, `backend_local_override.tf` swaps the committed remote `azurerm`
+backend (see **State** below) for **local** state — Terraform auto-merges `*_override.tf`
+files and a `backend` block in an override replaces the primary one. Without it, a bare
+`terraform init` tries to initialize the remote backend and prompts for a container name. The
+override file and `terraform.tfstate*` are gitignored, so local iteration never touches the
+shared remote backend.
 
 > **Cost:** a Fabric capacity bills while it runs. F2 is the smallest SKU; **pause the
 > capacity** (az CLI / portal) when idle to stop billing. Terraform manages the capacity's

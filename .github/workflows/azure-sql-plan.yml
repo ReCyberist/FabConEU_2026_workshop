@@ -1,10 +1,16 @@
 name: Azure SQL — Terraform plan (PR)
 
-# Read-only verification for pull requests that touch the Azure SQL infra module.
+# Read-only verification for pull requests that touch the Azure SQL infra modules.
 # Runs `terraform fmt`/`validate`/`plan` only — it NEVER applies — so reviewers can see the
 # intended change in the PR checks before anything is provisioned. Actually creating or
 # changing resources stays a deliberate, manual action from main (see azure-sql-apply.yml,
 # which is workflow_dispatch-only and named "apply" on purpose).
+#
+# TWO Terraform flows run here as separate jobs:
+#   1. plan               — the taught module (infra/azure-sql/terraform/demo).
+#   2. plan-shared-endpoint — the shared attendee endpoint (infra/azure-sql/terraform/shared-endpoint).
+# The second one powers the "bump attendee_count" demo: change the count in a PR, push, and
+# the plan job prints exactly the databases/logins/users it would add.
 #
 # Auth: OIDC (no secrets). A pull_request run's OIDC subject is
 # repo:<owner>/<repo>:pull_request — matched by the `fabcon26-github-pr` federated
@@ -15,7 +21,8 @@ name: Azure SQL — Terraform plan (PR)
 on:
   pull_request:
     paths:
-      - 'infra/azure-sql/terraform/**'
+      - 'infra/azure-sql/terraform/demo/**'
+      - 'infra/azure-sql/terraform/shared-endpoint/**'
       - '.github/workflows/azure-sql-plan.yml'
 
 permissions:
@@ -38,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/azure-sql/terraform
+        working-directory: infra/azure-sql/terraform/demo
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -69,5 +76,50 @@ jobs:
           terraform plan -lock=false \
             -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
             -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}" \
+            -var="presenter_client_ips=[\"${{ secrets.ROB_CLIENT_IP }}\",\"${{ secrets.JESS_CLIENT_IP }}\"]"
+
+  # Second Terraform flow: the shared, unsupported attendee endpoint. This is the "bump
+  # attendee_count" demo target — a PR that changes the count shows the exact +N databases /
+  # +N logins / +N users here.
+  plan-shared-endpoint:
+    name: terraform plan (shared endpoint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/azure-sql/terraform/shared-endpoint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      # Its own state key, in the same backend as everything else (D5).
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/shared-endpoint.terraform.tfstate"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      # Read-only. -lock=false: a plan never mutates state. -refresh=false: compute the diff
+      # from state + config only, so the plan does NOT try to reach the SQL server (the
+      # mssql provider would otherwise connect to refresh logins/users) — the plan still
+      # works when the endpoint is torn down between sessions, and it surfaces exactly the
+      # config change (the bumped attendee_count) without depending on the DB being up.
+      - name: Terraform plan
+        run: |
+          terraform plan -lock=false -refresh=false \
             -var="location=${{ vars.AZURE_LOCATION }}" \
             -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"

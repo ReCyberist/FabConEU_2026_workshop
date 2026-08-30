@@ -6,8 +6,8 @@ name: CI
 # Planned jobs (add as each lands — see planning/tasks.md):
 #   - database      ✅  build the SQL project + T-SQL static code analysis
 #   - docs          ✅  mkdocs build --strict (only when docs change)
-#   - terraform         fmt check + validate (infra/**/terraform)
-#   - bicep             az bicep build (infra/**/bicep)
+#   - terraform     ✅  fmt check + validate (infra/**/terraform)
+#   - bicep         ✅  az bicep build (infra/**/bicep)
 #   - markdown          link / lint check
 
 on:
@@ -89,3 +89,93 @@ jobs:
       - name: Build site (strict)
         if: steps.filter.outputs.docs == 'true'
         run: mkdocs build --strict
+
+  terraform:
+    name: Terraform fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # paths-filter needs history to diff against the base
+
+      # Only validate when Terraform (or this workflow) actually changes.
+      - name: Detect terraform changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            terraform:
+              - 'infra/**/*.tf'
+              - 'infra/**/.terraform.lock.hcl'
+              - '.github/workflows/ci.yml'
+
+      - name: Set up Terraform
+        if: steps.filter.outputs.terraform == 'true'
+        uses: hashicorp/setup-terraform@v4
+
+      # fmt is repo-wide over infra/ (only touches .tf files); a mis-formatted
+      # module fails the check without needing provider init.
+      - name: Terraform fmt (check)
+        if: steps.filter.outputs.terraform == 'true'
+        run: terraform fmt -check -recursive infra
+
+      # validate each module offline: -backend=false skips the azurerm backend
+      # (no Azure creds needed); the committed .terraform.lock.hcl pins providers.
+      - name: Terraform validate (each module)
+        if: steps.filter.outputs.terraform == 'true'
+        run: |
+          set -euo pipefail
+          for dir in \
+            infra/azure-sql/terraform/demo \
+            infra/azure-sql/terraform/shared-endpoint \
+            infra/fabric-sql/terraform \
+            infra/fabric-sql/automation; do
+            echo "::group::validate $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+
+  bicep:
+    name: Bicep build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # paths-filter needs history to diff against the base
+
+      - name: Detect bicep changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            bicep:
+              - 'infra/**/*.bicep'
+              - 'infra/**/*.bicepparam'
+              - '.github/workflows/ci.yml'
+
+      # az is preinstalled on the runner; install the bicep CLI it invokes.
+      - name: Install Bicep
+        if: steps.filter.outputs.bicep == 'true'
+        run: az bicep install
+
+      # build compiles each entrypoint (+ its referenced modules) to ARM JSON
+      # with no Azure connection; --stdout keeps the compiled JSON out of the tree.
+      # Fails on compilation errors; any linter warnings surface in the log (the
+      # templates currently compile clean — keep them that way for the front row).
+      - name: Bicep build (templates + params)
+        if: steps.filter.outputs.bicep == 'true'
+        run: |
+          set -euo pipefail
+          for f in infra/azure-sql/bicep/main.bicep infra/fabric-sql/bicep/main.bicep; do
+            echo "::group::bicep build $f"
+            az bicep build --file "$f" --stdout > /dev/null
+            echo "::endgroup::"
+          done
+          for p in infra/azure-sql/bicep/main.bicepparam infra/fabric-sql/bicep/main.bicepparam; do
+            echo "::group::bicep build-params $p"
+            az bicep build-params --file "$p" --stdout > /dev/null
+            echo "::endgroup::"
+          done

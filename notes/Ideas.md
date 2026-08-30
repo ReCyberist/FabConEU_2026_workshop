@@ -2,8 +2,8 @@
 
 ## Demo idea: "blind deploy vs. schema compare" data-loss cautionary tale
 
-**For:** 15:30 agenda slot ("CI/CD part 3 — ship database changes automatically") /
-feeds task #15 in `planning/tasks.md`.
+**For:** the **afternoon** ship-changes story (Afternoon 1 + Afternoon 2 of the
+[five-section agenda](../agenda/agenda.md)) / feeds task #15 in `planning/tasks.md`.
 
 **Setup:** a two-stage pipeline (Dev → Test), each stage backed by its own Fabric
 workspace with its own Fabric SQL database.

@@ -1,2 +1,4 @@
-# Attendee site toolchain (MkDocs Material). Pin versions before the event.
-mkdocs-material
+# Attendee site toolchain (MkDocs Material). Pinned for a reproducible workshop build.
+# Bump deliberately and re-test `mkdocs build --strict` before the event.
+mkdocs-material==9.7.7  # pulls in mkdocs==1.6.1 as a dependency; pinned below for clarity
+mkdocs==1.6.1

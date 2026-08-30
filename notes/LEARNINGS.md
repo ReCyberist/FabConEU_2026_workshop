@@ -15,6 +15,16 @@ Format:
 
 ---
 
+## 2026-08-30 — Rebase-style PR conflict checks still need a current-base merge
+**Context:** Resolving the Morning 1 docs PR after GitHub still reported merge conflicts even though
+the branch already contained an older merge from `main`.
+**Learning:** A conflict can be genuinely resolved for one base SHA and then become dirty again when
+`main` advances. In this case the only new conflict was the append-only learning log: keep both
+entries, remove the markers, and verify the PR diff still contains only the intended feature files.
+**Action:** Merged current `origin/main` into the PR branch, preserved both
+`notes/LEARNINGS.md` entries, and confirmed the PR changed-files list stayed scoped to the Morning 1
+work.
+
 ## 2026-08-29 — Presenter firewall IPs are GitHub secrets that go stale
 **Context:** Reviewing the morning-of checklist (PR #43) before the workshop — specifically
 what has to be true before dispatching `azure-sql-apply`.
@@ -29,6 +39,285 @@ timestamps) — so "check they're current" really means "re-set them to today's 
 [`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) §1 and cross-linked
 it from the §3 manual-firewall fallback (that manual `az` rule is now only for a skipped step
 or a one-off third machine).
+
+## 2026-08-29 — Database demo page should split at lunch, then pause again before increment 3
+**Context:** Writing `docs/database/demo.md` as an attendee-facing step-by-step walkthrough from the existing SQL-project and ship-changes notes.
+**Learning:** The clearest demo structure follows the agenda rather than the code folders: **Part 1** ends before lunch with the DACPAC built, and **Part 2** resumes after lunch for increments 1 and 2, with a second explicit pause at the 15:15 break before increment 3. That keeps the page aligned with how the room actually experiences the day.
+**Action:** Added [`../docs/database/demo.md`](../docs/database/demo.md) as a two-part, step-by-step database demo page aligned to the agenda breaks.
+
+## 2026-08-29 — Azure SQL local demo deploy to `test` in `uksouth` took 4m31s
+**Context:** Running the Azure SQL Terraform module locally with the demo overrides (`environment=test`, `location=uksouth`) and local backend.
+**Learning:** Jess's measured `terraform apply` completed in **4m31s** and created 4 resources: the resource group, logical SQL server, serverless database, and firewall rule. Example outputs were `rg-fabcon26-test-uks`, `sqldb-football-test`, and `sql-fabcon26-test-uks-myw0ki.database.windows.net`. This is a useful attendee expectation-setting datapoint for the infra demo page.
+**Action:** Added the runtime note and sample output to [`../docs/infra/demo.md`](../docs/infra/demo.md).
+
+## 2026-08-29 — Suppress the Material MkDocs 2.0 banner in local preview
+**Context:** Running local attendee-site preview with `mkdocs serve -f mkdocs.local.yml` printed the new Material warning banner every run.
+**Learning:** Material documents an opt-out env var for local runs. Setting `NO_MKDOCS_2_WARNING=1` in the PowerShell session suppresses the banner without changing the published site build.
+**Action:** Updated [`../CLAUDE.md`](../CLAUDE.md) §6 with the local preview instruction: `$env:NO_MKDOCS_2_WARNING = '1'` before serving/building.
+
+## 2026-08-29 — Infra demo page works best as one shared Terraform flow split by platform
+**Context:** Writing `docs/infra/demo.md` to mirror the source-control demo while covering both Azure SQL and Fabric SQL.
+**Learning:** The cleanest attendee demo format is one shared top-level structure (`What you'll do` → `The concept` → `Checkpoint` → `Gotchas`) with separate Azure and Fabric run sections underneath. The two paths are similar enough to teach side by side, but the provider split and cost warnings belong inside the Fabric subsection rather than in a generic flow.
+**Action:** Added [`../docs/infra/demo.md`](../docs/infra/demo.md) as a step-by-step attendee walkthrough with Azure SQL and Fabric SQL subheadings.
+
+## 2026-08-29 — The source-control demo should stay on the happy path
+**Context:** Simplifying `docs/foundations/demo.md` after the PR step picked up fork and closed-PR edge cases.
+**Learning:** This page works best as a first-run attendee exercise, not as a full GitHub CLI troubleshooting guide. Keep the flow on the happy path: branch, new file, staged diff, commit, push, `gh pr create --fill --base main`. Handle edge cases separately if they matter later.
+**Action:** Restored [`../docs/foundations/demo.md`](../docs/foundations/demo.md) to the simpler working PR flow and removed the extra PR edge-case guidance.
+
+## 2026-08-29 — Closed PR on the same branch needs reopen or a new commit
+**Context:** Retesting the source-control demo after opening, closing and trying to recreate the same pull request.
+**Learning:** `gh pr create` works for the first PR on a branch, but if that PR is later closed and the branch has no new commits, GitHub will not create a second PR for the same head/base comparison. The practical rule for the workshop is: reopen the closed PR with `gh pr reopen <number>`, or add another commit before creating a new PR.
+**Action:** Updated [`../docs/foundations/demo.md`](../docs/foundations/demo.md) to explain the retry behaviour in the PR step and gotchas.
+
+## 2026-08-29 — `gh pr create` needs the fork repo named explicitly in this demo
+**Context:** Testing the source-control demo after switching it to create a new file and open a PR from a cloned fork.
+**Learning:** In a clone created from `gh repo fork --clone`, `gh pr create` can target the upstream repo by default even though the working branch only exists in the attendee's fork. That produces `No commits between main and demo/source-control` and `Head ref must be a branch`. For this workshop flow, the reliable command is to name the fork explicitly with `--repo <your-account>/FabConEU_2026_workshop` and set `--head demo/source-control`.
+**Action:** Updated [`../docs/foundations/demo.md`](../docs/foundations/demo.md) to target the attendee's fork explicitly and documented the gotcha on the page.
+
+## 2026-08-29 — Source-control demo works best as one tiny PR from a harmless existing file
+**Context:** Writing the attendee-facing demo page that sits after the source-control concepts page.
+**Learning:** The clearest first source-control exercise is one complete PR loop against the attendee's own fork: clean status, branch, tiny edit, review the diff, commit, push, open PR. Using an existing harmless text file (`notes/Ideas.md`) keeps the exercise concrete without touching infra or database code too early.
+**Action:** Added the step-by-step flow to [`../docs/foundations/demo.md`](../docs/foundations/demo.md).
+
+## 2026-08-29 — Terraform directory renames merge cleanly with subsequent module edits
+**Context:** The Azure SQL Terraform modules moved under `terraform/demo` and
+`terraform/shared-endpoint`; the current `main` branch then changed the demo module's
+auto-pause default.
+**Learning:** Git's rename detection mapped the subsequent edit to the relocated demo module,
+so merging the current base produced no conflict and retained the updated default.
+**Action:** Merged current `main` into the restructuring branch and checked the resulting
+`infra/azure-sql/terraform/demo/variables.tf` change.
+
+## 2026-08-29 — Azure SQL Terraform split into `terraform/{demo,shared-endpoint}`
+**Context:** The taught module lived at `infra/azure-sql/terraform` and the shared attendee
+endpoint at a sibling `infra/azure-sql/shared-endpoint`. Post-merge feedback: put both under
+one `terraform/` parent with `demo` and `shared-endpoint` children.
+**Learning:** Two gotchas when relocating Terraform modules. (1) A blanket path rewrite is
+unsafe once one new path is a prefix of another — rewrite the more specific path
+(`shared-endpoint`) **first**, then rewrite `terraform` with a negative lookahead
+(`terraform(?!/demo|/shared-endpoint)`) so you don't double-apply. (2) The remote-state
+**blob key** (`azure-sql/shared-endpoint.terraform.tfstate`) is *not* a filesystem path —
+it must stay put or you orphan state; anchoring the rewrite to the `infra/` prefix leaves it
+alone. Also: a moved README's relative links all shift by one `../` level, and cross-module
+links change target (`../terraform` → `../demo`).
+**Action:** `git mv` into `terraform/demo` and `terraform/shared-endpoint`; updated all 20
+referencing files (workflows, CI validate loop, ADO pipelines, docs, slides, agenda, tasks).
+`terraform validate`/`fmt` clean on both; gitignore globs (`*_override.tf`, `**/.terraform/*`)
+still catch the new depths. State keys and concurrency groups unchanged.
+
+## 2026-08-29 — Default region flipped to UK South everywhere (West Europe has no capacity)
+**Context:** West Europe has no capacity for our subscription, so a deploy that lands in the
+old default region fails. Earlier the same day we had deliberately kept `westeurope` as the
+*taught* default and only overrode to UK South in CI/the shared-endpoint module (see the
+shared-endpoint entry below, and 2026-07-22).
+**Learning:** That split is no longer worth keeping — a taught default nobody can actually
+provision into is a footgun, not a teaching aid. So **UK South (`uksouth`/`uks`) is now the
+single default across every module**: the taught Azure SQL + Fabric Terraform modules, both
+Bicep templates, the Fabric automation module, and the shared-endpoint module (already there).
+CI is unaffected — it still passes `AZURE_LOCATION`/`AZURE_LOCATION_ABBREVIATION` (=uksouth/uks)
+explicitly, which is now belt-and-braces rather than a required override. **This supersedes the
+"the taught module's WEU default stands" line in the shared-endpoint entry below.** Two things
+deliberately **not** touched: the state resource group `rg-fabcon26-state-weu` (a real RG
+physically in West Europe — renaming it in code would try to recreate the state backend), and
+past dated entries in this log (history, not rewritten).
+**Action:** `location`→`uksouth`, `location_abbreviation`→`uks` in
+[`infra/azure-sql/terraform/demo/variables.tf`](../infra/azure-sql/terraform/demo/variables.tf),
+[`infra/fabric-sql/terraform/variables.tf`](../infra/fabric-sql/terraform/variables.tf),
+[`infra/fabric-sql/automation/variables.tf`](../infra/fabric-sql/automation/variables.tf), and
+both `main.bicep` files; updated every `terraform.tfvars.example`, the Bicep deploy READMEs, the
+CAF naming examples in the infra READMEs, and the attendee pages
+[`docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) /
+[`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (resource-name examples now `…-uks`).
+Reworded the shared-endpoint `location` description (the "unlike the taught module" contrast is
+gone). (Jess & Rob, 2026-08-29.)
+
+## 2026-08-29 — The scary "MkDocs 2.0" banner is theme advocacy, not an error — and requirements.txt was unpinned
+**Context:** Running `mkdocs serve -f mkdocs.local.yml` printed a red-bordered "Warning from
+the Material for MkDocs team" about a coming **MkDocs 2.0** (plugins removed, theming
+rewritten, "unlicensed", "unsuitable for production"). Looked like a build error.
+**Learning:** It's a **banner the Material theme prints itself** on every `serve`/`build`
+(seen here on `mkdocs-material==9.7.7`) — pure advocacy about a *forecasted* fork/rewrite the
+squidfunk team disagrees with. It is **not** an error, is unrelated to our config, and the
+build completes normally right after it (`mkdocs build --strict` → *"Documentation built in
+1.52 seconds"*, exit 0). MkDocs 2.0 is not something installed here. The only real finding:
+`requirements.txt` pinned nothing (`mkdocs-material` bare) despite its own "Pin versions before
+the event" comment — a reproducibility risk for a 200-attendee follow-along.
+**Action:** Pinned the toolchain to the tested combo — `mkdocs-material==9.7.7` + `mkdocs==1.6.1`
+— in [`../requirements.txt`](../requirements.txt), verified with `mkdocs build --strict`.
+(Earlier entries — 2026-07-18, 2026-07-04 — already noted the banner is informational; this
+consolidates it and closes the pinning gap.)
+
+## 2026-08-29 — Running Terraform locally against the *remote* state (no spurious diffs)
+**Context:** For the "bump attendee_count" demo the presenter wants: apply workflow deploys the
+10, then `terraform plan` **on the laptop** shows *no changes* — bump the count, plan shows only
+the delta. That needs local Terraform to read the **same remote state** CI writes, not local state.
+**Learning:** Two distinct local modes, easy to conflate: (a) the `backend_local_override.tf`
+(local state) is for standing the module up *standalone*; (b) to interact with what the workflow
+deployed you must init the **remote** backend locally. The committed backend block has
+`use_oidc = true`, which has no token on a laptop — so init with the real `-backend-config` values
+**plus `-backend-config="use_oidc=false"`**, and `az login`; `use_azuread_auth = true` (already in
+the block) then authenticates the state blob via the Azure CLI identity (needs *Storage Blob Data
+Contributor* on the state account). Second gotcha (general, though now defused for THIS module):
+a local plan shows a **spurious full destroy/recreate** if it runs in a different **region** than
+the deploy — the module names include the region token, so a region mismatch rewrites every
+resource. The taught module keeps a West Europe default and overrides to UK South via the
+`AZURE_LOCATION` repo var, so a laptop run there must set `location`/`location_abbreviation` to
+match. For the shared-endpoint module we instead **changed the default to UK South** (it only ever
+runs in this sandbox — see the follow-up entry), so a bare local run already matches and needs no
+tfvars. With state + region matched, `terraform plan` reports *"No changes"*; bumping the count
+then shows a clean **"5 to add"** (against the recorded 10) rather than "15 to add" (a fresh build).
+**Action:** Documented the recipe in the module README ("Run locally against the shared state").
+Companion to the apply/destroy workflows below.
+
+## 2026-08-29 — Shared-endpoint module defaults to UK South (it only runs in the sandbox)
+**Context:** The shared endpoint always deploys to the personal sandbox subscription, which is
+region-restricted to UK South. The `location`/`location_abbreviation` defaults were West Europe
+(copied from the taught module), so every local run needed a region override to avoid spurious
+region-rewrite diffs.
+**Learning:** The taught module deliberately keeps `westeurope` as its *documented/taught* default
+and treats UK South as a sandbox-specific override (LEARNINGS 2026-07-22). The shared endpoint is
+**ops tooling, not taught content**, and it only ever runs in that one sandbox — so the honest
+default there is **`uksouth`/`uks`**, not a value nothing uses. Flipping it removes the local-run
+footgun (no tfvars region override) and doesn't change CI, which still passes `AZURE_LOCATION`
+(`=uksouth`) explicitly. Only the shared-endpoint module changed; the taught module's WEU default
+stands. (Rob, 2026-08-29.)
+**Action:** `location`→`uksouth`, `location_abbreviation`→`uks` in the module's `variables.tf`;
+README examples now show `…-shared-uks-…` (the state RG stays `rg-fabcon26-state-weu` — really in
+WEU) and the local-run steps drop the region override; `terraform.tfvars.example` region note
+inverted.
+
+## 2026-08-29 — Shared-endpoint apply + nightly destroy (auto-provision, small + torn down daily)
+**Context:** Closing the demo loop: after plan-on-PR, a way to actually build the endpoint and to
+guarantee it doesn't bill overnight. Auto-provisioning was OK'd because the pool is small and the
+thing is destroyed daily.
+**Learning:** Mirrored the taught module's apply/destroy shape but simpler — the shared endpoint has
+**no DACPAC publish/smoke job** (attendees publish their own schemas into their own DBs), so apply is
+just init → plan → apply against its own state key (`azure-sql/shared-endpoint.terraform.tfstate`).
+Two deliberate choices: (1) apply **does not** pass `attendee_count` as a `-var` — it takes the
+committed `variables.tf` default, so *committing a count change and running the workflow* is what
+deploys the new count (the second half of the demo). (2) A **dedicated concurrency group**
+(`azure-sql-shared-endpoint-terraform`, separate from the taught module's `azure-sql-terraform`) so
+the two modules never block each other, while this module's own apply/destroy still serialise (never
+run over the same state). The apply writes the **attendee handout** (server, shared password,
+per-attendee connection strings — all giveaways; admin password stays a sensitive output, unprinted)
+to `$GITHUB_STEP_SUMMARY` via `terraform output -json … | jq`. Destroy is nightly 21:00 UTC (house
+style) and a no-op against empty state on days the endpoint wasn't stood up.
+
+**Consolidated into `azure-sql-apply.yml` (Rob's steer, same day):** rather than a separate
+`shared-endpoint-apply.yml`, the standup became the **`attendee-endpoint` job** inside the existing
+apply workflow — one workflow, two Terraform flows (mirroring the two-job plan workflow). A
+**`workflow_dispatch` choice input `target` (demo/attendee/both, default both)** gates the jobs via
+`if:`; the `publish` (DACPAC) job `needs: apply`, so it's auto-skipped when `target=attendee`. Key
+mechanic that makes independent flows safe in one workflow: **move concurrency from workflow-level to
+JOB-level** — the demo `apply` job keeps `group: azure-sql-terraform`, the `attendee-endpoint` job
+takes `group: azure-sql-shared-endpoint-terraform` (matching each flow's own destroy), so a run isn't
+globally serialised and each flow only blocks against its own destroy. (GitHub Actions supports
+`concurrency` at both workflow and job scope; job-level is what you want when one workflow drives
+multiple independent state files.) The nightly destroy stays a separate file (only apply was
+consolidated).
+**Action:** Folded the standup into [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
+(deleted the standalone apply); kept [`shared-endpoint-destroy.yml`](../.github/workflows/shared-endpoint-destroy.yml); README Status +
+demo sections updated; task #19 advanced. **Not yet run live** — first apply is the verification.
+
+## 2026-08-29 — "Bump the count" IaC demo: a second plan flow in one workflow, refresh off
+**Context:** Turning the shared endpoint into a teaching prop — change `attendee_count`, push,
+and let a GitHub Actions plan show the exact "+N databases". Rob wanted it as a **second job in
+the existing azure-sql workflow**, not a new workflow file.
+**Learning:** Two independent Terraform flows live happily as **two jobs in one workflow** —
+added `plan-shared-endpoint` alongside `plan` in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)
+(each with its own `working-directory` + state key), and widened the `paths:` filter so a change
+to either module triggers the PR. Two gotchas that shaped it: (1) **a CI plan needs remote state
+to show the *incremental* change** — with local state CI has no record that 10 DBs exist, so it'd
+plan "everything to add". So the module moved from local to the **remote azurerm backend** (own
+key `azure-sql/shared-endpoint.terraform.tfstate`), keeping a `backend_local_override.tf.example`
+so presenters still run it locally. (2) **`terraform plan` refreshes state by default, and the
+`betr-io/mssql` provider connects to the server to refresh existing logins/users** — which fails
+whenever the endpoint is torn down between sessions. Fix: run the PR plan with **`-refresh=false`**
+(plus `-lock=false`), so the diff is computed from state+config only, never touching SQL — the
+plan still works when the DB is down and still shows the bumped-count delta. Caveat: the crisp
+"+5" needs the initial 10 already seeded in the remote state (one prior apply).
+**Action:** Second job added; module → remote state + local override; added to `ci.yml` validate
+loop; demo beat written into [`../agenda/agenda.md`](../agenda/agenda.md) Morning 2 and the module
+README. `init`/`validate`/`fmt` clean offline. Apply/destroy workflow for this module still to come
+(task #19).
+
+## 2026-08-29 — Shared attendee endpoint: Azure SQL elastic pool beats a VM
+**Context:** Rob asked how we actually build the shared "run against this" endpoint (D6),
+sketching an Azure SQL server with a database per attendee. D6 had said "SQL Server on a VM."
+**Learning:** The VM was justified by "a database per attendee so DACPACs don't collide" — but
+that's not a VM feature: an **Azure SQL logical server hosts many databases on one endpoint too**,
+so per-attendee isolation needs no VM. Azure SQL wins on all the axes that matter here — it's the
+platform we teach, it reuses the module we already have, and there's no VM to patch/back up/NSG on
+a target we've said we won't support. An **elastic pool** caps the day's cost across N databases.
+The real design forks are (1) **auth** — you can't hand a room of strangers Entra identities, so
+this endpoint runs **SQL authentication** (per-attendee login, shared throwaway password), a
+deliberate departure from the taught module's Entra-only design; and (2) **logins/users aren't ARM
+resources** — azurerm makes the server/pool/DBs, but `CREATE LOGIN`/`CREATE USER`/role membership
+run *inside* SQL, so they need the **`betr-io/mssql`** provider (connects per-resource with the
+generated SQL admin) — which in turn needs the firewall open before it runs.
+**Action:** Drafted a **separate** module [`../infra/azure-sql/terraform/shared-endpoint/`](../infra/azure-sql/terraform/shared-endpoint/)
+(server + elastic pool + DB/login/user per attendee, local state, `Taylor==Metallica` shared password,
+open firewall for the day) so the taught module stays pristine. Recorded the reversal as a
+[decisions.md](decisions.md) **D6 update**; ordering + task #19 updated. **Untested** — no live
+apply in the authoring env; first-run checks listed in the module README.
+
+## 2026-08-29 — Fabric SQL module needed the same local-backend override as Azure SQL; infra diagrams added
+**Context:** Bringing the Fabric SQL Terraform "Run it" steps in line with Azure SQL, and
+adding infrastructure diagrams to the docs.
+**Learning:** The Fabric SQL module declares the **same committed remote `azurerm` backend**
+as Azure SQL (`providers.tf`), so a bare `terraform init` on a laptop prompts for a container
+name — but it had **no `backend_local_override.tf.example`** and its README/docs jumped
+straight into `init`. The gitignore already covers `*_override.tf` + `!*_override.tf.example`
+repo-wide, so the override pattern drops into any module folder with no gitignore change.
+Also: **Mermaid is already enabled** in `mkdocs.yml` (Material bundles Mermaid.js via
+`pymdownx.superfences`), so ` ```mermaid ` fenced blocks render on the site and on GitHub with
+no extra plugin — the right way to ship infra diagrams as version-controlled code. Note
+`mkdocs build` does **not** validate Mermaid syntax (it renders client-side); verify diagrams
+by rendering (e.g. an Artifact renders `<pre class="mermaid">` natively).
+**Action:** Added `infra/fabric-sql/terraform/backend_local_override.tf.example`, the
+`cd`/copy-override/open-tfvars steps to the Fabric README + `docs/infra/fabric-sql.md`, and
+Mermaid diagrams to both infra docs pages. Reminder: `docs/infra/fabric-sql.md` is still held
+from the published site by `exclude_docs`, so its diagram shows only in the local full
+preview (`mkdocs serve -f mkdocs.local.yml`) until the page is un-excluded.
+
+## 2026-08-29 — `terraform plan` "AccountUnusable" on Windows = WAM broker, fix with device-code login
+**Context:** Running `terraform plan` for the Azure SQL module, every plan failed at the
+`azurerm` provider block with *"Account has previously been signed out of this application…
+Status: Response_Status.Status_AccountUnusable, Error code: 0, Tag: 540940121"*.
+**Learning:** The `azurerm` provider fetches a **Microsoft Graph** token to parse identity
+claims. ARM auth was fine (`az account get-access-token` with the default scope returned a
+token), but the **Graph** scope (`--scope https://graph.microsoft.com/.default`) threw
+`AccountUnusable`. A plain `az login` did **not** fix it — even `az login` failed at
+"Retrieving tenants and subscriptions". Root cause on Windows: the **WAM broker** holds a
+poisoned account outside `~/.azure`, so deleting `msal_token_cache.*` alone isn't enough.
+**Action:** Fixed by disabling the broker + clearing + **device-code** login:
+```powershell
+az config set core.enable_broker_on_windows=false
+az account clear
+Remove-Item "$env:USERPROFILE\.azure\msal_token_cache.*" -Force -ErrorAction SilentlyContinue
+az login --use-device-code
+az account set --subscription $env:ARM_SUBSCRIPTION_ID
+# verify GRAPH scope specifically:
+az account get-access-token --scope https://graph.microsoft.com/.default --query expiresOn -o tsv
+```
+Diagnostic tell: ARM token works but the Graph-scoped `get-access-token` errors ⇒ it's the
+CLI/broker, not Terraform. Attendees on managed Windows laptops will likely hit this.
+Documented as a gotcha in
+[`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md) and
+[`../infra/azure-sql/terraform/demo/README.md`](../infra/azure-sql/terraform/demo/README.md).
+
+## 2026-08-29 — Azure SQL Terraform run steps now name the folder + open tfvars
+**Context:** Reviewing the Azure SQL Terraform "Run it" steps — the README and the
+`docs/infra/azure-sql.md` demo block jumped into `Copy-Item`/`terraform init` without
+saying which directory to be in.
+**Learning:** Both left the working directory implicit. The docs demo block also never
+copied `terraform.tfvars` at all, so attendees had no prompt to review the variables.
+**Action:** Added `cd infra/azure-sql/terraform/demo` (from repo root) to both, added a
+`Copy-Item terraform.tfvars.example …` + `code terraform.tfvars` step so the variables get
+opened for review, and kept README and docs in step. Files:
+[`../infra/azure-sql/terraform/demo/README.md`](../infra/azure-sql/terraform/demo/README.md),
+[`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md).
 
 ## 2026-07-01 — Repo scaffolded and decisions locked
 **Context:** First pass setting up the repo as the source of truth for the workshop.
@@ -139,7 +428,7 @@ SKU won't error. Verified offline: `terraform fmt/validate` clean and `plan` pro
 coherent **5-to-add** plan (picked up cached az-CLI auth; no live apply — that's #14).
 Best-practice flag: this repo **gitignores `.terraform.lock.hcl`**; HashiCorp recommends
 **committing** it so CI/teammates resolve identical provider versions — worth revisiting.
-**Action:** New module [`../infra/azure-sql/terraform/`](../infra/azure-sql/terraform/)
+**Action:** New module [`../infra/azure-sql/terraform/demo/`](../infra/azure-sql/terraform/demo/)
 (`providers/variables/main/outputs.tf` + `terraform.tfvars.example`); README rewritten with
 the naming + passwordless rationale. Task #4 → DONE; unblocks the deploy pipeline (#9). The
 Fabric mirror (#5) and Bicep reference (#6) should follow the same naming.
@@ -265,7 +554,7 @@ subject `repo:<owner>/<repo>:ref:refs/heads/main` covers both `schedule` events 
 `environment:` subject needed for this simple case.
 **Action:** Added [`../.github/workflows/azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)
 and [`../.github/workflows/azure-sql-destroy.yml`](../.github/workflows/azure-sql-destroy.yml).
-Backend + OIDC wired into `infra/azure-sql/terraform/providers.tf`; `.terraform.lock.hcl`
+Backend + OIDC wired into `infra/azure-sql/terraform/demo/providers.tf`; `.terraform.lock.hcl`
 un-ignored and committed. Repo variables set (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
 `AZURE_SUBSCRIPTION_ID`, `TF_STATE_*`, `SQL_ENTRA_ADMIN_*`) — all non-secret with OIDC, so
 `vars` not `secrets`. Recorded in `notes/decisions.md` D5 (update) and `planning/tasks.md`
@@ -759,6 +1048,41 @@ no validate cycles wasted, per the standing rule.
 Tasks #14 (**Fabric side now verified end-to-end**) and #20 updated. Open follow-ups: nightly-teardown
 decision (issue #35), least-privilege contributor+GUID refactor, and a possible PR-time plan comment.
 
+## 2026-08-23 — Demos mapped onto the five-section agenda; CI now validates infra too
+**Context:** Status pass — "where are we, what's left, what demos go where, is the base
+complete?" The base (both Terraform modules, both pipelines, the SQL project) is built and
+**live-verified end to end on Azure SQL and Fabric SQL**; the review surfaced three genuine
+"base" gaps and one drift problem.
+**Learning 1 — the agenda restructure orphaned the demo docs.** `agenda.md` was rebuilt into
+**five teaching sections**, but the ship-changes design doc, its demo README, and the
+`Ideas.md` seed still pointed at the old **"15:30 module."** That per-30-min module map no
+longer exists. Fixed the *living* docs to point at the afternoon sections (increments 1–2 →
+Afternoon 1, increment 3 → Afternoon 2); deliberately **left the append-only log and the
+dated `2026-08-04-*` planning snapshots alone** (rewriting a timestamped record falsifies
+history — same reason this file's old entries keep their original times).
+**Learning 2 — the coffee-break apply trick died with the restructure.** The 2026-08-17 plan
+hid the Azure SQL `terraform apply` behind the 10:30 break by splitting the module across it.
+In the five-section agenda **IaC (Morning 2) sits entirely *after* the break**, so there's
+nowhere to hide ~4–5 min of provisioning — the apply now runs live inside the block (kick off
+early, narrate the module while it runs; Fabric is faster because the capacity is
+pre-provisioned). Flagged Morning 2 as the section most at risk of overrun for the dry run (#13).
+**Learning 3 — CI validated our SQL + docs but not the infra it ships.** `ci.yml` had only
+`database` + `docs` jobs, so a broken Terraform/Bicep change passed CI. Added **`terraform`**
+(`fmt -check -recursive` + per-module `validate` with **`init -backend=false`** so it needs no
+Azure creds — the committed `.terraform.lock.hcl` pins providers) and **`bicep`**
+(`az bicep install` → `az bicep build` templates + `build-params`), both **path-gated** with
+`dorny/paths-filter` like the docs job so unrelated PRs don't pay for them. YAML validated;
+live-verify on the next PR touching each area (the deploy workflows' OIDC-only-trusts-`main`
+limit doesn't apply here — these jobs are credential-free).
+**Action:** `agenda.md` gained a per-section demo map (M1 source-control → A2 pulling-together,
+each naming the driving workflow/module); stale "15:30" refs fixed in
+[`ship-changes-increments.md`](../planning/ship-changes-increments.md),
+[`ship-changes/README.md`](../database/demo/ship-changes/README.md), and [`Ideas.md`](Ideas.md);
+`terraform`+`bicep` jobs added to [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packaging — attendee
+downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
+"all as code" (fine as pointers if we decide that consciously — worth a decision).
+
 ## 2026-08-28 — Morning-of readiness checklist captured from the operational gotchas
 **Context:** Planning the run-of-day. Realised the demo environment is **not** standing when we
 walk in — nightly destroy (21:00 UTC) wipes the infra and the Fabric capacity auto-pauses every
@@ -774,5 +1098,213 @@ live**.
 **Action:** Wrote [`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md);
 added task **#28**. Standalone eval flagged the real gap as **content + a timed dry run** (#13,
 #22, #24, #25), not code — the core "infra + DB as code" path is proven live on both platforms.
+
+## 2026-08-28 — Docs-accuracy sweep: pages drift behind the code that ships underneath them
+**Context:** Asked to check the whole attendee site was up to date. Read every page and diffed
+its factual claims against `tasks.md`, `LEARNINGS.md`, and the actual code.
+**Learning:** Three real drifts, all "the code moved, the prose didn't": (1) the Fabric SQL page
+**and** the CI/CD-part-3 Fabric tab still said the Fabric apply was *pending*, though it went live
+end-to-end on 2026-08-20 (#20); (2) the **build & validate** page described `ci.yml` as two jobs
+(database + docs) when #8 grew it to **four** (added terraform `fmt`/`validate` + bicep `az bicep
+build`) on 2026-08-23; (3) the sample-database **ER diagram had drifted from the schema** — missing
+`Stadium.Opened`, `Club.ShortName`/`Founded`, `Competition.Tier`, `Player.ShirtNumber`/`DateOfBirth`,
+`Referee.Country`. `ShirtNumber` is the one that stings: it's the column the whole part-3 "drop a
+populated column" demo revolves around, and it wasn't on the diagram. **Method gotcha worth keeping:**
+a quick `grep '^\s*\['` column extract that also filters `CONSTRAINT` lines gives **false negatives** —
+it hid `Fixture.Status` and `Goal.IsPenalty`/`IsOwnGoal` (inline `DEFAULT` constraints on the column
+line), which I nearly reported as missing. Read the table file to confirm a column is *absent*; a
+filtered grep only proves it's *present*. Verified the fixes with a `--strict` build of the full
+(un-excluded) site via a scratch `INHERIT` overlay.
+**Action:** Fixed [`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (earlier this session),
+[`docs/cicd/ship-database-changes.md`](../docs/cicd/ship-database-changes.md),
+[`docs/cicd/build-validate.md`](../docs/cicd/build-validate.md), and the ER diagram in
+[`docs/database/sample-database.md`](../docs/database/sample-database.md). **Still open (content, not
+accuracy — task #22):** `fabric-sql.md` is a bare skeleton while its Azure SQL sibling is fully
+fleshed, and `welcome.md` / both `wrap-up/` pages / `reference/other-tooling.md` are still stubs.
+
+## 2026-08-28 — Content Phase 3: fleshed the skeleton pages, and where "as code" honesty forced a hold
+**Context:** Fleshing the remaining stub pages (#22): `infra/fabric-sql.md`, `setup/welcome.md`,
+`wrap-up/resources.md`, `wrap-up/migrations-drift-teardown.md`.
+**Learning:** Three wrote cleanly from material already in the repo — the Fabric page from the
+Terraform module + `fabric-sql-notes.md` + the live-deploy learnings (it had been the one bare
+skeleton while its Azure SQL sibling was fully fleshed); welcome from D6 + the agenda (kept
+**format-focused**, not pinned to timings still being finalised); resources with a "coming soon"
+Downloads placeholder (bundles = #12) and a generic FabCon-survey feedback line. The **wrap-up
+migrations/drift/teardown** page is the honest exception: its migrations-reference (Flyway,
+dbatools/dbops are README-only, links per decision B) and teardown parts are writable, but **there
+is no drift demo anywhere in the repo** (grep confirms "drift" only appears in prose). Rather than
+write a drift section describing a demo that doesn't exist — against the repo's "everything is real,
+runnable code" rule — we **hold the page and build the demo first** (new task #29). Also captured a
+standing hygiene task: **sweep for `coming soon`/`TODO`/skeleton placeholders before any reveal**
+(#30).
+**Action:** Fleshed the three pages (PR on branch `docs/fabric-page-verified-status`); `--strict`
+full-site build green. Tasks: #22 Phase-3 progress noted, **#29** (drift demo) and **#30**
+(placeholder sweep) added.
+
+## 2026-08-28 — Preview the full site locally while the pushed site stays teaser: an INHERIT overlay
+**Context:** Wanted to author/preview the held content pages on a laptop while keeping the
+**published** site in teaser mode (`exclude_docs` in `mkdocs.yml`). The published config can't
+just un-hide the pages, and MkDocs has a single config per build.
+**Learning:** MkDocs' **`INHERIT:`** key lets a second config layer on top of the first, and
+**scalars/lists in the child replace the parent's** (dicts deep-merge). So `mkdocs.local.yml`
+does `INHERIT: mkdocs.yml`, sets `exclude_docs: ""` (clears the teaser exclusions) and supplies
+the **full `nav`** (replacing the teaser nav wholesale — necessary because a page that's in nav
+*and* excluded errors under `--strict`, so the parent's nav can't just list everything). Preview
+with **`mkdocs serve -f mkdocs.local.yml`**; the overlay is only ever used when you pass `-f`, so
+CI (`ci.yml`) and Pages (`pages.yml`) — both plain `mkdocs build` on the default `mkdocs.yml` —
+still publish teaser-only. Verified both `--strict` builds: default emits **2** pages
+(`index` + `prerequisites`), the overlay emits all **14**. Bonus: the overlay's nav is the exact
+tree to paste into `mkdocs.yml` at the real reveal.
+**Action:** Added [`../mkdocs.local.yml`](../mkdocs.local.yml); pointers in
+[`../mkdocs.yml`](../mkdocs.yml) teaser header, [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and
+[`../CLAUDE.md`](../CLAUDE.md) §5. Doesn't change the reveal (#22) — just makes held pages
+previewable while writing them.
+
+## 2026-08-28 — Local Terraform demo needs a local-backend override, not `-backend=false`
+**Context:** Attendee/presenter runs `terraform init` in `infra/azure-sql/terraform/demo` on a laptop
+and gets prompted for a **container name**. `providers.tf` declares a remote **`azurerm`** backend
+(D5) with only `use_oidc`/`use_azuread_auth` inline — the storage account/container/key come from
+`-backend-config` in CI, so a bare local `init` tries to initialize the real remote backend
+interactively.
+**Learning:** `terraform init -backend=false` (what the README used to say) is **not** a working
+local demo path — it only unblocks `fmt`/`validate`. A subsequent `plan`/`apply` errors with
+*"Backend initialization required, please run terraform init"* because the `backend "azurerm"`
+block is present but uninitialized (verified on TF v1.12.0). The clean fix: Terraform
+**auto-merges any `*_override.tf` file**, and a `backend` block in an override **replaces** the
+primary. A one-line `backend_local_override.tf` (`terraform { backend "local" {} }`) makes local
+`init` → `plan` → `apply` run with **local state, no Azure Storage account, no prompts**, while the
+committed `azurerm` backend stays intact for CI. Shipped as `.example` (mirrors
+`terraform.tfvars.example`); `.gitignore` adds `*_override.tf` + `!*_override.tf.example` so the
+activated copy never gets committed and can't clobber the remote backend.
+**Action:** Added
+[`../infra/azure-sql/terraform/demo/backend_local_override.tf.example`](../infra/azure-sql/terraform/demo/backend_local_override.tf.example);
+fixed the local snippets in
+[`../infra/azure-sql/terraform/demo/README.md`](../infra/azure-sql/terraform/demo/README.md) and the
+Terraform tab in [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md); gitignore rule added.
+The *attendee-facing* backend/sandbox strategy (#1) is still the broader open question — this just
+makes the module runnable on a laptop today.
+
+## 2026-08-29 — Attendee voice: two registers, with hover translations for the idioms
+**Context:** Doing a voice pass on the attendee site, starting with the home page. The room at
+FabCon Europe is international, and a lot of attendees will not have English as a first language —
+so the dry British humour we want in the prose is a genuine comprehension risk in the steps.
+**Learning:** One blanket "voice" rule does not work. The useful line is between **talking about
+a thing** and **doing the thing**, so `docs/` now has two registers: **discussion** (relaxed, dry
+humour, idioms permitted) and **step** (numbered, one action per step, no idioms, no hedging, say
+what success looks like). The idioms are then made safe by MkDocs Material's abbreviation
+tooltips: `abbr` + `pymdownx.snippets.auto_append` pointed at a single `includes/glossary.md`
+gives a hover translation for a term **on every page with zero per-page markup** — verified on the
+existing home page, which picked up `CI/CD`, `DACPAC`, `teardown` and `kit` without being edited.
+Two constraints worth knowing: the glossary file must live **outside `docs/`** (inside it, the
+teaser-mode `exclude_docs` and the `mkdocs.local.yml` overlay that clears it fight each other and
+`--strict` fails on a page missing from the nav), and matching is **exact and case-sensitive and
+site-wide** — a word added for the prose will also underline itself inside a step. Tooltips also
+do not appear on touch devices, which is why the standing rule is that humour and idiom must never
+carry meaning: the sentence has to survive the tooltip never showing.
+**Action:** Rewrote [`../CLAUDE.md`](../CLAUDE.md) §5 into 5a/5b/5c (sections 5–8 renumbered to
+6–9); added [`../includes/glossary.md`](../includes/glossary.md); enabled `abbr`,
+`pymdownx.snippets` and the `content.tooltips` feature in [`../mkdocs.yml`](../mkdocs.yml);
+voice-passed [`../docs/index.md`](../docs/index.md) only. Both `mkdocs build --strict` (teaser)
+and `-f mkdocs.local.yml` (full) pass. The remaining 13 pages are **deliberately untouched** —
+we are working through them one at a time.
+
+## 2026-08-29 — A session clock on every teaching page, and Morning 1 written
+**Context:** Building out the first agenda slot (Morning 1, 09:00–10:30 — "the hardest part of IT"
+then source control), plus Rob's ask for the section timing to run along the top of every page as
+`09:00 ————— 10:30` with a progress bar.
+**Learning:** Four things.
+(1) **One include per agenda slot beats a per-page HTML block.** `includes/clock-*.md` holds the
+markup once per slot and a page adds its timing with a single
+`--8<-- "includes/clock-morning-1.md"`. `pymdownx.snippets` was already enabled for the glossary
+auto-append, and explicit `--8<--` includes resolve from the project root, so no config change was
+needed beyond `extra_css`/`extra_javascript`. **The times live in one place per slot** — change
+`agenda/agenda.md` first, then the include.
+(2) **The live fill must be progressive enhancement.** The bar is plain HTML + CSS; the JS only
+paints a fill when the reader's local clock is inside the window. With JS off, or at any other hour,
+it degrades to exactly the static bar the sketch asked for. Boundary bug worth remembering: the
+first version snapped the bar from ~100% back to **empty** at the moment a session ended — a
+finished slot now holds at 100% but muted (`data-state="done"`), so "finished" and "running" read
+differently. Verified with a DOM shim in node across before/start/half/end/after.
+(3) **`abbr` will not match a phrase that straddles a source line break.** "carries the can" was
+wrapped mid-phrase and silently got no tooltip; reflowing the line fixed it. Since we hard-wrap at
+~100 chars, **any multi-word glossary phrase needs its line checked after wrapping** — the build
+gives no warning, the tooltip is just quietly absent. Same failure mode as the `keyring` entry
+last time (that one matched nothing because it only ever appeared inside code).
+(4) **`ci.yml` has no path filter and needs no cloud credentials** (`terraform validate` runs
+`-backend=false`), so an attendee's first PR **in their own fork** genuinely goes green on all four
+checks. That makes a real "change → PR → green → merge" moment possible in Morning 1 with no Azure
+subscription. The OIDC-based `azure-sql-plan.yml` is the opposite — it *will* fail in a fork until
+the Deploy-infrastructure setup is done, so the page says so plainly rather than letting attendees
+think they broke something.
+**Action:** Added [`../docs/foundations/hardest-part-of-it.md`](../docs/foundations/hardest-part-of-it.md)
+(discussion register, no steps) and rewrote
+[`../docs/foundations/source-control.md`](../docs/foundations/source-control.md) with a nine-step
+first-PR walkthrough; added [`../ATTENDEES.md`](../ATTENDEES.md) as the safe thing to change; added
+the clock component (`includes/clock-morning-1.md`, `docs/stylesheets/session-clock.css`,
+`docs/javascripts/session-clock.js`); `carries the can` added to the glossary.
+**Deliberately scoped to Morning 1 only.** The clock was briefly rolled out to all eleven teaching
+pages and then pulled back: the later sections still have code being written (Jess's PR #56 touches
+`docs/database/sample-database.md`, `docs/infra/fabric-sql.md` and
+`docs/wrap-up/migrations-drift-teardown.md`; #60 rewires the plan workflows), and there is no point
+writing prose against demos that have not settled. **Standing rule: write an attendee page only
+once the code it describes is merged.** Adding the clock to a later page is one `--8<--` line plus
+a five-line include, so nothing is lost by waiting.
+Related: the source-control page describes `azure-sql-plan.yml` as *surfacing the plan on the pull
+request* rather than naming checks-vs-comment, because #60 is actively moving it to a sticky PR
+comment. Pitch a page above a mechanism that is still in flight.
+
+## 2026-08-29 — Fabric demo: `ARM_SUBSCRIPTION_ID` doesn't feed the required module variable
+**Context:** Running the Fabric `terraform plan` from the demo steps dropped into an interactive
+prompt for `var.fabric_subscription_id` — the exact thing the "no clicking / no surprises" rule
+forbids happening live in the room.
+**Learning:** The Fabric module's `azurerm` provider reads its subscription from the
+`fabric_subscription_id` **variable** (no default — it exists for the cross-tenant CI design where
+the state backend is Tenant A and the provider is Tenant B), **not** from `ARM_SUBSCRIPTION_ID`.
+`ARM_SUBSCRIPTION_ID` only feeds the state backend and the CLI, so setting it (as both demo pages
+did) leaves the variable unset and `terraform plan` prompts. For a local single-tenant demo the
+cleanest fix is one env line — `$env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID` —
+reusing the same GUID; no tfvars edit needed. The Azure SQL module has no equivalent required var,
+which is why only the Fabric path trips on this.
+**Action:** Added the `TF_VAR_fabric_subscription_id` line to the Fabric steps in
+[`../docs/infra/demo.md`](../docs/infra/demo.md) and the "The code" snippet in
+[`../docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md), plus a gotcha on demo.md so it does
+not regress. Also surfaced `fabric_subscription_id` in
+`infra/fabric-sql/terraform/terraform.tfvars.example` (previously it never mentioned the one
+required variable, and its header wrongly claimed the module "runs with no tfvars at all").
+
+## 2026-08-29 — Non-Windows attendees: OS install tabs, and a repo-setup step that keeps them short
+**Context:** Issue #52 — the prerequisites page only ever showed `winget`, which leaves every
+attendee not on Windows to work it out themselves. The room is international; a lot of them will
+be on a Mac.
+**Learning:** Three things worth keeping.
+(1) **`content.tabs.link` syncs tab sets by their *label list***, not by page position. A
+`Windows`/`macOS`/`Debian & Ubuntu` set therefore syncs with every other copy of itself while
+leaving the existing `Azure SQL`/`Fabric SQL` and `Terraform`/`Bicep` sets completely alone — so
+the attendee picks their OS once and the page follows them. Verified: 8 OS sets and 1 platform set
+on the page, and the OS sets **nest cleanly inside** the Azure SQL tab (confirmed at nesting depth
+1 by parsing the built HTML, not by eye — indentation is 4 spaces per level, so a tab inside a
+numbered step inside a tab puts the fence at 12 spaces).
+(2) **The apt keyring dance belongs in one collapsed block at the top, not in every step.** Four of
+the six tools come from vendor repositories (GitHub CLI, HashiCorp, Microsoft ×2). Repeating the
+keyring commands per tool would have added ~60 lines to an already long page; hoisting them into a
+run-once `??? note` makes every later Linux tab a single `sudo apt install x` that sits level with
+the winget and brew one-liners. Using `$(lsb_release -cs)` and `$(dpkg --print-architecture)` makes
+that block identical on Debian and Ubuntu — the **only** genuine split is .NET, where Ubuntu 22.04+
+ships `dotnet-sdk-8.0` in its own archive and adding Microsoft's repo there causes a package
+conflict.
+(3) **A glossary entry only fires in prose.** `winget` and `Homebrew` picked up tooltips; `keyring`
+did not, because the word appeared solely inside code blocks — `abbr` never matches inside `<code>`.
+Worth checking the built HTML after adding an entry rather than assuming it took.
+**Testing:** The Debian path is genuinely tested — this is a Debian 12 box. All five packages
+resolve under `apt-get install --simulate`, all 14 bash blocks pass `bash -n`, and all three
+keyring commands were checked against the keys actually installed here (GitHub and Microsoft match
+byte-for-byte; HashiCorp matches on both fingerprints). **macOS is not tested by either of us**, so
+the page says so plainly in a short note and points at the vendor link as the authority — per
+CLAUDE.md §4.
+**Action:** Rewrote [`../docs/setup/prerequisites.md`](../docs/setup/prerequisites.md) with OS tabs
+throughout (including the summary table); added `winget` and `Homebrew` to
+[`../includes/glossary.md`](../includes/glossary.md) — deliberately **not** `apt`, since matching is
+exact and site-wide and "apt" is an ordinary English word that would underline itself in prose. No
+`mkdocs.yml` change needed; `pymdownx.tabbed` and `content.tabs.link` were already on.
 
 <!-- Add new entries above this line -->

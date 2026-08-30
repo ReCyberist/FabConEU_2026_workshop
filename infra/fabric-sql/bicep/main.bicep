@@ -12,18 +12,18 @@
 // This mirrors the "capacity" slice of ../terraform/main.tf only.
 //
 // Deploy with:
-//   az deployment sub create --location westeurope `
+//   az deployment sub create --location uksouth `
 //     --template-file main.bicep --parameters main.bicepparam
 
 targetScope = 'subscription'
 
-@description('Azure region for the Fabric capacity (and its resource group).')
-param location string = 'westeurope'
+@description('Azure region for the Fabric capacity (and its resource group). Defaults to UK South — West Europe has no capacity for this subscription (see LEARNINGS 2026-08-29).')
+param location string = 'uksouth'
 
-@description('Short region token used in the resource group name (CAF style), e.g. weu.')
+@description('Short region token used in the resource group name (CAF style), e.g. uks.')
 @minLength(2)
 @maxLength(6)
-param locationAbbreviation string = 'weu'
+param locationAbbreviation string = 'uks'
 
 @description('Workload / application token used in every resource name. Kept as the teardown prefix.')
 @minLength(2)

@@ -5,20 +5,20 @@
 // functional mirror of the Terraform module in ../terraform (the taught path) — keep the two
 // in step. Deploy with:
 //
-//   az deployment sub create --location westeurope `
+//   az deployment sub create --location uksouth `
 //     --template-file main.bicep --parameters main.bicepparam
 //
 // Passwordless throughout: no SQL admin login/password — Microsoft Entra is the only way in.
 
 targetScope = 'subscription'
 
-@description('Azure region for all resources.')
-param location string = 'westeurope'
+@description('Azure region for all resources. Defaults to UK South — West Europe has no capacity for this subscription (see LEARNINGS 2026-08-29).')
+param location string = 'uksouth'
 
-@description('Short region token used in resource names (CAF style), e.g. weu for westeurope.')
+@description('Short region token used in resource names (CAF style), e.g. uks for uksouth.')
 @minLength(2)
 @maxLength(6)
-param locationAbbreviation string = 'weu'
+param locationAbbreviation string = 'uks'
 
 @description('Workload / application token used in every resource name. Kept as the teardown prefix.')
 @minLength(2)

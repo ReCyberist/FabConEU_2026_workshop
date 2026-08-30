@@ -1,0 +1,49 @@
+# ── LOCAL PREVIEW CONFIG — shows the WHOLE site on your machine ────────────────
+# The published site (built from mkdocs.yml) stays in TEASER mode: only the home
+# page + prerequisites ship. This overlay inherits that config and reveals every
+# page locally, so you can write/preview held content without publishing it.
+#
+#   👉 Preview the full site locally:
+#        mkdocs serve -f mkdocs.local.yml
+#
+# Nothing here changes the pushed site — CI (ci.yml) and the Pages deploy
+# (pages.yml) both call `mkdocs build` with the default mkdocs.yml, which keeps
+# exclude_docs on. This file is only ever used when you pass `-f` by hand.
+#
+# INHERIT layers this on top of mkdocs.yml; scalars and lists in this file
+# REPLACE the parent's, so we (1) blank exclude_docs to un-hide every page and
+# (2) supply the full nav tree (the parent's teaser nav is replaced wholesale).
+# When we do the real reveal, this nav is the exact tree to paste into mkdocs.yml.
+INHERIT: mkdocs.yml
+
+# Clear the teaser exclusions — reveal every page locally.
+exclude_docs: ""
+
+# Full navigation (mirrors the commented tree in mkdocs.yml).
+nav:
+  - Home: index.md
+  - Getting started:
+      - Welcome & how the day works: setup/welcome.md
+      - Prerequisites: setup/prerequisites.md
+  - Foundations:
+      - The hardest part of IT: foundations/hardest-part-of-it.md
+      - Source control for databases: foundations/source-control.md
+      - Demo: foundations/demo.md
+  - Infrastructure as code:
+      - Azure SQL (Terraform): infra/azure-sql.md
+      - Fabric SQL (Terraform): infra/fabric-sql.md
+      - Demo: infra/demo.md
+  - Database as code:
+      - The sample database: database/sample-database.md
+      - SQL projects: database/sql-projects.md
+      - Demo: database/demo.md
+  - CI/CD:
+      - Build & validate: cicd/build-validate.md
+      - Deploy infrastructure: cicd/deploy-infra.md
+      - Ship database changes: cicd/ship-database-changes.md
+      - Demo: cicd/demo.md
+  - Wrap up:
+      - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
+      - Resources & next steps: wrap-up/resources.md
+  - Reference:
+      - Other tooling: reference/other-tooling.md

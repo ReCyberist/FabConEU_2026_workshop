@@ -5,12 +5,15 @@
 
 entra_admin_login     = "fabcon26-sql-admins"                    # display name of the Entra user/group/SP
 entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (principal) id
+# Get the object id with the Azure CLI:
+#   az ad group show --group "fabcon26-sql-admins" --query id -o tsv   # a group (recommended)
+#   az ad user  show --id    "you@contoso.com"      --query id -o tsv   # or a user
 
 # Optional overrides:
 # workload              = "fabcon26"
 # environment           = "dev"
-# location              = "westeurope"
-# location_abbreviation = "weu"
+# location              = "uksouth"
+# location_abbreviation = "uks"
 # database_name         = "football"
 
 # Let a specific machine connect (name = ip). The pipeline runner is covered by
@@ -18,3 +21,9 @@ entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (p
 # allowed_client_ips = {
 #   "my-laptop" = "203.0.113.7"
 # }
+
+# Client IPs fed from SECRETS (e.g. presenters' static IPs) — do NOT set them here. They're
+# passed at apply time from the GitHub Actions secrets ROB_CLIENT_IP / JESS_CLIENT_IP (one per
+# person, so each rotates independently) as -var="presenter_client_ips=[...]", so the addresses
+# never land in source control. Empty entries are dropped. Shown here only for documentation:
+# presenter_client_ips = ["<robs.static.ip>", "<jess.static.ip>"]

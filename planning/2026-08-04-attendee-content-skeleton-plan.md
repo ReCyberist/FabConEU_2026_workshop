@@ -155,7 +155,7 @@ nav:
 ## The code
 
 The module lives in
-[`infra/azure-sql/terraform`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/terraform)
+[`infra/azure-sql/terraform/demo`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/terraform/demo)
 (Bicep reference in
 [`infra/azure-sql/bicep`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/infra/azure-sql/bicep)).
 Download the module bundle and run it from code — nothing is clicked.

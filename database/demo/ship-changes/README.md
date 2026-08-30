@@ -1,6 +1,8 @@
-# Demo — Ship database changes as code (15:30 module)
+# Demo — Ship database changes as code (afternoon sections)
 
-The reproducible demo for **CI/CD part 3 — ship database changes automatically**. Design +
+The reproducible demo for the **afternoon "ship database changes" story** — increments 1–2 in
+Afternoon 1 (14:00–15:15) and increment 3 in Afternoon 2 (15:45–17:00) of the
+[agenda](../../../agenda/agenda.md). Design +
 rationale live in [`planning/ship-changes-increments.md`](../../../planning/ship-changes-increments.md);
 this folder is the runnable version.
 

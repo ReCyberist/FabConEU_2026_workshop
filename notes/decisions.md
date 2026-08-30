@@ -59,7 +59,7 @@ path, not a deferral.
 **Consequence:** Need the bootstrap script + `-backend-config` wiring (backend blocks can't
 take variables). **Who** creates and owns the state storage account depends on the attendee
 sandbox model, so this is gated on **task #1**. Tracked as **task #17**; the initial
-`infra/azure-sql/terraform` module ships with local state until #17 lands. Also revisit the
+`infra/azure-sql/terraform/demo` module ships with local state until #17 lands. Also revisit the
 repo's gitignore of `.terraform.lock.hcl` (HashiCorp recommends committing it).
 
 **Update 2026-07-22:** Landed for J's **personal sandbox** subscription — storage account
@@ -110,3 +110,23 @@ participate at some level. (Rob + Jess, chat 2026-07-18.)
 - **Deferred ("decide later"):** the Fabric IaC path's capacity cost (an F-SKU bills; a trial
   capacity can't be Terraform-created), and the CI/demo state owner (#17). Both noted as open
   caveats; neither blocks the prerequisites page.
+
+**Update 2026-08-29 — the shared endpoint is Azure SQL (elastic pool + DB-per-attendee), not a
+VM.** Reconsidered the "SQL Server on a VM" line above. The reason it gave for a VM — a database
+per attendee so DACPACs don't collide — **doesn't require a VM**: an Azure SQL *logical server*
+hosts many databases on one endpoint just as well. So the shared endpoint is now **one Azure SQL
+logical server + an elastic pool + one empty database per attendee**, because it (a) is the actual
+platform we teach (attendees deploy to *Azure SQL*, not a bare SQL Server VM), (b) reuses the
+module we already built, with no VM to patch/back up/NSG on a target we won't support, and (c) caps
+cost for the day via one pool. **Auth is SQL authentication** — one login per attendee
+(`attendee01`…), all sharing one throwaway password (`Taylor==Metallica` — a nod to Jess's Taylor Swift and
+Rob's Metallica fandom), each a `db_owner` in its own
+database only. This is a *deliberate* departure from the taught module's Entra-only/passwordless
+design: you can't provision Entra identities for a room of strangers on the day. The shared
+password is public by design (printed on a slide) for an endpoint that is open to the internet and
+**destroyed the same day** — the one intentional exception to the "never commit secrets" rule; the
+server *admin* password is generated and never handed out. Built as a **separate** module
+[`../infra/azure-sql/terraform/shared-endpoint/`](../infra/azure-sql/terraform/shared-endpoint/) (local state — a
+one-shot, throwaway stand-up) so the taught module stays pristine. Task **#19** changes from
+"provision a VM" to "extend the Azure SQL path with the pooled, per-attendee endpoint." (Rob +
+Jess, 2026-08-29.)

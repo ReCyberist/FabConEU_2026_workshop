@@ -2,7 +2,7 @@
 # Naming inputs — kept identical to the Azure SQL module so the two read side by side.
 #
 # Azure resources (the Fabric capacity + its resource group) follow CAF:
-#   <type>-<workload>-<environment>-<region>   e.g. rg-fabcon26-dev-weu
+#   <type>-<workload>-<environment>-<region>   e.g. rg-fabcon26-dev-uks
 # The workload token stays "fabcon26" so a *fabcon26* filter tears everything down
 # (CLAUDE.md §4). NOTE: a Fabric capacity name allows lowercase alphanumerics ONLY
 # (no hyphens), so its name is assembled separately in main.tf.
@@ -31,19 +31,19 @@ variable "environment" {
 }
 
 variable "location" {
-  description = "Azure region for the Fabric capacity (the workspace inherits this region)."
+  description = "Azure region for the Fabric capacity (the workspace inherits this region). Defaults to UK South — West Europe has no capacity for this subscription (see LEARNINGS 2026-08-29)."
   type        = string
-  default     = "westeurope"
+  default     = "uksouth"
 }
 
 variable "location_abbreviation" {
-  description = "Short region token used in the resource group name (CAF style), e.g. weu for westeurope."
+  description = "Short region token used in the resource group name (CAF style), e.g. uks for uksouth."
   type        = string
-  default     = "weu"
+  default     = "uks"
 
   validation {
     condition     = can(regex("^[a-z0-9]{2,6}$", var.location_abbreviation))
-    error_message = "location_abbreviation must be 2-6 lowercase alphanumeric characters (e.g. weu, neu, eus)."
+    error_message = "location_abbreviation must be 2-6 lowercase alphanumeric characters (e.g. uks, weu, neu)."
   }
 }
 

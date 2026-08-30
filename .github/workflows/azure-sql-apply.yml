@@ -1,20 +1,33 @@
 name: Azure SQL — Terraform apply
 
-# Manually provisions the Azure SQL infra module (infra/azure-sql/terraform) into the
-# personal sandbox subscription. Deliberately workflow_dispatch-only — this creates real,
-# billed resources, so it's never triggered automatically by a push.
+# Manually provisions Azure SQL infra into the personal sandbox subscription. TWO independent
+# Terraform flows live here as separate jobs; the `target` input picks which run:
+#   • demo     — the taught module (infra/azure-sql/terraform/demo) + DACPAC publish/smoke test.
+#   • attendee — the shared, unsupported attendee endpoint (infra/azure-sql/terraform/shared-endpoint):
+#                elastic pool + a database/login per attendee, for the "bump the count" demo.
+#   • both     — both flows (default).
+# workflow_dispatch-only — these create real, billed resources, so nothing runs on a push.
 #
-# Auth: OIDC (no secrets) — see notes/decisions.md D5. State: remote azurerm backend in
-# the persistent rg-fabcon26-state-weu resource group (kept separate from the workload RG
-# so the nightly destroy workflow never touches the state store itself).
+# Auth: OIDC (no secrets) — see notes/decisions.md D5. State: remote azurerm backend in the
+# persistent rg-fabcon26-state-weu resource group (separate from the workload RGs so the
+# destroy workflows never touch the state store), a distinct state key per flow. Each flow's
+# apply carries a JOB-LEVEL concurrency group matching its own destroy workflow, so an apply
+# can't run over that flow's state — while the two flows stay independent of each other.
 #
-# Region override: this personal Azure Sponsorship subscription is restricted from
-# provisioning SQL resources in the module's default region (West Europe) — a
-# subscription-level block, not a quota/RP issue. AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION
-# repo variables override to a region that's actually open on this subscription.
+# Region: this Azure Sponsorship subscription can't provision SQL in West Europe, so
+# AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION (=uksouth/uks) drive the region.
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Which flow(s) to apply
+        type: choice
+        options:
+          - both
+          - demo
+          - attendee
+        default: both
 
 permissions:
   contents: read
@@ -26,20 +39,21 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_OIDC: true
 
-concurrency:
-  group: azure-sql-terraform
-  cancel-in-progress: false
-
 jobs:
   apply:
-    name: terraform apply
+    name: terraform apply (demo)
+    if: ${{ inputs.target == 'demo' || inputs.target == 'both' }}
     runs-on: ubuntu-latest
+    # Shares a group with azure-sql-destroy.yml so demo apply/destroy can't overlap.
+    concurrency:
+      group: azure-sql-terraform
+      cancel-in-progress: false
     outputs:
       server_fqdn: ${{ steps.tf.outputs.server_fqdn }}
       database_name: ${{ steps.tf.outputs.database_name }}
     defaults:
       run:
-        working-directory: infra/azure-sql/terraform
+        working-directory: infra/azure-sql/terraform/demo
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -63,7 +77,8 @@ jobs:
             -var="entra_admin_login=${{ vars.SQL_ENTRA_ADMIN_LOGIN }}" \
             -var="entra_admin_object_id=${{ vars.SQL_ENTRA_ADMIN_OBJECT_ID }}" \
             -var="location=${{ vars.AZURE_LOCATION }}" \
-            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}" \
+            -var="presenter_client_ips=[\"${{ secrets.ROB_CLIENT_IP }}\",\"${{ secrets.JESS_CLIENT_IP }}\"]"
 
       - name: Terraform apply
         run: terraform apply -auto-approve tfplan
@@ -204,3 +219,73 @@ jobs:
           Test-Query 'proc   usp_GetLeagueTable'     $exec                                                          -MustHaveRows | Out-Null
 
           Write-Host 'Smoke test passed.'
+
+  # -------------------------------------------------------------------------------------
+  # Second Terraform flow: the shared, UNSUPPORTED attendee endpoint
+  # (infra/azure-sql/terraform/shared-endpoint) — one server + elastic pool + a database/login per
+  # attendee. Independent of the demo jobs above (own state key, own concurrency group). No
+  # DACPAC publish here: attendees publish their own schemas into their own databases.
+  #
+  # Deploys whatever attendee_count is committed in variables.tf (default 10) — so committing
+  # a count change and running this workflow deploys that new count (the "bump the count"
+  # demo). Torn down nightly by shared-endpoint-destroy.yml.
+  # -------------------------------------------------------------------------------------
+  attendee-endpoint:
+    name: terraform apply (attendee endpoint)
+    if: ${{ inputs.target == 'attendee' || inputs.target == 'both' }}
+    runs-on: ubuntu-latest
+    # Shares a group with shared-endpoint-destroy.yml so this flow's apply/destroy can't overlap.
+    concurrency:
+      group: azure-sql-shared-endpoint-terraform
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: infra/azure-sql/terraform/shared-endpoint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '~1.12.0'
+
+      - name: Terraform init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-sql/shared-endpoint.terraform.tfstate"
+
+      # attendee_count is intentionally NOT passed here — it comes from the committed
+      # variables.tf default, so committing a count change and running this deploys that count.
+      - name: Terraform plan
+        run: |
+          terraform plan -out=tfplan \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
+
+      # Attendee handout in the run summary: server, shared password, and a ready-to-paste
+      # connection string per attendee. Giveaways by design; the admin password is a separate
+      # sensitive output and is deliberately NOT printed.
+      - name: Publish attendee handout to the run summary
+        run: |
+          {
+            echo "## Shared endpoint — attendee handout"
+            echo ""
+            echo "- **Server:** \`$(terraform output -raw sql_server_fqdn)\`"
+            echo "- **Shared password:** \`$(terraform output -raw attendee_password)\`"
+            echo "- **Attendees:** $(terraform output -raw attendee_count)"
+            echo ""
+            echo "Each attendee uses login \`attendeeNN\` against database \`sqldb-attendeeNN\`."
+            echo ""
+            echo "### Connection strings"
+            echo '```'
+            terraform output -json attendee_connection_strings \
+              | jq -r 'to_entries[] | "\(.key): \(.value)"'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

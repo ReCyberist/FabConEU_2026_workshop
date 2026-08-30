@@ -1,0 +1,35 @@
+# Shared, UNSUPPORTED workshop endpoint — example variables.
+# Copy to terraform.tfvars and adjust. Most defaults are fine; the ones you'll actually
+# touch are attendee_count, the region, and pool sizing.
+
+# --- Attendees ------------------------------------------------------------------------
+attendee_count = 10 # attendee01 .. attendee10 (each gets a DB + a login)
+
+# The shared, printed-on-a-slide password. Public by design — change per event if you like.
+# attendee_password = "Taylor==Metallica"
+
+# --- Region ---------------------------------------------------------------------------
+# Defaults to UK South (uksouth/uks) — where this sandbox subscription can provision SQL.
+# West Europe has no capacity for this subscription (see notes/LEARNINGS.md 2026-08-29).
+# Override only to deploy elsewhere:
+# location              = "northeurope"
+# location_abbreviation = "neu"
+
+# --- Elastic pool sizing (cost cap for the day) ---------------------------------------
+# Defaults: GP_Gen5, 4 vCores total, each DB may burst to 2. Bump pool_capacity for a big
+# room where everyone deploys at once.
+# pool_capacity            = 4
+# pool_per_db_max_capacity = 2
+# pool_max_size_gb         = 50
+
+# --- Network --------------------------------------------------------------------------
+# Open to the internet for the day (default). For a tighter test, set allow_all_ips = false
+# and list the IPs that may connect (include the machine running terraform!):
+# allow_all_ips = false
+# allowed_client_ips = {
+#   presenter-laptop = "203.0.113.5"
+# }
+
+# --- Optional Entra admin (off by default; SQL auth is the point here) ----------------
+# entra_admin_login     = "fabcon26-sql-admins"
+# entra_admin_object_id = "00000000-0000-0000-0000-000000000000"
