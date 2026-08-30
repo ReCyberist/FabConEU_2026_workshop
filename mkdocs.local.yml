@@ -26,6 +26,7 @@ nav:
       - Welcome & how the day works: setup/welcome.md
       - Prerequisites: setup/prerequisites.md
   - Foundations:
+      - The hardest part of IT: foundations/hardest-part-of-it.md
       - Source control for databases: foundations/source-control.md
       - Demo: foundations/demo.md
   - Infrastructure as code:

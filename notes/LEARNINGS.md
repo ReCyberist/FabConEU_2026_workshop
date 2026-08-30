@@ -34,6 +34,30 @@ redacts them before writing. Any plan that uses secret `-vars` MUST set `mask`.
 [`../.github/workflows/fabric-sql-plan.yml`](../.github/workflows/fabric-sql-plan.yml), adding
 `pull-requests: write` to each. YAML + embedded JS validated locally.
 
+## 2026-08-30 — Rebase-style PR conflict checks still need a current-base merge
+**Context:** Resolving the Morning 1 docs PR after GitHub still reported merge conflicts even though
+the branch already contained an older merge from `main`.
+**Learning:** A conflict can be genuinely resolved for one base SHA and then become dirty again when
+`main` advances. In this case the only new conflict was the append-only learning log: keep both
+entries, remove the markers, and verify the PR diff still contains only the intended feature files.
+**Action:** Merged current `origin/main` into the PR branch, preserved both
+`notes/LEARNINGS.md` entries, and confirmed the PR changed-files list stayed scoped to the Morning 1
+work.
+
+## 2026-08-29 — Presenter firewall IPs are GitHub secrets that go stale
+**Context:** Reviewing the morning-of checklist (PR #43) before the workshop — specifically
+what has to be true before dispatching `azure-sql-apply`.
+**Learning:** The rules that let our laptops reach the Azure SQL server aren't hand-added on
+the day — Terraform builds them as code from the `ROB_CLIENT_IP` / `JESS_CLIENT_IP` GitHub
+**secrets** (`presenter_client_ips` in
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml)). They were set from home,
+so in Barcelona they're stale, and apply won't re-open the firewall if you fix them *after*
+running it. Secret **values can't be read back** — you can only `gh secret list` (names +
+timestamps) — so "check they're current" really means "re-set them to today's egress IP."
+**Action:** Added a "refresh the presenter IP secrets first" step to
+[`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) §1 and cross-linked
+it from the §3 manual-firewall fallback (that manual `az` rule is now only for a skipped step
+or a one-off third machine).
 ## 2026-08-29 — Database demo page should split at lunch, then pause again before increment 3
 **Context:** Writing `docs/database/demo.md` as an attendee-facing step-by-step walkthrough from the existing SQL-project and ship-changes notes.
 **Learning:** The clearest demo structure follows the agenda rather than the code folders: **Part 1** ends before lunch with the DACPAC built, and **Part 2** resumes after lunch for increments 1 and 2, with a second explicit pause at the 15:15 break before increment 3. That keeps the page aligned with how the room actually experiences the day.
@@ -1076,6 +1100,22 @@ Task **#8 → DONE**. Open base gaps still tracked: **#12** (code-bundle packagi
 downloads), and Flyway + dbatools/dbops are still **README-only stubs** vs CLAUDE.md's
 "all as code" (fine as pointers if we decide that consciously — worth a decision).
 
+## 2026-08-28 — Morning-of readiness checklist captured from the operational gotchas
+**Context:** Planning the run-of-day. Realised the demo environment is **not** standing when we
+walk in — nightly destroy (21:00 UTC) wipes the infra and the Fabric capacity auto-pauses every
+2h — so "be demo-ready" is an actual procedure, not a given.
+**Learning:** The morning setup is fully derivable from gotchas already logged, and they cluster:
+(1) both `*-apply` workflows must be re-dispatched **from `main`** (OIDC only trusts main) to
+rebuild infra + republish the DACPAC; (2) the Fabric capacity must be **resumed to `Active`**
+before anything Fabric resolves; (3) `az login` to **both tenants** (the Fabric path is
+cross-tenant); (4) the Fabric **workspace-admin grant re-applies** on every apply because the
+workspace is recreated; (5) any laptop-to-DB demo needs a **temporary firewall rule** (external
+clients are blocked). Site reveal (drop `exclude_docs` + uncomment nav) should happen **early, not
+live**.
+**Action:** Wrote [`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md);
+added task **#28**. Standalone eval flagged the real gap as **content + a timed dry run** (#13,
+#22, #24, #25), not code — the core "infra + DB as code" path is proven live on both platforms.
+
 ## 2026-08-28 — Docs-accuracy sweep: pages drift behind the code that ships underneath them
 **Context:** Asked to check the whole attendee site was up to date. Read every page and diffed
 its factual claims against `tasks.md`, `LEARNINGS.md`, and the actual code.
@@ -1184,6 +1224,51 @@ carry meaning: the sentence has to survive the tooltip never showing.
 voice-passed [`../docs/index.md`](../docs/index.md) only. Both `mkdocs build --strict` (teaser)
 and `-f mkdocs.local.yml` (full) pass. The remaining 13 pages are **deliberately untouched** —
 we are working through them one at a time.
+
+## 2026-08-29 — A session clock on every teaching page, and Morning 1 written
+**Context:** Building out the first agenda slot (Morning 1, 09:00–10:30 — "the hardest part of IT"
+then source control), plus Rob's ask for the section timing to run along the top of every page as
+`09:00 ————— 10:30` with a progress bar.
+**Learning:** Four things.
+(1) **One include per agenda slot beats a per-page HTML block.** `includes/clock-*.md` holds the
+markup once per slot and a page adds its timing with a single
+`--8<-- "includes/clock-morning-1.md"`. `pymdownx.snippets` was already enabled for the glossary
+auto-append, and explicit `--8<--` includes resolve from the project root, so no config change was
+needed beyond `extra_css`/`extra_javascript`. **The times live in one place per slot** — change
+`agenda/agenda.md` first, then the include.
+(2) **The live fill must be progressive enhancement.** The bar is plain HTML + CSS; the JS only
+paints a fill when the reader's local clock is inside the window. With JS off, or at any other hour,
+it degrades to exactly the static bar the sketch asked for. Boundary bug worth remembering: the
+first version snapped the bar from ~100% back to **empty** at the moment a session ended — a
+finished slot now holds at 100% but muted (`data-state="done"`), so "finished" and "running" read
+differently. Verified with a DOM shim in node across before/start/half/end/after.
+(3) **`abbr` will not match a phrase that straddles a source line break.** "carries the can" was
+wrapped mid-phrase and silently got no tooltip; reflowing the line fixed it. Since we hard-wrap at
+~100 chars, **any multi-word glossary phrase needs its line checked after wrapping** — the build
+gives no warning, the tooltip is just quietly absent. Same failure mode as the `keyring` entry
+last time (that one matched nothing because it only ever appeared inside code).
+(4) **`ci.yml` has no path filter and needs no cloud credentials** (`terraform validate` runs
+`-backend=false`), so an attendee's first PR **in their own fork** genuinely goes green on all four
+checks. That makes a real "change → PR → green → merge" moment possible in Morning 1 with no Azure
+subscription. The OIDC-based `azure-sql-plan.yml` is the opposite — it *will* fail in a fork until
+the Deploy-infrastructure setup is done, so the page says so plainly rather than letting attendees
+think they broke something.
+**Action:** Added [`../docs/foundations/hardest-part-of-it.md`](../docs/foundations/hardest-part-of-it.md)
+(discussion register, no steps) and rewrote
+[`../docs/foundations/source-control.md`](../docs/foundations/source-control.md) with a nine-step
+first-PR walkthrough; added [`../ATTENDEES.md`](../ATTENDEES.md) as the safe thing to change; added
+the clock component (`includes/clock-morning-1.md`, `docs/stylesheets/session-clock.css`,
+`docs/javascripts/session-clock.js`); `carries the can` added to the glossary.
+**Deliberately scoped to Morning 1 only.** The clock was briefly rolled out to all eleven teaching
+pages and then pulled back: the later sections still have code being written (Jess's PR #56 touches
+`docs/database/sample-database.md`, `docs/infra/fabric-sql.md` and
+`docs/wrap-up/migrations-drift-teardown.md`; #60 rewires the plan workflows), and there is no point
+writing prose against demos that have not settled. **Standing rule: write an attendee page only
+once the code it describes is merged.** Adding the clock to a later page is one `--8<--` line plus
+a five-line include, so nothing is lost by waiting.
+Related: the source-control page describes `azure-sql-plan.yml` as *surfacing the plan on the pull
+request* rather than naming checks-vs-comment, because #60 is actively moving it to a sticky PR
+comment. Pitch a page above a mechanism that is still in flight.
 
 ## 2026-08-29 — Fabric demo: `ARM_SUBSCRIPTION_ID` doesn't feed the required module variable
 **Context:** Running the Fabric `terraform plan` from the demo steps dropped into an interactive
