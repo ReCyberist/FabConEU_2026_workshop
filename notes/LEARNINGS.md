@@ -15,6 +15,25 @@ Format:
 
 ---
 
+## 2026-08-29 — Terraform plan output posted as a sticky PR comment (and the secret-leak trap)
+**Context:** Wanted the PR plan workflows to surface the diff on the PR itself, not just in the
+checks log — this makes the "bump attendee_count" demo land, since the +N databases/logins/users
+show up right in the conversation.
+**Learning:** Two things worth remembering. (1) The `hashicorp/setup-terraform` wrapper exposes
+the plan text as `steps.<id>.outputs.stdout`, so capturing it is free — but only if the plan step
+keeps its `id`. Give the step `continue-on-error: true` so the comment still posts on a failed
+plan, then a `if: steps.plan.outcome == 'failure'` → `exit 1` gate re-fails the job. (2) **GitHub
+masks registered secrets in the log, but NOT in a comment body posted via the API.** The azure-sql
+`plan` job feeds `secrets.ROB_CLIENT_IP` / `secrets.JESS_CLIENT_IP` into the firewall-rule diff, so
+a naive comment would leak the presenters' IPs into a public PR. The shared local action
+`.github/actions/tf-plan-comment` takes a `mask` input (newline-separated secret values) and
+redacts them before writing. Any plan that uses secret `-vars` MUST set `mask`.
+**Action:** Added [`../.github/actions/tf-plan-comment/action.yml`](../.github/actions/tf-plan-comment/action.yml)
+(sticky comment, one per header, masking + truncation) and wired it into all three plan jobs in
+[`../.github/workflows/azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml) and
+[`../.github/workflows/fabric-sql-plan.yml`](../.github/workflows/fabric-sql-plan.yml), adding
+`pull-requests: write` to each. YAML + embedded JS validated locally.
+
 ## 2026-08-30 — Rebase-style PR conflict checks still need a current-base merge
 **Context:** Resolving the Morning 1 docs PR after GitHub still reported merge conflicts even though
 the branch already contained an older merge from `main`.
@@ -39,7 +58,6 @@ timestamps) — so "check they're current" really means "re-set them to today's 
 [`../planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) §1 and cross-linked
 it from the §3 manual-firewall fallback (that manual `az` rule is now only for a skipped step
 or a one-off third machine).
-
 ## 2026-08-29 — Database demo page should split at lunch, then pause again before increment 3
 **Context:** Writing `docs/database/demo.md` as an attendee-facing step-by-step walkthrough from the existing SQL-project and ship-changes notes.
 **Learning:** The clearest demo structure follows the agenda rather than the code folders: **Part 1** ends before lunch with the DACPAC built, and **Part 2** resumes after lunch for increments 1 and 2, with a second explicit pause at the 15:15 break before increment 3. That keeps the page aligned with how the room actually experiences the day.
@@ -131,7 +149,6 @@ CAF naming examples in the infra READMEs, and the attendee pages
 [`docs/infra/fabric-sql.md`](../docs/infra/fabric-sql.md) (resource-name examples now `…-uks`).
 Reworded the shared-endpoint `location` description (the "unlike the taught module" contrast is
 gone). (Jess & Rob, 2026-08-29.)
-
 ## 2026-08-29 — The scary "MkDocs 2.0" banner is theme advocacy, not an error — and requirements.txt was unpinned
 **Context:** Running `mkdocs serve -f mkdocs.local.yml` printed a red-bordered "Warning from
 the Material for MkDocs team" about a coming **MkDocs 2.0** (plugins removed, theming

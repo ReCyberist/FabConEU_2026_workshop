@@ -1,0 +1,100 @@
+name: Comment Terraform plan on PR
+description: >
+  Posts (or updates in place) a single sticky PR comment showing a terraform plan.
+  Re-running on a new push edits the same comment instead of adding another, so the
+  PR always shows the current plan and nothing older.
+
+# WHY THIS EXISTS
+# The plan workflows already print the diff in the checks log, but a reviewer has to open
+# the run to see it. This surfaces the same plan right on the PR conversation — which is
+# exactly what makes the "bump attendee_count" demo land: change the count, push, and the
+# comment shows the precise +N databases / +N logins / +N users.
+#
+# SECRET SAFETY
+# GitHub masks registered secrets in the *log* output, but NOT in a comment body we post
+# through the API. A terraform plan can print secret values in the diff (e.g. the presenter
+# firewall IPs), so pass any such values via `mask` and they are replaced with *** before
+# the comment is written. Never post a plan that used secret -vars without setting `mask`.
+
+inputs:
+  header:
+    description: Heading for the comment, and the key that makes it sticky (one comment per header).
+    required: true
+  outcome:
+    description: 'Result of the terraform plan step: success or failure.'
+    required: true
+  plan:
+    description: 'The terraform plan stdout to show (from the setup-terraform wrapper: steps.<id>.outputs.stdout).'
+    required: true
+  mask:
+    description: Newline-separated secret values to redact from the plan before commenting.
+    required: false
+    default: ''
+  github-token:
+    description: 'Token with pull-requests: write.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@v7
+      env:
+        HEADER: ${{ inputs.header }}
+        OUTCOME: ${{ inputs.outcome }}
+        PLAN: ${{ inputs.plan }}
+        MASK: ${{ inputs.mask }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const header = process.env.HEADER;
+          const outcome = process.env.OUTCOME;
+          let plan = process.env.PLAN || '';
+
+          // Terraform colours its output with ANSI escapes even in CI; they render as noise
+          // like "[0m[1m[32m" in a comment. Strip every escape sequence so the comment is clean.
+          // Anchored on the ESC byte (\x1b) so real bracketed text in the plan is left alone.
+          // (The workflow log keeps its colours — this only touches the comment copy.)
+          plan = plan.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+
+          // Redact secret values the plan may have printed (see SECRET SAFETY above).
+          const masks = (process.env.MASK || '').split('\n').map(s => s.trim()).filter(Boolean);
+          for (const value of masks) {
+            plan = plan.split(value).join('***');
+          }
+
+          // A comment is capped at 65536 chars; stay well under and keep the tail (the
+          // "Plan: X to add..." summary lives at the end).
+          const MAX = 60000;
+          let note = '';
+          if (plan.length > MAX) {
+            plan = plan.slice(-MAX);
+            note = '\n> Plan output was truncated — open the workflow run for the full plan.\n';
+          }
+
+          const status = outcome === 'success' ? '✅ Plan succeeded' : '❌ Plan failed';
+          // Hidden marker: how we find our own comment to update instead of duplicating it.
+          const marker = `<!-- tf-plan-comment:${header} -->`;
+          const body = [
+            marker,
+            `### ${header} — ${status}`,
+            note,
+            '<details><summary>Show plan</summary>',
+            '',
+            '```',
+            plan.trim(),
+            '```',
+            '',
+            '</details>',
+          ].join('\n');
+
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const comments = await github.paginate(github.rest.issues.listComments, {
+            owner, repo, issue_number,
+          });
+          const mine = comments.find(c => c.body && c.body.includes(marker));
+          if (mine) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }

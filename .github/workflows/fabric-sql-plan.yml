@@ -22,6 +22,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  pull-requests: write   # required to post/update the plan comment on the PR
 
 env:
   # --- Terraform state backend -> Tenant A (unchanged identity) ---
@@ -82,8 +83,25 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
+      # id + continue-on-error: capture the plan output for the PR comment and still comment
+      # if the plan errors; the gate step below fails the job afterwards.
       - name: Terraform plan
+        id: plan
+        continue-on-error: true
         run: |
           terraform plan -lock=false \
             -var="location=${{ vars.AZURE_LOCATION }}" \
             -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+
+      # No secret -vars here, so nothing to mask.
+      - name: Comment plan on PR
+        uses: ./.github/actions/tf-plan-comment
+        with:
+          header: Fabric SQL — Terraform plan
+          outcome: ${{ steps.plan.outcome }}
+          plan: ${{ steps.plan.outputs.stdout }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
