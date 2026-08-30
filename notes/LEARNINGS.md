@@ -15,6 +15,51 @@ Format:
 
 ---
 
+## 2026-08-30 — Increment 3 built: the pre-deploy migration gotcha, and how to prove DACPAC behaviour offline
+**Context:** Building Increment 3 of the ship-changes demo (safe retire of `Player.ShirtNumber`)
+as runnable code (task #21). The design in `increment-3_safe-retire.md` had drafted a pre-deploy
+migration: `UPDATE Player SET SquadNumber = ShirtNumber ...`. Verified everything with a real
+`dotnet build` (installed .NET 8 SDK + `Microsoft.Build.Sql` locally) and `sqlpackage`.
+**Learning:** Five things, most of which contradicted an assumption in the repo:
+1. **The drafted pre-deploy migration was broken.** A DacFx publish runs *pre-deploy → schema
+   change → post-deploy*, and the plan is computed once up front. So at pre-deploy time the new
+   `SquadNumber` column does **not** exist. `UPDATE ... SET [SquadNumber] = ...` against a
+   database that already has `Player` fails with **Msg 207 (Invalid column name)** at *bind*
+   time — deferred name resolution never covers a missing *column* of an existing table, and the
+   whole batch is bound before the `IF` guard runs. Confirmed by MS Learn + research.
+2. **Canonical single-deployment fixes:** (a) genuine transform → **pre-deploy stash to a staging
+   table + post-deploy restore** (each script binds only against columns that exist at its own
+   phase); (b) pure rename → **refactorlog** (`sp_rename`, zero movement). A pre-deploy
+   `sp_rename` is *not* reliable — it collides with the already-computed ADD/DROP plan.
+3. **A `<PreDeploy Include="…">` pointing at a missing file FAILS the build** (`SQL72006`,
+   exit 1). So the pre-deploy wiring can't be pre-committed — it stays a demo step (the presenter
+   copies in a wired `.sqlproj`). Same for the refactorlog, which in SDK-style projects is **not**
+   auto-globbed and needs an explicit `<RefactorLog Include="…">` item.
+4. **Post-deploy scripts are NOT validated against the schema model at build time.** A seed that
+   still references a dropped column *builds clean* — the mismatch fails only at publish. The old
+   "the build should fail" note in `docs/database/demo.md` (and `increment-2_drop-shirtnumber.md`)
+   was wrong; fixed the demo.md gotcha, flagged increment-2's copy as a follow-up.
+5. **Option A still trips the data-loss guard.** Its DeployReport *keeps* the `DataIssue` alert
+   (the column really is dropped; the data is preserved *around* it), so Option A must publish
+   with `/p:BlockOnPossibleDataLoss=false` — the same flag as the Increment 2 YOLO, used
+   deliberately. Only **Option B (refactorlog)** produces an empty `<Alerts />` and publishes
+   under the shipped safe profile unchanged.
+**Reusable technique — verify DACPAC deploy behaviour with no live DB:** build the "before" and
+"after" DACPACs, then `sqlpackage /Action:Script` (or `/Action:DeployReport`)
+`/SourceFile:new.dacpac /TargetFile:old.dacpac /TargetDatabaseName:<anyname>`. This diffs two
+packages offline. It proved Option B: with the refactorlog the script is
+`EXECUTE sp_rename @objname=N'[football].[Player].[ShirtNumber]', @newname=N'SquadNumber', @objtype=N'COLUMN'`
+and the report is `<Alerts />`; without it, a column drop + `DataIssue` alert.
+**Action:** Shipped the Increment 3 artifacts in
+[`../database/demo/ship-changes/`](../database/demo/ship-changes/) (Player, pre-deploy migration,
+seed, refactorlog, and two wired `.sqlproj` variants), rewrote
+[`increment-3_safe-retire.md`](../database/demo/ship-changes/increment-3_safe-retire.md) and the
+[`README`](../database/demo/ship-changes/README.md), rewrote `docs/database/demo.md` steps 16–26
+to the step register, and fixed the false build-fail gotcha. All builds green (`-warnaserror`,
+0 analysis findings); both mkdocs configs `--strict` green. Live publish is the remaining check
+(task #21). **Toolchain note:** this box had no .NET/sqlpackage/mkdocs; installed .NET 8 via
+`dotnet-install.sh` to `~/.dotnet`, `microsoft.sqlpackage` as a global tool, and mkdocs in a venv.
+
 ## 2026-08-29 — Terraform plan output posted as a sticky PR comment (and the secret-leak trap)
 **Context:** Wanted the PR plan workflows to surface the diff on the PR itself, not just in the
 checks log — this makes the "bump attendee_count" demo land, since the +N databases/logins/users
