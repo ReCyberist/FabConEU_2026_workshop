@@ -15,6 +15,16 @@ Format:
 
 ---
 
+## 2026-08-30 — Rebase-style PR conflict checks still need a current-base merge
+**Context:** Resolving the Morning 1 docs PR after GitHub still reported merge conflicts even though
+the branch already contained an older merge from `main`.
+**Learning:** A conflict can be genuinely resolved for one base SHA and then become dirty again when
+`main` advances. In this case the only new conflict was the append-only learning log: keep both
+entries, remove the markers, and verify the PR diff still contains only the intended feature files.
+**Action:** Merged current `origin/main` into the PR branch, preserved both
+`notes/LEARNINGS.md` entries, and confirmed the PR changed-files list stayed scoped to the Morning 1
+work.
+
 ## 2026-08-29 — Database demo page should split at lunch, then pause again before increment 3
 **Context:** Writing `docs/database/demo.md` as an attendee-facing step-by-step walkthrough from the existing SQL-project and ship-changes notes.
 **Learning:** The clearest demo structure follows the agenda rather than the code folders: **Part 1** ends before lunch with the DACPAC built, and **Part 2** resumes after lunch for increments 1 and 2, with a second explicit pause at the 15:15 break before increment 3. That keeps the page aligned with how the room actually experiences the day.
