@@ -12,7 +12,7 @@ Track everything that must be arranged **before** the event. Tick items as confi
 - [ ] **The shared unsupported endpoint** — an **Azure SQL logical server + elastic pool with a
       database + SQL login per attendee** (`attendee01`…, shared password), attendees push their
       DACPAC into their own DB. Superseded the VM idea 2026-08-29 (D6 update). Module drafted in
-      [`../infra/azure-sql/shared-endpoint/`](../infra/azure-sql/shared-endpoint/); provision +
+      [`../infra/azure-sql/terraform/shared-endpoint/`](../infra/azure-sql/terraform/shared-endpoint/); provision +
       teardown + first live apply = **task #19**.
 - [ ] Cost estimate + spending caps / auto-teardown for **our** demo resources.
 

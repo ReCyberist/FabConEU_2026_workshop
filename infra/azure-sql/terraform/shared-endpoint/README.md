@@ -1,9 +1,9 @@
 # Shared, unsupported workshop endpoint (Azure SQL)
 
 > ⚠️ **This is not the module you teach with.** The taught Azure SQL module lives in
-> [`../terraform`](../terraform): remote state, Entra-only (passwordless), one database.
+> [`../demo`](../demo): remote state, Entra-only (passwordless), one database.
 > **This** module is the best-effort DB-deploy target we hand attendees on the day
-> ([decisions.md **D6**](../../../notes/decisions.md)) — **explicitly unsupported**, opened
+> ([decisions.md **D6**](../../../../notes/decisions.md)) — **explicitly unsupported**, opened
 > to the internet, on **SQL authentication**, and **destroyed the same day**.
 
 ## What it builds
@@ -27,7 +27,7 @@ sql-fabcon26-shared-uks-xxxxxx.database.windows.net
 
 ## Why it differs from the taught module
 
-| | Taught module (`../terraform`) | This shared endpoint |
+| | Taught module (`../demo`) | This shared endpoint |
 |---|---|---|
 | Auth | Entra-only, passwordless | **SQL logins** (can't hand a room Entra identities) |
 | Shape | server → 1 database | server → **pool → N databases** |
@@ -55,7 +55,7 @@ read shared state); to stand it up from your own machine, drop in the local-stat
 first so `terraform init` needs no state account:
 
 ```powershell
-cd infra/azure-sql/shared-endpoint
+cd infra/azure-sql/terraform/shared-endpoint
 Copy-Item backend_local_override.tf.example backend_local_override.tf   # local state, laptop runs
 Copy-Item terraform.tfvars.example terraform.tfvars
 code terraform.tfvars          # set attendee_count, region, pool size
@@ -103,7 +103,7 @@ then edit `attendee_count` and watch the plan show only the delta. The trick is 
 your `az login` instead of CI's OIDC:
 
 ```powershell
-cd infra/azure-sql/shared-endpoint
+cd infra/azure-sql/terraform/shared-endpoint
 az login
 az account set --subscription <the-workshop-subscription-id>
 
@@ -163,7 +163,7 @@ git commit -am "more attendees: 10 -> 15 databases"
 git push
 ```
 
-The PR triggers [`azure-sql-plan.yml`](../../../.github/workflows/azure-sql-plan.yml), whose
+The PR triggers [`azure-sql-plan.yml`](../../../../.github/workflows/azure-sql-plan.yml), whose
 **`terraform plan (shared endpoint)`** job prints the exact delta:
 
 ```
@@ -179,7 +179,7 @@ job is **read-only** (`-lock=false -refresh=false`); it never provisions.
 **Then choose how to make it real:**
 
 - **From CI (the usual demo close):** merge the PR and run
-  [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml) with the **`target`**
+  [`azure-sql-apply.yml`](../../../../.github/workflows/azure-sql-apply.yml) with the **`target`**
   input set to `attendee` (or `both`) — the shared endpoint is the `attendee-endpoint` job in
   that workflow. It applies the committed `attendee_count` against the shared remote state, so
   it creates exactly the extra databases/logins the plan showed, and prints the attendee
@@ -188,7 +188,7 @@ job is **read-only** (`-lock=false -refresh=false`); it never provisions.
   state* below — plan/apply the delta directly.
 
 The endpoint is torn down nightly by
-[`shared-endpoint-destroy.yml`](../../../.github/workflows/shared-endpoint-destroy.yml)
+[`shared-endpoint-destroy.yml`](../../../../.github/workflows/shared-endpoint-destroy.yml)
 (21:00 UTC) so nothing bills overnight.
 
 ## Cost
@@ -222,13 +222,13 @@ and `.terraform.lock.hcl` is committed. What's **not** yet exercised is a real
 
 **Full pipeline now wired, but no live apply has run yet.** The shared endpoint rides along
 in the Azure SQL workflows as its own job: plan-on-PR (`plan-shared-endpoint` job in
-[`azure-sql-plan.yml`](../../../.github/workflows/azure-sql-plan.yml)), apply
-(`attendee-endpoint` job in [`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml),
+[`azure-sql-plan.yml`](../../../../.github/workflows/azure-sql-plan.yml)), apply
+(`attendee-endpoint` job in [`azure-sql-apply.yml`](../../../../.github/workflows/azure-sql-apply.yml),
 run with `target: attendee` or `both`), and nightly teardown
-([`shared-endpoint-destroy.yml`](../../../.github/workflows/shared-endpoint-destroy.yml),
+([`shared-endpoint-destroy.yml`](../../../../.github/workflows/shared-endpoint-destroy.yml),
 21:00 UTC + dispatch). What's unproven is a real run against Azure — the checks above are
 the things to watch on the first `apply`. For the demo's crisp `+5`, seed the initial 10
 first (run the apply once with `target: attendee`, or one local apply against the remote state).
 
-Tracked as **task #19** in [`../../../planning/tasks.md`](../../../planning/tasks.md).
-Log anything surprising in [`../../../notes/LEARNINGS.md`](../../../notes/LEARNINGS.md).
+Tracked as **task #19** in [`../../../../planning/tasks.md`](../../../../planning/tasks.md).
+Log anything surprising in [`../../../../notes/LEARNINGS.md`](../../../../notes/LEARNINGS.md).

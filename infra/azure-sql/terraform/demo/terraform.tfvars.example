@@ -12,8 +12,8 @@ entra_admin_object_id = "00000000-0000-0000-0000-000000000000"   # its object (p
 # Optional overrides:
 # workload              = "fabcon26"
 # environment           = "dev"
-# location              = "westeurope"
-# location_abbreviation = "weu"
+# location              = "uksouth"
+# location_abbreviation = "uks"
 # database_name         = "football"
 
 # Let a specific machine connect (name = ip). The pipeline runner is covered by

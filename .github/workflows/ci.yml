@@ -127,8 +127,8 @@ jobs:
         run: |
           set -euo pipefail
           for dir in \
-            infra/azure-sql/terraform \
-            infra/azure-sql/shared-endpoint \
+            infra/azure-sql/terraform/demo \
+            infra/azure-sql/terraform/shared-endpoint \
             infra/fabric-sql/terraform \
             infra/fabric-sql/automation; do
             echo "::group::validate $dir"

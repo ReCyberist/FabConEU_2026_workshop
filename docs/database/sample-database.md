@@ -147,13 +147,13 @@ across the **Premier League** and **Women's Super League**, a handful of played 
 El Clásico fixtures for `vw_UpcomingFixtures`. Re-deploying never duplicates rows.
 
 !!! tip "Try it after you deploy"
-    ```sql
-    -- Women's Super League table for 2025/26
-    EXEC football.usp_GetLeagueTable @CompetitionId = 2, @SeasonId = 1;
+```sql
+-- Women's Super League table for 2025/26
+EXEC football.usp_GetLeagueTable @CompetitionId = 2, @SeasonId = 1;
 
-    -- Who's scoring?
-    SELECT * FROM football.vw_TopScorers ORDER BY Goals DESC;
-    ```
+-- Who's scoring?
+SELECT * FROM football.vw_TopScorers ORDER BY Goals DESC;
+```
 
 ## Get the code
 

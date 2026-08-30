@@ -1,6 +1,6 @@
 name: Azure SQL — Terraform destroy
 
-# Tears down the Azure SQL infra module (infra/azure-sql/terraform) in the personal
+# Tears down the Azure SQL infra module (infra/azure-sql/terraform/demo) in the personal
 # sandbox subscription. Runs nightly at 21:00 UTC (we like to go to bed then) and can also
 # be triggered manually.
 #
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/azure-sql/terraform
+        working-directory: infra/azure-sql/terraform/demo
     steps:
       - name: Checkout
         uses: actions/checkout@v7

@@ -3,7 +3,7 @@
 #
 # Resource names follow the Azure Cloud Adoption Framework (CAF) convention:
 #   <resource-type-abbreviation>-<workload>-<environment>-<region>[-<unique>]
-# e.g. rg-fabcon26-dev-weu, sql-fabcon26-dev-weu-a1b2c3, sqldb-football-dev.
+# e.g. rg-fabcon26-dev-uks, sql-fabcon26-dev-uks-a1b2c3, sqldb-football-dev.
 #
 # The workload token stays "fabcon26" so a *fabcon26* filter still finds and tears down
 # every workshop resource (CLAUDE.md §4).
@@ -32,19 +32,19 @@ variable "environment" {
 }
 
 variable "location" {
-  description = "Azure region for all resources."
+  description = "Azure region for all resources. Defaults to UK South — West Europe has no capacity for this subscription (see LEARNINGS 2026-08-29)."
   type        = string
-  default     = "westeurope"
+  default     = "uksouth"
 }
 
 variable "location_abbreviation" {
-  description = "Short region token used in resource names (CAF style), e.g. weu for westeurope."
+  description = "Short region token used in resource names (CAF style), e.g. uks for uksouth."
   type        = string
-  default     = "weu"
+  default     = "uks"
 
   validation {
     condition     = can(regex("^[a-z0-9]{2,6}$", var.location_abbreviation))
-    error_message = "location_abbreviation must be 2-6 lowercase alphanumeric characters (e.g. weu, neu, eus)."
+    error_message = "location_abbreviation must be 2-6 lowercase alphanumeric characters (e.g. uks, weu, neu)."
   }
 }
 
@@ -148,7 +148,7 @@ variable "database_min_capacity" {
 variable "database_auto_pause_delay" {
   description = "Minutes of inactivity before a serverless database auto-pauses; -1 disables auto-pause (ignored for provisioned SKUs)."
   type        = number
-  default     = 60
+  default     = 75
 }
 
 variable "tags" {

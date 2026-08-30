@@ -42,11 +42,11 @@ variable "environment" {
 variable "location" {
   description = "Azure region for the Automation account's resource group."
   type        = string
-  default     = "westeurope"
+  default     = "uksouth"
 }
 
 variable "location_abbreviation" {
-  description = "Short region token for CAF naming (e.g. weu). Must match the Fabric module."
+  description = "Short region token for CAF naming (e.g. uks). Must match the Fabric module."
   type        = string
-  default     = "weu"
+  default     = "uks"
 }

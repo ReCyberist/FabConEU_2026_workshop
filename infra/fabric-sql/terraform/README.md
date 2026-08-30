@@ -9,9 +9,9 @@ project's DACPAC publishes into — the *same* DACPAC that targets Azure SQL (se
 
 | Resource | Provider | Name (defaults) | Notes |
 |----------|----------|-----------------|-------|
-| Resource group | `azurerm` | `rg-fabcon26-dev-weu` | Holds the Azure-side capacity. |
+| Resource group | `azurerm` | `rg-fabcon26-dev-uks` | Holds the Azure-side capacity. |
 | Fabric capacity | `azurerm` | `capfabcon26dev<rnd>` | `Microsoft.Fabric/capacities`, SKU **F2** (smallest). Lowercase-alphanumeric-only name. |
-| Fabric workspace | `fabric` | `ws-fabcon26-dev-weu` | Assigned to the capacity above. |
+| Fabric workspace | `fabric` | `ws-fabcon26-dev-uks` | Assigned to the capacity above. |
 | SQL database in Fabric | `fabric` | `football-dev` | `SQL_Latin1_General_CP1_CI_AS`, 7-day PITR. |
 
 ## Two providers, two planes
