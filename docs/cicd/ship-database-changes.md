@@ -4,11 +4,11 @@ The punchline of the day: **a database change is a pull request, and the pipelin
 what it will do to your data before it does it** — the database's answer to `terraform plan`.
 Additive changes flow automatically; destructive ones stop for a human.
 
-!!! note "Follow along — or just watch"
-    A target SQL **with seeded data**, so a data-loss change is real and visible. See
-    [Prerequisites](../setup/prerequisites.md).
+!!! tip "The hands-on part is on the demo page"
+    This page is the *why*. All three increments are run step by step in Part 2 of the
+    **[Database demo](../database/demo.md)**.
 
-## What you'll build
+## What gets built
 
 Three schema changes, each a pull request, each teaching one thing:
 
@@ -41,6 +41,12 @@ The flow is identical on both — only the publish profile changes.
 === "Fabric SQL"
     The same flow with `FabricSql.publish.xml`, verified live end-to-end on the cross-tenant Fabric
     capacity — see the [Fabric SQL](../infra/fabric-sql.md) page.
+
+## The demo
+
+👉 **[Database demo — Part 2](../database/demo.md)** — publish the baseline, add the view, spring
+the trap, then retire the column safely. **[CI/CD demo](demo.md)** shows the same story driven
+from the pipeline.
 
 ## The code
 

@@ -1410,4 +1410,38 @@ blurred them into one paragraph. Keeping them in separate sentences makes both r
 [`../docs/setup/prerequisites.md`](../docs/setup/prerequisites.md), and expanded the shared-endpoint
 section on the prerequisites page.
 
+## 2026-08-31 — One job per page: overview pages explain, demo pages instruct
+
+**Learning:** Every teaching section had grown **two** step-by-step walkthroughs — one on the
+concept page and one on Jess's `demo.md` — and they were near-duplicates that had already started
+to drift apart. `foundations/source-control.md` walked a nine-step pull request against
+`ATTENDEES.md`; `foundations/demo.md` walked a nine-step pull request against `notes/fabcon.md`.
+`cicd/build-validate.md` carried a six-step "watch CI validate a PR" demo alongside `cicd/demo.md`.
+`infra/azure-sql.md` printed a full `init`/`plan`/`apply` block pointing at
+`infra/azure-sql/terraform/demo`, while `infra/demo.md` pointed at `infra/azure-sql/terraform`.
+An attendee reading top to bottom cannot tell which page to follow, and a presenter cannot tell
+which one is current.
+
+The rule that resolves it, and the one to keep: **a page either explains a thing or instructs you
+to do it, never both.** Overview pages get the concept, what gets built, the gotchas, and a
+signposted link to the demo. The demo page is the only place with numbered commands. Applied
+consistently, the two registers in CLAUDE.md §5 stop competing for the same page.
+
+Two knock-on effects worth noting. Troubleshooting is *step* register but does not belong on a demo
+page mid-flow — the Windows WAM/Graph-token fix now sits on `infra/azure-sql.md` as a collapsed
+`??? warning` under Gotchas, out of the way until needed. And the wrap-up had no `demo.md` at all;
+its "final boss" demo lived inside `migrations-drift-teardown.md`, so it was split out to
+`wrap-up/demo.md` (content moved byte-for-byte) to match every other section.
+
+**Still open:** the demo pages themselves carry stale paths — `infra/demo.md` and `wrap-up/demo.md`
+both use `infra/azure-sql/terraform`, but the module actually lives in
+`infra/azure-sql/terraform/demo` (the parent folder is now just a container for `demo/` and
+`shared-endpoint/`). Deliberately left for the follow-up demo-code pass rather than fixed here.
+
+**Action:** Rewrote the eight overview pages, added the "Two kinds of page" section to
+[`../docs/setup/welcome.md`](../docs/setup/welcome.md), created
+[`../docs/wrap-up/demo.md`](../docs/wrap-up/demo.md), and added it to the nav in `mkdocs.yml`
+(commented, plus `exclude_docs`) and `mkdocs.local.yml`. Both configs build clean under
+`mkdocs build --strict`. Jess's four `demo.md` pages were not touched.
+
 <!-- Add new entries above this line -->

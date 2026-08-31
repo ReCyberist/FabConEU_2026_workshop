@@ -4,10 +4,11 @@ Now provision for real — **`terraform apply` from the pipeline**. Deployment i
 passwordless action: you dispatch it from `main`, it stands up the Azure SQL infrastructure, and a
 nightly job tears it back down so nothing bills overnight.
 
-!!! note "Follow along — or just watch"
-    Your own Azure subscription to deploy into. See [Prerequisites](../setup/prerequisites.md).
+!!! tip "The hands-on part is on the demo page"
+    This page is the *why*. Dispatching the apply and watching it run is walked through step by
+    step on **[CI/CD demo](demo.md)**.
 
-## What you'll build
+## What gets built
 
 - A **manually-dispatched apply**
   ([`azure-sql-apply.yml`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/azure-sql-apply.yml))
@@ -31,6 +32,11 @@ nightly job tears it back down so nothing bills overnight.
     Holding a deploy for a human is a **GitHub Environment required-reviewer** gate. On a *private*
     repo those protection rules need a **Team/Enterprise** plan, so ours is documented as the pattern
     (and it's the resolution in [part 3](ship-database-changes.md)) rather than enforced on this repo.
+
+## The demo
+
+👉 **[CI/CD demo](demo.md)** — dispatch `azure-sql-apply.yml` from `main`, watch the run, and
+confirm the nightly teardown is in place.
 
 ## The code
 
