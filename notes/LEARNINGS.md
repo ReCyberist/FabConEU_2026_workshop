@@ -15,6 +15,23 @@ Format:
 
 ---
 
+## 2026-08-30 — Lunch page + a reusable countdown banner; build-validate gets its PR demo
+**Context:** Attendee docs for the lunch break and for the first session after lunch (build & validate).
+**Learning:** The `session-clock` component now supports an **optional live countdown**. Add a
+`<span class="session-clock__remaining">` to any clock include and `session-clock.js` fills it —
+`"N min left"` while the slot runs, `"starts HH:MM"` before, `"done"` after. It is backward-compatible
+(clocks without that span are untouched), so it doubles as a break countdown without a second widget.
+Also a demo gotcha worth remembering: **`gh pr create` from a fork defaults its base to the UPSTREAM
+repo**, so a follow-along attendee must open the PR *inside their own fork* or they raise it against
+the workshop repo — the build-validate demo calls this out.
+**Action:** Added [`docs/lunch.md`](../docs/lunch.md) (countdown banner via
+[`includes/clock-lunch.md`](../includes/clock-lunch.md) + a light "Jess eats lunch" aside), enhanced
+[`session-clock.js`](../docs/javascripts/session-clock.js) / [`session-clock.css`](../docs/stylesheets/session-clock.css),
+wired lunch into both navs (teaser `exclude_docs` + `mkdocs.local.yml`), and added a step-register
+**"watch CI validate a pull request"** demo to [`docs/cicd/build-validate.md`](../docs/cicd/build-validate.md)
+(reuses the increment-1 additive view + `ci.yml`). Both mkdocs configs `--strict` green. Scoped to the
+sessions either side of lunch — Afternoon 2 / increment 3 deliberately untouched. Feeds task #22.
+
 ## 2026-08-29 — Terraform plan output posted as a sticky PR comment (and the secret-leak trap)
 **Context:** Wanted the PR plan workflows to surface the diff on the PR itself, not just in the
 checks log — this makes the "bump attendee_count" demo land, since the +N databases/logins/users

@@ -37,6 +37,7 @@ nav:
       - The sample database: database/sample-database.md
       - SQL projects: database/sql-projects.md
       - Demo: database/demo.md
+  - Lunch: lunch.md
   - CI/CD:
       - Build & validate: cicd/build-validate.md
       - Deploy infrastructure: cicd/deploy-infra.md
