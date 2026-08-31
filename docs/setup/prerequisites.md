@@ -1,9 +1,14 @@
 # Prerequisites
 
-This is a **bring-your-own** workshop. Nothing is provisioned for you, and there is no lab
-environment handed out. You will get the most from the day by deploying along on your own Azure or
-Fabric kit — but every step is a live demo you can equally watch, then replay later from the
-downloads. The only hard requirement is a laptop and some curiosity.
+This is a **bring-your-own** workshop, and every step is a live demo. You can deploy along on your
+own Azure or Fabric kit, or you can watch and replay the whole thing later from the downloads —
+both are entirely respectable choices. The only hard requirement is a laptop and some curiosity.
+
+There is **no lab environment**: we do not hand out subscriptions, capacities or credentials, so
+anything you deploy today you deploy into your own cloud. The single exception is a **shared SQL
+Server** we run on the day, for anyone who wants to practise deploying a database but has no
+endpoint of their own to deploy into. It is best-effort and unsupported — see
+[The shared endpoint](#the-shared-endpoint-unsupported) below.
 
 Everything else on this page is **optional**, and depends on how hands-on you would like to be.
 
@@ -84,7 +89,7 @@ The hands-on work splits into **two independent, optional parts**. Choose either
 |---|---|
 | **Watch** (and replay later) | A laptop. That is all. |
 | **Part 1 — deploy infrastructure** as code | Your **own Azure subscription**, plus a **Fabric capacity** for the Fabric path |
-| **Part 2 — ship database changes** as code | A reachable **target SQL endpoint** — your own, or our shared one on the day |
+| **Part 2 — ship database changes** as code | A reachable **target SQL endpoint** — your own, or our shared SQL Server on the day |
 
 The two parts are independent. You can do Part 2 without Part 1, as long as you already have a
 target SQL endpoint to deploy into.
@@ -382,9 +387,13 @@ Install two tools before you travel.
 
 ## The shared endpoint (unsupported)
 
-For anyone without a target SQL endpoint of their own, we will run **one shared SQL Server** on the
-day. You push your database changes to it through the pipeline, and you get **your own database**
-on that server — so there are no name collisions with the person sitting next to you.
+This is the one thing we do provide, and it exists for a single purpose: so that nobody who wants
+to practise deploying a database is stopped by not having somewhere to deploy it to.
+
+It is **one shared SQL Server**, running only on the day. You push your database changes to it
+through the pipeline, and you get **your own database** on that server — so there are no name
+collisions with the person sitting next to you. It is not a lab environment: it is a target for
+Part 2, and nothing else. Part 1 still needs your own Azure subscription.
 
 !!! warning "Best-effort, and explicitly unsupported"
     The shared endpoint exists so that everyone *can* try Part 2. We will not be able to

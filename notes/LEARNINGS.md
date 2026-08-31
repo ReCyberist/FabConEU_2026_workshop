@@ -1386,4 +1386,28 @@ throughout (including the summary table); added `winget` and `Homebrew` to
 exact and site-wide and "apt" is an ordinary English word that would underline itself in prose. No
 `mkdocs.yml` change needed; `pymdownx.tabbed` and `content.tabs.link` were already on.
 
+## 2026-08-31 — "Nothing is provisioned" vs. the shared SQL endpoint: name the exception up front
+
+**Learning:** Three attendee pages opened with an absolute — "Nothing is provisioned for you, and
+there is no lab environment handed out" — and then, further down the same page, offered a shared
+SQL endpoint. Read end to end it looks like a contradiction, and an attendee deciding what to bring
+cannot tell which sentence to believe.
+
+The fix is not to soften the promise but to **state the exception where the promise is made**. The
+"bring your own" claim is really two claims: (a) we hand out no subscriptions, capacities or
+credentials — always true; (b) we provide nothing at all — never was true. The intro now makes
+claim (a) and immediately names the single exception, with a link down to
+[The shared endpoint](../docs/setup/prerequisites.md). The shared-endpoint section, in turn, opens
+by saying it *is* the one thing we provide, and bounds it: a Part 2 target, not a lab environment —
+Part 1 still needs your own subscription.
+
+Also worth remembering: "follow along **or** watch" is not in tension with "we provide nothing".
+Those are separate axes — how hands-on you are, versus whose cloud you use — and the original prose
+blurred them into one paragraph. Keeping them in separate sentences makes both readable.
+
+**Action:** Reworded the openers of [`../docs/index.md`](../docs/index.md),
+[`../docs/setup/welcome.md`](../docs/setup/welcome.md) and
+[`../docs/setup/prerequisites.md`](../docs/setup/prerequisites.md), and expanded the shared-endpoint
+section on the prerequisites page.
+
 <!-- Add new entries above this line -->

@@ -7,15 +7,16 @@ tomorrow.
 
 ## How the day works
 
-This is a **bring-your-own** workshop. Nothing is provisioned for you: you use whatever cloud you
-already have, or none at all. The hands-on work splits into **two independent, optional parts**, and
-you choose your own level for each.
+This is a **bring-your-own** workshop. There is no lab environment: you deploy into whatever cloud
+you already have, or you watch and replay it later. The hands-on work splits into **two
+independent, optional parts**, and you choose your own level for each.
 
 - **Watch.** Every step is a live demo. Sit back, follow the reasoning, and download the code later.
 - **Part 1 — deploy infrastructure** as code, into your own Azure subscription. Azure SQL, Fabric
   SQL, or both.
-- **Part 2 — ship database changes** as code, into a target SQL endpoint. Use your own, or the
-  shared endpoint we run on the day — which is best-effort and **unsupported**.
+- **Part 2 — ship database changes** as code, into a target SQL endpoint. Use your own, or — if you
+  have no endpoint to deploy into — the one shared SQL Server we run on the day, which is
+  best-effort and **unsupported**.
 
 The two parts are independent. You can do Part 2 without Part 1, as long as you already have a
 target SQL endpoint to deploy into. All three levels are equally respectable, and you can change

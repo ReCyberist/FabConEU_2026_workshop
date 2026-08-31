@@ -20,8 +20,8 @@ controlled, repeatable, and ready for production.
 ## What you'll see (and can follow along with)
 
 Everything is a live demo. Follow along on your own Azure or Fabric kit if you have it, or sit
-back and watch — both are entirely respectable choices. There is no provided lab environment, so
-bring your own subscription or replay the whole thing later from the downloads.
+back and watch — both are entirely respectable choices. There is no lab environment, so you deploy
+into your own subscription, or replay the whole thing later from the downloads.
 
 - Provision **Azure SQL** and **Fabric SQL** as code with **Terraform**, side by side.
 - Define your database schema as code with **SQL projects** (`.sqlproj` / DACPAC).
@@ -38,7 +38,9 @@ and the women's game.
 
 This is a **bring-your-own** workshop. There is no lab environment handed out, so a little
 preparation goes a long way. The only hard requirements are a laptop and some curiosity;
-everything else depends on how hands-on you would like to be.
+everything else depends on how hands-on you would like to be. If you would like to practise
+deploying a database but have nowhere to deploy it, we run one shared SQL Server on the day for
+exactly that.
 
 👉 **[Read the prerequisites](setup/prerequisites.md)** — what to install, the cloud access each
 optional part needs, and the all-important cost and teardown notes.
