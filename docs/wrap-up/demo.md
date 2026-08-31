@@ -26,7 +26,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      Open the variables file:
 
      ```powershell
-     code .\infra\azure-sql\terraform\variables.tf
+     code .\infra\azure-sql\terraform\demo\variables.tf
      ```
 
      In `database_auto_pause_delay`, change:
@@ -38,7 +38,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
 3. Commit the change.
 
      ```powershell
-     git add .\infra\azure-sql\terraform\variables.tf
+     git add .\infra\azure-sql\terraform\demo\variables.tf
      git commit -m "demo: change Azure SQL auto-pause delay to 75 minutes"
      ```
 
@@ -78,7 +78,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      ```powershell
      git switch main
      git pull
-     git --no-pager show -- .\infra\azure-sql\terraform\variables.tf
+     git --no-pager show -- .\infra\azure-sql\terraform\demo\variables.tf
      ```
 
      In the workflow run log, point to the same change being applied to the database.

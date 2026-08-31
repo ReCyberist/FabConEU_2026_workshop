@@ -1444,4 +1444,42 @@ both use `infra/azure-sql/terraform`, but the module actually lives in
 (commented, plus `exclude_docs`) and `mkdocs.local.yml`. Both configs build clean under
 `mkdocs build --strict`. Jess's four `demo.md` pages were not touched.
 
+## 2026-08-31 — Presenter demos, and the drift that had already been committed
+
+**Learning:** Building the presenter scripts turned up the thing they were meant to prevent, sitting
+on `main`. `database_auto_pause_delay` in the Azure SQL module was `75`, not `60` — commit `33cf375`
+committed a demo run's value. Step 8 of the wrap-up demo says to reset it and nobody had. The whole
+beat of that demo is "change 60 to 75, look at the plan", so as it stood `terraform plan` would have
+reported `0 to change` in front of the room. The demo would have died on stage and nobody would have
+known why.
+
+That is the actual argument for a **RESET region**, and it is why every presenter script now ends
+with one. `03-database.ps1` is the worst offender: the ship-changes demo overwrites three *tracked*
+files (`Tables/Player.sql`, `Scripts/PostDeployment/Seed.sql`, `FabConFootball.sqlproj`) and creates
+four more. The attendee page has no reset step and should not grow one — it is presenter
+housekeeping, not an attendee step.
+
+**The `break` guard rail works, and is worth knowing.** `break` at the top level of a PowerShell
+script terminates it, so F5 does nothing; F8 (Run Selection) never sends that line, so running a
+block at a time is unaffected. Verified both ways rather than assumed. It is two characters and it
+removes the entire "I pressed F5 in front of 300 people" class of disaster.
+
+**"The path exists" is a useless check.** The first version of `check-demo-paths.py` passed happily
+on the exact bug it was written to catch: `cd infra/azure-sql/terraform` resolves to a real
+directory — it is just the *container* for `demo/` and `shared-endpoint/`, with no `.tf` files in
+it. The check that works is **"a `cd` that is followed by a `terraform` command must land somewhere
+holding tracked `.tf` files"**, and it has to ask *git*, not the filesystem: a leftover gitignored
+`backend_local_override.tf` from someone's demo run (there is one in that very folder) makes the
+wrong directory look right. Worth remembering generally — a checker that passes on the known bug is
+worse than no checker, because now you trust it.
+
+**Also:** resolving demo paths the way the demo does — walking the file, tracking `cd`, resolving
+`..\` against it — is what makes the check meaningful, and it means one wrong `cd` lights up every
+command after it.
+
+**Action:** Added [`demo/`](../demo/) — five presenter scripts plus a README. Added CLAUDE.md §7a
+(the two halves of a demo, and that Jess's comments may be added to but not rewritten), the `demos`
+job in `ci.yml`, and [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py). Fixed six
+bugs, listed in [the design doc](../planning/2026-08-31-presenter-demo-scripts-design.md).
+
 <!-- Add new entries above this line -->

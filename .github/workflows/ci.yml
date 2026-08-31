@@ -8,6 +8,7 @@ name: CI
 #   - docs          ✅  mkdocs build --strict (only when docs change)
 #   - terraform     ✅  fmt check + validate (infra/**/terraform)
 #   - bicep         ✅  az bicep build (infra/**/bicep)
+#   - demos         ✅  presenter scripts parse + stay in sync with the site
 #   - markdown          link / lint check
 
 on:
@@ -179,3 +180,59 @@ jobs:
             az bicep build-params --file "$p" --stdout > /dev/null
             echo "::endgroup::"
           done
+
+  demos:
+    name: Demo scripts + attendee page sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # paths-filter needs history to diff against the base
+
+      # Every demo has two halves that drift apart: the presenter script in demo/
+      # and the attendee page in docs/**/demo.md (CLAUDE.md §7a). A change to the
+      # code either of them drives is exactly when they go stale, so watch the
+      # code too — not only the two halves themselves.
+      - name: Detect demo changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            demos:
+              - 'demo/**'
+              - 'docs/**/demo.md'
+              - 'infra/**'
+              - 'database/**'
+              - '.github/scripts/check-demo-paths.py'
+              - '.github/workflows/ci.yml'
+
+      # A demo script that does not parse is a demo that fails at 09:01 rather
+      # than in CI. pwsh is preinstalled on the runner.
+      - name: Parse the presenter scripts
+        if: steps.filter.outputs.demos == 'true'
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem demo/*.ps1 | ForEach-Object {
+              $errors = $null
+              [System.Management.Automation.Language.Parser]::ParseFile(
+                  $_.FullName, [ref]$null, [ref]$errors) | Out-Null
+              if ($errors) {
+                  $failed = $true
+                  Write-Host "::error file=demo/$($_.Name)::does not parse"
+                  $errors | ForEach-Object { Write-Host "    $($_.Message)" }
+              } else {
+                  Write-Host "ok  demo/$($_.Name)"
+              }
+          }
+          if ($failed) { exit 1 }
+
+      # Checks that every script names a real attendee page, that every attendee
+      # page is claimed by a script, and that every repo path either half
+      # mentions actually exists — including that a `cd` into a Terraform module
+      # lands somewhere with tracked .tf files in it. That last one is the check
+      # that would have caught the bugs this job was written for.
+      - name: Check demo paths and pairing
+        if: steps.filter.outputs.demos == 'true'
+        run: python .github/scripts/check-demo-paths.py
