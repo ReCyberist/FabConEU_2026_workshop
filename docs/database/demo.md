@@ -606,41 +606,221 @@ the **15:15 break**. Increment 3 resumes after that break.
 
 ### Increment 3 — Retire it safely
 
-16. Explain the goal for Increment 3.
+Increment 3 keeps Increment 2's goal — retire `ShirtNumber` — but preserves the data. There are
+two safe patterns. **Option A** is the general one: a data-preserving migration you can adapt to
+any change. **Option B** is the clean special case when the change is only a rename. Both are
+shipped in `database/demo/ship-changes` and applied the same copy-in way as the earlier
+increments, and both end at the same schema, where `Player.SquadNumber` replaces
+`Player.ShirtNumber`.
 
-    Keep the same objective as Increment 2 (retire `ShirtNumber`) but do it without data loss.
-    Show two safe patterns. Use either one with a deliberate approval gate.
+The order matters. A publish runs in three phases: the **pre-deployment script**, then the
+**schema change**, then the **post-deployment script**. The schema change is what adds
+`SquadNumber` and drops `ShirtNumber`, so the new column does not exist during the pre-deployment
+phase. That is why the copy cannot be a single statement, and why Option A splits the work either
+side of the schema change.
 
-17. Option A: preserve the data first with a pre-deploy migration.
+!!! note "Two options, one end state"
+    Option A works for any data-preserving change; Option B is the tidy choice when the change is
+    purely a rename. You do not need both — pick the one that fits your change. The deploy reports
+    below are what `sqlpackage` produces for each.
 
-    Add a pre-deploy script that runs before the schema change:
+16. Confirm the target still holds `ShirtNumber` data.
 
-    ```sql
-    -- database/sql-projects/Scripts/PreDeployment/Migrate-ShirtNumber.sql
-    -- Idempotent: only acts while the old column still exists. Copies ShirtNumber into its new
-    -- home before the DACPAC's ALTER TABLE ... DROP COLUMN runs.
-    IF COL_LENGTH('football.Player', 'ShirtNumber') IS NOT NULL
-    BEGIN
-        UPDATE p
-        SET p.[SquadNumber] = p.[ShirtNumber]
-        FROM [football].[Player] AS p
-        WHERE p.[SquadNumber] IS NULL
-          AND p.[ShirtNumber] IS NOT NULL;
-    END;
+    === "Presenter path (Entra token)"
+
+        ```powershell
+        $queryParams = @{
+            SqlInstance = $server
+            Database    = $db
+            AccessToken = $token
+            Query       = "SELECT TOP (5) PlayerId, LastName, ShirtNumber FROM football.Player WHERE ShirtNumber IS NOT NULL"
+        }
+
+        Invoke-DbaQuery @queryParams
+        ```
+
+    === "Attendee path (SQL login)"
+
+        ```powershell
+        $queryParams = @{
+            SqlInstance   = $server
+            Database      = $db
+            SqlCredential = $sqlCredential
+            Query         = "SELECT TOP (5) PlayerId, LastName, ShirtNumber FROM football.Player WHERE ShirtNumber IS NOT NULL"
+        }
+
+        Invoke-DbaQuery @queryParams
+        ```
+
+    The query returns rows with `ShirtNumber` values. Run the Increment 2 forced publish (the
+    `/p:BlockOnPossibleDataLoss=false` path) against a throwaway database, not this one, so this
+    target still has the data to preserve.
+
+#### Option A — a data-preserving migration
+
+17. Copy in the Option A files.
+
+    ```powershell
+    New-Item -ItemType Directory -Path .\Scripts\PreDeployment -Force | Out-Null
+    Copy-Item ..\demo\ship-changes\increment-3_Player.sql              .\Tables\Player.sql -Force
+    Copy-Item ..\demo\ship-changes\increment-3_Migrate-ShirtNumber.sql .\Scripts\PreDeployment\Migrate-ShirtNumber.sql -Force
+    Copy-Item ..\demo\ship-changes\increment-3_Seed.sql                .\Scripts\PostDeployment\Seed.sql -Force
+    Copy-Item ..\demo\ship-changes\increment-3A_FabConFootball.sqlproj .\FabConFootball.sqlproj -Force
     ```
 
-    Register it as the pre-deploy script in the SQL project. Only one pre-deploy entry is allowed,
-    so use `:r` includes if you need to compose multiple scripts.
+    The pre-deployment script copies `ShirtNumber` into a staging table before the drop; the
+    post-deployment step lands those values in `SquadNumber` after the schema change creates it.
 
-18. Option B: model the change as a rename.
+18. Build the DACPAC.
 
-    If the intent is `ShirtNumber` -> `SquadNumber`, use SQL project refactor tooling so the
-    intent is written to the `.refactorlog`.
+    ```powershell
+    dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
+    ```
 
-    The publish then emits `sp_rename` instead of drop-and-add. This keeps the data in place and
-    applies consistently across environments.
+    The build succeeds with zero warnings and zero analysis findings:
 
-19. Add an approval gate for destructive deployments.
+    ```text
+    Build succeeded.
+        0 Warning(s)
+        0 Error(s)
+    ```
+
+19. Generate the deploy report.
+
+    === "Presenter path (Entra token)"
+
+        ```powershell
+        sqlpackage /Action:DeployReport `
+            /SourceFile:"bin/Release/FabConFootball.dacpac" `
+            /Profile:$profile `
+            /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
+            /OutputPath:"deploy-report.xml"
+        ```
+
+    === "Attendee path (SQL login)"
+
+        ```powershell
+        sqlpackage /Action:DeployReport `
+            /SourceFile:"bin/Release/FabConFootball.dacpac" `
+            /Profile:$profile `
+            /TargetServerName:$server /TargetDatabaseName:$db `
+            /TargetUser:$login /TargetPassword:$password `
+            /OutputPath:"deploy-report.xml"
+        ```
+
+    The report still flags the column drop. Option A preserves the data, not the column, so the
+    report contains a data-loss alert:
+
+    ```xml
+    <Alert Name="DataIssue"><Issue Value="The column [football].[Player].[ShirtNumber] is being dropped, data loss could occur." Id="1" /></Alert>
+    ```
+
+20. Publish, explicitly allowing the drop.
+
+    === "Presenter path (Entra token)"
+
+        ```powershell
+        sqlpackage /Action:Publish `
+            /SourceFile:"bin/Release/FabConFootball.dacpac" `
+            /Profile:$profile `
+            /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
+            /p:BlockOnPossibleDataLoss=false
+        ```
+
+    === "Attendee path (SQL login)"
+
+        ```powershell
+        sqlpackage /Action:Publish `
+            /SourceFile:"bin/Release/FabConFootball.dacpac" `
+            /Profile:$profile `
+            /TargetServerName:$server /TargetDatabaseName:$db `
+            /TargetUser:$login /TargetPassword:$password `
+            /p:BlockOnPossibleDataLoss=false
+        ```
+
+    The publish succeeds. This is the same flag as the Increment 2 forced publish, used
+    deliberately here: the migration already moved the data to safety before the drop.
+
+21. Confirm the data survived in the new column.
+
+    === "Presenter path (Entra token)"
+
+        ```powershell
+        $queryParams = @{
+            SqlInstance = $server
+            Database    = $db
+            AccessToken = $token
+            Query       = "SELECT TOP (5) PlayerId, LastName, SquadNumber FROM football.Player WHERE SquadNumber IS NOT NULL"
+        }
+
+        Invoke-DbaQuery @queryParams
+        ```
+
+    === "Attendee path (SQL login)"
+
+        ```powershell
+        $queryParams = @{
+            SqlInstance   = $server
+            Database      = $db
+            SqlCredential = $sqlCredential
+            Query         = "SELECT TOP (5) PlayerId, LastName, SquadNumber FROM football.Player WHERE SquadNumber IS NOT NULL"
+        }
+
+        Invoke-DbaQuery @queryParams
+        ```
+
+    `SquadNumber` holds the old shirt numbers. The data survived the drop.
+
+#### Option B — model it as a rename
+
+Option B is the cleaner path when the change is only a rename. The project's refactorlog records
+the intent, so the publish emits `sp_rename` instead of drop-and-add: no data-loss alert, and no
+override needed. Demonstrate it from a target that still has `ShirtNumber` (re-establish the
+baseline on a fresh database if Option A already ran here).
+
+22. Copy in the Option B files.
+
+    ```powershell
+    Copy-Item ..\demo\ship-changes\increment-3_Player.sql                 .\Tables\Player.sql -Force
+    Copy-Item ..\demo\ship-changes\increment-3_Seed.sql                   .\Scripts\PostDeployment\Seed.sql -Force
+    Copy-Item ..\demo\ship-changes\increment-3_FabConFootball.refactorlog .\FabConFootball.refactorlog -Force
+    Copy-Item ..\demo\ship-changes\increment-3B_FabConFootball.sqlproj    .\FabConFootball.sqlproj -Force
+    ```
+
+    There is no pre-deployment migration this time. The refactorlog carries the rename intent.
+
+23. Build the DACPAC.
+
+    ```powershell
+    dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
+    ```
+
+    The build succeeds with zero warnings and zero analysis findings.
+
+24. Generate the deploy report.
+
+    Run the same `sqlpackage /Action:DeployReport` command as in Option A above. This time the
+    report is clean, because the change is a rename, not a drop:
+
+    ```xml
+    <Alerts />
+    ```
+
+25. Publish under the shipped profile.
+
+    Run the same `sqlpackage /Action:Publish` command as in Option A above, but without
+    `/p:BlockOnPossibleDataLoss=false`. The shipped profile keeps `BlockOnPossibleDataLoss=True`,
+    and the publish still succeeds because a rename loses no data. The generated script contains
+    `EXECUTE sp_rename ... 'COLUMN'`.
+
+26. Confirm the data is in the renamed column.
+
+    Run the same `SquadNumber` query as in Option A above. The values are present because the
+    column was renamed in place, with no copy and no drop.
+
+#### Gate the destructive deploy
+
+27. Require a human approval before the deploy lands.
 
     ```yaml
     jobs:
@@ -648,8 +828,9 @@ the **15:15 break**. Increment 3 resumes after that break.
         environment: test
     ```
 
-    Protect that environment with required reviewers so a human checks the deploy report before
-    approving.
+    Protect that environment with required reviewers so a human reads the deploy report before
+    approving. The publish stays automated; the approval is the only manual step, and it is still
+    defined as code.
 
     !!! note "Plan and identity notes"
         GitHub required-reviewer and wait-timer rules for private repositories require Team or
@@ -659,10 +840,8 @@ the **15:15 break**. Increment 3 resumes after that break.
         `repo:<org>/<repo>:environment:<name>`. Add a matching federated credential for the deploy
         principal in addition to any branch-based subject you already use.
 
-20. State the lesson clearly.
-
-    Destructive changes can still ship as code, but only with a data-preserving approach (migration
-    or rename) and a human approval gate. Never blind auto-apply.
+Destructive changes can still ship as code, with a data-preserving approach — a migration
+(Option A) or a rename (Option B) — and a human approval gate. Never a blind auto-apply.
 
 ## Checkpoint
 
@@ -672,8 +851,11 @@ same column with a human gate.
 
 ## Gotchas
 
-- `dotnet build -warnaserror` is part of the demo, not a nice-to-have. If the seed still mentions
-  `ShirtNumber` after you remove the column from `Player.sql`, the build should fail.
+- `dotnet build -warnaserror` runs T-SQL static analysis and must stay at zero findings. Note that
+  the post-deployment seed is *not* checked against the schema at build time, so a seed that still
+  mentions `ShirtNumber` after you remove the column from `Player.sql` still builds — that mismatch
+  fails later, at publish time, when the seed runs against the database. Update the seed together
+  with the table.
 - `DeployReport` writes with `/OutputPath`. That is the database-plan artifact you review before
   publishing.
 - The Fabric path uses the same DACPAC and almost the same commands, but it needs the
