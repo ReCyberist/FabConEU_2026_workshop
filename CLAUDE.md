@@ -220,7 +220,7 @@ Every demo exists **twice**, on purpose, because the two audiences need differen
 |---|---|---|
 | For | Jess & Rob, on stage | Attendees, following along |
 | Adds | Timings, what to say, failure recovery, a RESET region | Nothing — it is the steps, in the step register (§5b) |
-| Register | Presenter shorthand. Humour welcome in `WHAT`/`SAY`; never in `EXPECT`/`IF DEAD` | §5b, always |
+| Register | Presenter shorthand. Humour welcome in `WHAT`/`SAY`; never in `EXPECT`/`IF STUCK` | §5b, always |
 
 **The rule: a change to a demo touches BOTH halves, or it is not finished.** They have drifted
 before — a `cd` that pointed at a Terraform module for months after it moved, and a demo run's

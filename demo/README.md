@@ -19,7 +19,7 @@ halfway through.
 
 ## How to run one
 
-**Never press F5.** Every script starts with a `break` that stops a full run dead, because running
+**Never press F5.** Every script starts with a `break` that halts a full run, because running
 one of these top to bottom in front of a room would provision an Azure SQL server, drop a
 populated column and open three pull requests before you had finished your first sentence.
 
@@ -33,16 +33,16 @@ populated column and open three pull requests before you had finished your first
 
 ```powershell
 #region 03 · The plan — a proposal, not a change          [~40s]
-# WHAT    What the command actually does.
-# SAY     The line that goes with it — a prompt, not a script.
-# EXPECT  The output that means it worked. If you don't see this, stop.
-# IF DEAD The known failure and the recovery, so nobody debugs live.
-# PAGE    The matching step on the attendee page.
+# WHAT     What the command actually does.
+# SAY      The line that goes with it — a prompt, not a script.
+# EXPECT   The output that means it worked. If you don't see this, stop.
+# IF STUCK The known failure and the recovery, so nobody debugs live.
+# PAGE     The matching step on the attendee page.
 terraform plan
 #endregion
 ```
 
-`EXPECT` and `IF DEAD` are read under pressure, with a room watching. They stay plain. Jokes live
+`EXPECT` and `IF STUCK` are read under pressure, with a room watching. They stay plain. Jokes live
 in `WHAT`, `SAY` and the guard rail, where they cost nothing if they land badly.
 
 The `[~40s]` in a region title is how long the step took when we last ran it. If you are three

@@ -21,7 +21,7 @@ demo's working state has been committed to `main`:
 
 - `infra/azure-sql/terraform/demo/variables.tf` — `database_auto_pause_delay` was left at `75`
   in commit `33cf375`. The wrap-up demo's whole beat is "change 60 to 75", so as it stands
-  `terraform plan` reports `0 to change` and the demo dies on stage.
+  `terraform plan` reports `0 to change` and the demo falls over on stage.
 - `database/sql-projects/` — the ship-changes demo overwrites `Tables/Player.sql`,
   `Scripts/PostDeployment/Seed.sql` and `FabConFootball.sqlproj`, and creates four more files.
   The attendee page has no reset step, so the tree is left dirty every single run.
@@ -80,13 +80,13 @@ mid-sentence:
 | `WHAT` | What the command actually does. The technical truth, for us. |
 | `SAY` | The line that goes with it. A prompt, not a script — say it in your own words. |
 | `EXPECT` | The output that means it worked. If you do not see this, stop. |
-| `IF DEAD` | The known failure and the recovery, so nobody debugs live. |
+| `IF STUCK` | The known failure and the recovery, so nobody debugs live. |
 | `PAGE` | The matching step on the attendee page. Also the anchor CI checks. |
 
 Region titles carry a duration (`[~40s]`) so we can tell at a glance whether we are behind.
 
 Humour is welcome in `WHAT` and `SAY` and in the guard rail. It is **not** welcome in `EXPECT` or
-`IF DEAD` — those two are read under pressure, and a joke in a recovery instruction is a bug.
+`IF STUCK` — those two are read under pressure, and a joke in a recovery instruction is a bug.
 Attendees may well see these scripts; nothing in them should embarrass us or mislead them.
 
 ## Reset regions
