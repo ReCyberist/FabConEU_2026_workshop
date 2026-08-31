@@ -89,6 +89,15 @@
   color: var(--md-default-fg-color--light);
 }
 
+/* Optional live countdown readout (breaks). Filled by the script; the markup carries a
+   sensible static fallback for no-JS / off-hours. Kept visible on narrow screens — it is the
+   one piece of information a countdown banner exists to show. */
+.session-clock__remaining {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--md-primary-fg-color);
+}
+
 /* Dark scheme: the lightest fg token is very faint on slate, so lift the track. */
 [data-md-color-scheme="slate"] .session-clock__track {
   background: var(--md-default-fg-color--lighter);

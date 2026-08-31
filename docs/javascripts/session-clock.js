@@ -27,6 +27,8 @@
     var end = minutesOfDay(clock.getAttribute("data-end"));
     var fill = clock.querySelector(".session-clock__fill");
     var needle = clock.querySelector(".session-clock__now");
+    // Optional live countdown readout — only present on clocks that opt in (e.g. a break).
+    var remaining = clock.querySelector(".session-clock__remaining");
     if (start === null || end === null || end <= start || !fill) return;
 
     var now = new Date();
@@ -38,6 +40,7 @@
       clock.setAttribute("data-state", "upcoming");
       fill.style.width = "0";
       if (needle) needle.style.left = "0";
+      if (remaining) remaining.textContent = "starts " + clock.getAttribute("data-start");
       return;
     }
 
@@ -47,6 +50,7 @@
       clock.setAttribute("data-state", "done");
       fill.style.width = "100%";
       if (needle) needle.style.left = "100%";
+      if (remaining) remaining.textContent = "done";
       return;
     }
 
@@ -54,6 +58,11 @@
     clock.setAttribute("data-state", "running");
     fill.style.width = percent;
     if (needle) needle.style.left = percent;
+    if (remaining) {
+      var nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+      var minutesLeft = Math.max(1, Math.ceil(end - nowMinutes));
+      remaining.textContent = minutesLeft + " min left";
+    }
   }
 
   function paintAll() {
