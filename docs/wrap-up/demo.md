@@ -28,13 +28,18 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      ```powershell
      code .\infra\azure-sql\terraform\demo\variables.tf
      ```
+
+     In `database_auto_pause_delay`, change:
+     - `default = 75`
+     - to `default = 90`
+
      Save the file.
 
 3. Commit the change.
 
      ```powershell
-     git add .\infra\azure-sql\terraform\variables.tf
-     git commit -m "demo: change Azure SQL auto-pause delay to 75 minutes"
+     git add .\infra\azure-sql\terraform\demo\variables.tf
+     git commit -m "demo: change Azure SQL auto-pause delay to 90 minutes"
      ```
 
 4. Push and open a pull request.
@@ -73,15 +78,15 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      ```powershell
      git switch main
      git pull
-     git --no-pager show -- .\infra\azure-sql\terraform\variables.tf
+     git --no-pager show -- .\infra\azure-sql\terraform\demo\variables.tf
      ```
 
      In the workflow run log, point to the same change being applied to the database.
 
-8. Reset the demo default back to 60 for the next run.
+8. Reset the demo default back to 75 for the next run.
 
      Repeat steps 1-7 with:
-     - `default = 75` changed back to `default = 60`.
+     - `default = 90` changed back to `default = 75`.
 
      This keeps the repository baseline consistent for future sessions.
 
