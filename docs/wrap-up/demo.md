@@ -26,13 +26,8 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      Open the variables file:
 
      ```powershell
-     code .\infra\azure-sql\terraform\variables.tf
+     code .\infra\azure-sql\terraform\demo\variables.tf
      ```
-
-     In `database_auto_pause_delay`, change:
-     - `default = 60`
-     - to `default = 75`
-
      Save the file.
 
 3. Commit the change.
