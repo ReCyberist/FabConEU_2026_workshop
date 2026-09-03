@@ -50,6 +50,7 @@ DOCS_DIR = REPO / "docs"
 # ---------------------------------------------------------------------------
 EXPECTED_ABSENT = {
     "notes/fabcon.md": "created by demo 01, step 3",
+    "demo/wrapup-azure-sql-reset": "suggested branch name in the wrap-up demo, not a repository path",
     "database/sql-projects/Views/vw_SquadAges.sql": "created by demo 03, increment 1",
     "database/sql-projects/Views/vw_TeamRosterSizes.sql": "created by demo 03, increment 2",
     "database/sql-projects/Scripts/PreDeployment": "created by demo 03, increment 3A",

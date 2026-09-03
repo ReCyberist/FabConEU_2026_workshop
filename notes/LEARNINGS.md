@@ -15,6 +15,11 @@ Format:
 
 ---
 
+## 2026-09-03 — Ignore suggested branch names in demo path checks
+**Context:** The "Demo scripts + attendee page sync" Actions job failed while checking the wrap-up demo.
+**Learning:** A suggested Git branch such as `demo/wrapup-azure-sql-reset` can look like a repository path to the mechanical checker even though it is not a file or directory.
+**Action:** Added the branch name to `EXPECTED_ABSENT` in [`../.github/scripts/check-demo-paths.py`](../.github/scripts/check-demo-paths.py).
+
 ## 2026-08-30 — Increment 3 built: the pre-deploy migration gotcha, and how to prove DACPAC behaviour offline
 **Context:** Building Increment 3 of the ship-changes demo (safe retire of `Player.ShirtNumber`)
 as runnable code (task #21). The design in `increment-3_safe-retire.md` had drafted a pre-deploy
