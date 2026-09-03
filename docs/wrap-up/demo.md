@@ -83,7 +83,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
 
      In the workflow run log, point to the same change being applied to the database.
 
-8. Reset the demo default back to 75 for the next run.
+8. Reset the demo default back to 60 for the next run.
 
      Repeat steps 1-7, but use a new branch name (for example, `demo/wrapup-azure-sql-reset`), with:
      - `default = 75` changed back to `default = 60`.
