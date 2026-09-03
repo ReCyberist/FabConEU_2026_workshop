@@ -165,6 +165,30 @@ there gets a dotted underline and a hover tooltip **everywhere it appears** — 
 - For a one-off phrase, inline HTML is fine: `<abbr title="plain English">the phrase</abbr>`.
 - **Tooltips do not appear on touch devices.** They are a courtesy, never the meaning.
 
+### 5d. One job per page (overview vs. demo)
+
+The two registers must not share a page. Every teaching section in `docs/` is **an overview page
+(or two) plus exactly one `demo.md`**, and each has one job:
+
+| | Overview page | `demo.md` |
+|---|---|---|
+| Register | **Discussion** (§5a) | **Step** (§5b) |
+| Holds | The concept, what gets built, the diagram, the gotchas, links to the real code | The numbered commands, in run order, each with its expected result |
+| Never holds | Numbered "run it" procedures | Prose about *why*, beyond a one-line framing |
+
+Rules that follow from it:
+
+- **An overview page signposts its demo.** A `!!! tip "The hands-on part is on the demo page"`
+  admonition near the top, and a `## The demo` section with a 👉 link before `## The code`.
+- **A procedure lives in exactly one place.** If a walkthrough exists on the demo page, do not
+  restate it — link to it. Duplicated steps drift apart, and then nobody knows which is current.
+- **Troubleshooting is step register but is not a demo step.** Put it on the overview page under
+  Gotchas as a collapsed `??? warning`, so it is there when needed and out of the way when not.
+- **`Checkpoint` means the same thing on both.** On a demo page it states what exists after the
+  steps; on an overview page it states the same end state in prose ("By the end of this section
+  …"), for the attendee who read only the overview. It never becomes a summary of steps the
+  overview page did not give.
+
 ## 6. Editing the attendee site (MkDocs Material)
 
 - Content is Markdown in `docs/`. Navigation is defined in `mkdocs.yml`.

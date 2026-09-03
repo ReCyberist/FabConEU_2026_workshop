@@ -83,6 +83,7 @@ exclude_docs: |
   cicd/ship-database-changes.md
   cicd/demo.md
   wrap-up/migrations-drift-teardown.md
+  wrap-up/demo.md
   wrap-up/resources.md
   reference/other-tooling.md
 # ────────────────────────────────────────────────────────────────────────────────
@@ -119,6 +120,7 @@ nav:
   #     - Demo: cicd/demo.md
   # - Wrap up:
   #     - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
+  #     - Demo: wrap-up/demo.md
   #     - Resources & next steps: wrap-up/resources.md
   # - Reference:
   #     - Other tooling: reference/other-tooling.md

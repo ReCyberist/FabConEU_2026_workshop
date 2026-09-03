@@ -4,11 +4,12 @@ Define your database **schema as code** in a SQL project (`.sqlproj`), build it 
 and publish that to a live database. It's the state-based, native path for SQL Server / Azure SQL /
 Fabric SQL — you describe the *desired* schema and the tooling works out the change.
 
-!!! note "Follow along — or just watch"
-    You'll need the **.NET SDK** + **SqlPackage**, and a **target SQL** to publish into. See
-    [Prerequisites](../setup/prerequisites.md).
+!!! tip "The hands-on part is on the demo page"
+    This page is the *why*. Building the DACPAC, publishing it, and then shipping safe and unsafe
+    schema changes through it are walked through step by step on
+    **[Database demo](demo.md)** — split into a before-lunch part and an after-lunch part.
 
-## What you'll build
+## What gets built
 
 A **DACPAC** from the canonical football schema (see [The sample database](sample-database.md)) —
 9 tables, 3 views, 3 stored procedures, and an idempotent seed — publishable to **both** Azure SQL
@@ -17,17 +18,14 @@ and Fabric SQL from the one build.
 ## The concept
 
 An **SDK-style SQL project** (`Microsoft.Build.Sql`) is a folder of `.sql` files — one object per
-file — plus a project file. Building it:
+file — plus a project file. Building it with `dotnet build`:
 
 - compiles the schema into a **DACPAC** (a single deployable artifact), and
 - runs **T-SQL static code analysis** — the schema is written to pass with **zero findings**
   (SARGable predicates, explicit column lists, set-based, no `MERGE`, no cursors).
 
-```powershell
-dotnet build database/sql-projects/FabConFootball.sqlproj -warnaserror
-```
-
-`-warnaserror` makes any smell or model warning fail the build — the same check CI runs.
+The build takes a `-warnaserror` switch, which turns any smell or model warning into a failed
+build. That is the same check CI runs, so what passes on your laptop passes in the pipeline.
 
 ### Publish profiles carry options, not secrets
 
@@ -42,22 +40,24 @@ the command line, so nothing secret is committed. The safe defaults we ship:
 
 ## Azure SQL / Fabric SQL
 
-The **same DACPAC** deploys to both — only the publish profile (and the server) changes.
+The **same DACPAC** deploys to both. Only the publish profile and the target server change — the
+build, the artifact and the command are identical.
 
 === "Azure SQL"
-    ```powershell
-    sqlpackage /Action:Publish `
-      /SourceFile:bin/Release/FabConFootball.dacpac `
-      /Profile:PublishProfiles/AzureSql.publish.xml `
-      /TargetServerName:<server>.database.windows.net `
-      /TargetDatabaseName:<db> /AccessToken:$token
-    ```
+    Profile `AzureSql.publish.xml`, against a `…database.windows.net` server. This is the
+    live-verified path we run in the demo.
 
 === "Fabric SQL"
-    Same command with the `FabricSql.publish.xml` profile (which adds `AllowIncompatiblePlatform`
-    + `ExcludeObjectTypes=Logins;Users`) and a `…database.fabric.microsoft.com,1433` server. Fabric
-    SQL surface-area caveats:
+    Profile `FabricSql.publish.xml`, against a `…database.fabric.microsoft.com,1433` server. The
+    profile adds `AllowIncompatiblePlatform` and `ExcludeObjectTypes=Logins;Users` to cope with
+    the Fabric surface area. Caveats:
     [`notes/fabric-sql-notes.md`](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/notes/fabric-sql-notes.md).
+
+## The demo
+
+👉 **[Database demo](demo.md)** — Part 1 builds the DACPAC before lunch. Part 2 publishes the
+baseline after lunch, then ships one safe additive change, one destructive trap, and one safe way
+to retire the same column.
 
 ## The code
 
@@ -67,8 +67,9 @@ The schema itself is walked through on [The sample database](sample-database.md)
 
 ## Checkpoint
 
-`dotnet build` produces `FabConFootball.dacpac`; SqlPackage publishes all 9 tables, 3 views, 3
-procedures, and the post-deploy seed into your target — **passwordless**, with an Entra token.
+By the end of this section `dotnet build` has produced `FabConFootball.dacpac`, and SqlPackage has
+published all 9 tables, 3 views, 3 procedures, and the post-deploy seed into your target —
+**passwordless**, with an Entra token.
 
 ## Gotchas
 
@@ -81,4 +82,5 @@ procedures, and the post-deploy seed into your target — **passwordless**, with
 
 ## What's next
 
-Next: [CI/CD part 1 — build & validate](../cicd/build-validate.md).
+Next: [Database demo](demo.md), then
+[CI/CD part 1 — build & validate](../cicd/build-validate.md).

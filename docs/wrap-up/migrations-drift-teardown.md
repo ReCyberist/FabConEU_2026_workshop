@@ -1,7 +1,12 @@
 # Migrations, drift & teardown
 
-Close the day by running one final end-to-end change: edit Azure SQL infrastructure as code,
-raise a pull request, show the plan summary, merge, and apply from `main`.
+The last section of the day pulls every piece together and runs the whole loop once, end to end:
+edit Azure SQL infrastructure as code, raise a pull request, read the plan, merge, apply from
+`main` — and then tear it down.
+
+!!! tip "The hands-on part is on the demo page"
+    This page is the *why*. The full loop is walked through step by step on
+    **[Wrap-up demo](demo.md)**.
 
 ## The concept
 
@@ -10,104 +15,44 @@ raise a pull request, show the plan summary, merge, and apply from `main`.
 - **Drift awareness.** You trust code + state, then confirm the runtime result.
 - **Teardown always.** Sandbox resources are disposable.
 
-## Final demo — PR to deployment
+### Drift, and why the loop closes
 
-This demo changes one Azure SQL database setting by code, then shows the full CI/CD loop.
+**Drift** is the gap that opens when someone changes a deployed resource by hand. The code says one
+thing, the running resource says another, and nobody finds out until the next apply quietly reverts
+somebody's fix. The whole day's discipline exists to keep that gap at zero: if the only route to a
+change is a pull request, then the code and the resource cannot disagree for long.
 
-1. Create a branch for the wrap-up demo.
+That is why the final demo ends by confirming the change in **both** places — in git, and in the
+running database. Trusting the code alone is how drift hides.
 
-     ```powershell
-     git checkout main
-     git pull
-     git checkout -b demo/wrapup-azure-sql-change
-     ```
+### State-based and migration-based
 
-2. Change the Azure SQL serverless auto-pause value in Terraform.
+The taught path is **state-based**: a SQL project describes the schema you want, and SqlPackage
+works out the change. The alternative is **migration-based**: you write each change as an ordered
+script, and the tool replays the ones a database has not run yet.
 
-     Open the variables file:
-
-     ```powershell
-     code .\infra\azure-sql\terraform\variables.tf
-     ```
-
-     In `database_auto_pause_delay`, change:
-     - `default = 60`
-     - to `default = 75`
-
-     Save the file.
-
-3. Commit the change.
-
-     ```powershell
-     git add .\infra\azure-sql\terraform\variables.tf
-     git commit -m "demo: change Azure SQL auto-pause delay to 75 minutes"
-     ```
-
-4. Push and open a pull request.
-
-     ```powershell
-     git push -u origin demo/wrapup-azure-sql-change
-     gh pr create --fill --base main
-     gh pr view --web
-     ```
-
-     In the PR checks, open **Azure SQL - Terraform plan (PR)** and show the plan summary line.
-     Expected shape: `Plan: 0 to add, 1 to change, 0 to destroy`.
-
-5. Merge the pull request.
-
-     ```powershell
-     gh pr merge --squash --delete-branch
-     ```
-
-     The change is now on `main`, ready for deliberate apply.
-
-6. Dispatch the Azure SQL apply workflow from `main`.
-
-     ```powershell
-     gh workflow run azure-sql-apply.yml --ref main -f target=demo
-     gh run list --workflow azure-sql-apply.yml --limit 1
-     gh run watch
-     gh run view --web
-     ```
-
-     Show the apply summary and the Terraform result line.
-     Expected shape: `Apply complete! Resources: 0 added, 1 changed, 0 destroyed`.
-
-7. Show the change in code and runtime.
-
-     ```powershell
-     git switch main
-     git pull
-     git --no-pager show -- .\infra\azure-sql\terraform\variables.tf
-     ```
-
-     In the workflow run log, point to the same change being applied to the database.
-
-8. Reset the demo default back to 60 for the next run.
-
-     Repeat steps 1-7 with:
-     - `default = 75` changed back to `default = 60`.
-
-     This keeps the repository baseline consistent for future sessions.
-
-## Reference — migration-based options
+Neither is wrong. State-based gives you one readable description of the whole schema; migration-based
+gives you exact control over how each change is applied, which matters when a change needs to move
+data as well as shape. Both are in the repository, and the safe-retire increment in the
+[Database demo](../database/demo.md) is really a migration wearing a state-based coat.
 
 - [Flyway](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/database/flyway)
 - [dbatools / dbops](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/database/dbatools-dbops)
 
-## Teardown
+### Teardown
 
-If you deployed resources in your own subscription, run teardown before you finish.
+Workshop resources that survive the workshop become a bill. Teardown is a workflow dispatch, the
+same as the deploy — `azure-sql-destroy.yml` removes everything the apply created. A nightly
+scheduled run is the backstop at 21:00 UTC, but do not rely on it while you are still working:
+tear down deliberately when you finish. On Fabric especially, an F-SKU capacity bills continuously
+until it is paused or deleted.
 
-```powershell
-gh workflow run azure-sql-destroy.yml --ref main -f target=both
-gh run list --workflow azure-sql-destroy.yml --limit 1
-gh run watch
-```
+## The demo
 
-Nightly destroy still runs as the backstop, but do not rely on it during workshops.
+👉 **[Wrap-up demo](demo.md)** — change one Terraform variable, open the pull request, read the
+plan, merge, dispatch the apply, confirm the result in code *and* in the database, then run the
+teardown.
 
 ## What's next
 
-Next: [Resources & next steps](resources.md).
+Next: [Wrap-up demo](demo.md), then [Resources & next steps](resources.md).

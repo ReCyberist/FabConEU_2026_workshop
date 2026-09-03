@@ -146,14 +146,21 @@ across the **Premier League** and **Women's Super League**, a handful of played 
 (so `vw_LeagueTable` and `vw_TopScorers` return data straight away), and some upcoming
 El Clásico fixtures for `vw_UpcomingFixtures`. Re-deploying never duplicates rows.
 
-!!! tip "Try it after you deploy"
-```sql
--- Women's Super League table for 2025/26
-EXEC football.usp_GetLeagueTable @CompetitionId = 2, @SeasonId = 1;
+!!! tip "Try it once the seed is deployed"
+    ```sql
+    -- Women's Super League table for 2025/26
+    EXEC football.usp_GetLeagueTable @CompetitionId = 2, @SeasonId = 1;
 
--- Who's scoring?
-SELECT * FROM football.vw_TopScorers ORDER BY Goals DESC;
-```
+    -- Who's scoring?
+    SELECT Player, Team, Competition, Goals, Penalties
+    FROM   football.vw_TopScorers
+    ORDER  BY Goals DESC;
+    ```
+
+## The demo
+
+This page describes the schema. Deploying it is the
+**[Database demo](demo.md)** — build the DACPAC, publish it, and then change it.
 
 ## Get the code
 
@@ -161,3 +168,8 @@ The schema and seed are downloadable with each database module — you deploy th
 code, never by clicking. The canonical source lives in
 [`database/sql-projects`](https://github.com/JessAndRob/FabConEU_2026_workshop/tree/main/database/sql-projects)
 in the workshop repo.
+
+## What's next
+
+Next: [Database as code — SQL projects](sql-projects.md) — how that schema becomes a
+deployable artifact.

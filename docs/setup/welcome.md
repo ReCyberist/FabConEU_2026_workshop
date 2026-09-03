@@ -31,6 +31,18 @@ you arrive.
     real files and show short excerpts rather than large blocks, so what you run is exactly what is
     version controlled — never a copy that has quietly drifted out of date.
 
+## Two kinds of page
+
+Every section of this site is built the same way, and knowing which page you are on saves a lot of
+scrolling.
+
+- **The overview pages** explain what we are doing and why — the concept, what gets built, the
+  gotchas worth knowing before you start. Read these; there is nothing to type.
+- **The demo page** at the end of each section is the hands-on one. It holds the commands, in
+  order, with the expected result after each. That is the page to have open when we start typing.
+
+Every overview page links to its demo page, so you never have to guess.
+
 ## What we'll cover
 
 In this order, with **Azure SQL and Fabric SQL shown side by side** throughout.
@@ -41,17 +53,20 @@ In this order, with **Azure SQL and Fabric SQL shown side by side** throughout.
    costume.
 2. **[Source control for databases](../foundations/source-control.md)** — one git repository as the
    single source of truth, and the pull-request flow the whole day rides on.
+   ([demo](../foundations/demo.md))
 3. **Infrastructure as code** — provision [Azure SQL](../infra/azure-sql.md) and
    [Fabric SQL](../infra/fabric-sql.md) with Terraform, side by side.
+   ([demo](../infra/demo.md))
 4. **[Database as code](../database/sql-projects.md)** — define the schema in a SQL project and
-   build it into a deployable DACPAC.
+   build it into a deployable DACPAC. ([demo](../database/demo.md))
 5. **CI/CD** — [build and validate](../cicd/build-validate.md) on every pull request,
    [deploy infrastructure](../cicd/deploy-infra.md) from the pipeline, and then the part everything
    else has been building towards: [ship database changes](../cicd/ship-database-changes.md)
    safely, with the pipeline telling you what a change will do to your data *before* it does it.
+   ([demo](../cicd/demo.md))
 6. **[Migrations, drift and teardown](../wrap-up/migrations-drift-teardown.md)** — the alternative
    approaches, keeping the real world and the declared world in step, and always tearing it down
-   afterwards.
+   afterwards. ([demo](../wrap-up/demo.md))
 
 ## The shape of the day
 
@@ -85,8 +100,8 @@ seriously, and a workshop that runs into lunch is a workshop that has already lo
     Each follow-along segment has a point at which we move on, whether or not everyone has
     finished. That is not us being unkind — it is the only way the room stays together.
 
-    Every module page ends with a **Checkpoint** section describing exactly where you should be
-    at that point: which resources exist, and what should be working. If you fall behind, or your
+    The demo pages end with a **Checkpoint** section describing exactly where you should be at
+    that point: which resources exist, and what should be working. If you fall behind, or your
     own subscription decides to have a moment, read the Checkpoint, rejoin at the next module, and
     pick the rest up afterwards from the downloads. Nobody gets stranded, and nobody has to admit
     out loud that they are lost.
