@@ -85,7 +85,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
 
 8. Reset the demo default back to 60 for the next run.
 
-     Repeat steps 1-7 with:
+     Repeat steps 1-7, but use a new branch name (for example, `demo/wrapup-azure-sql-reset`), with:
      - `default = 75` changed back to `default = 60`.
 
      This keeps the repository baseline consistent for future sessions.
