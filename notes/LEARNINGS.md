@@ -1433,10 +1433,9 @@ page mid-flow — the Windows WAM/Graph-token fix now sits on `infra/azure-sql.m
 its "final boss" demo lived inside `migrations-drift-teardown.md`, so it was split out to
 `wrap-up/demo.md` (content moved byte-for-byte) to match every other section.
 
-**Still open:** the demo pages themselves carry stale paths — `infra/demo.md` and `wrap-up/demo.md`
-both use `infra/azure-sql/terraform`, but the module actually lives in
-`infra/azure-sql/terraform/demo` (the parent folder is now just a container for `demo/` and
-`shared-endpoint/`). Deliberately left for the follow-up demo-code pass rather than fixed here.
+**Follow-up:** those stale demo paths were fixed in the demo-code pass (task #32): `infra/demo.md`
+now uses `infra/azure-sql/terraform/demo`, and `wrap-up/demo.md` now points at
+`infra/azure-sql/terraform/demo/variables.tf`.
 
 **Action:** Rewrote the eight overview pages, added the "Two kinds of page" section to
 [`../docs/setup/welcome.md`](../docs/setup/welcome.md), created
