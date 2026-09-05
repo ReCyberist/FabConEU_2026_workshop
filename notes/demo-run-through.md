@@ -6,3 +6,11 @@ a note just to ignore the new-item command as the code command will create it an
 - source control presenter demo
 guard rail for F5 does not work on debian
 
+- azure sql demo
+do we need to explain teh reason for the overrides here?
+
+need to make the approve clear in page
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
