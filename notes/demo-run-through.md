@@ -14,3 +14,8 @@ need to make the approve clear in page
 Do you want to perform these actions?
   Terraform will perform the actions described above.
   Only 'yes' will be accepted to approve.
+
+- fabric demo
+docs can be updated I have gone as far as the plan
+
+
