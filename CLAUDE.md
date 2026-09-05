@@ -212,6 +212,38 @@ Rules that follow from it:
   linked from the relevant `docs/` page. The packaging step is a pipeline job (to be
   added) — do not hand-zip and commit binaries.
 
+### 7a. The two halves of a demo (keep them in sync)
+
+Every demo exists **twice**, on purpose, because the two audiences need different things:
+
+| | `demo/NN-<section>.ps1` | `docs/<section>/demo.md` |
+|---|---|---|
+| For | Jess & Rob, on stage | Attendees, following along |
+| Adds | Timings, what to say, failure recovery, a RESET region | Nothing — it is the steps, in the step register (§5b) |
+| Register | Presenter shorthand. Humour welcome in `WHAT`/`SAY`; never in `EXPECT`/`IF STUCK` | §5b, always |
+
+**The rule: a change to a demo touches BOTH halves, or it is not finished.** They have drifted
+before — a `cd` that pointed at a Terraform module for months after it moved, and a demo run's
+value committed to `main` so the next presenter's `plan` said *"0 to change"*. Neither survives
+review by eye.
+
+- **One script per attendee demo page, and exactly one.** The script names its page in an
+  `ATTENDEE PAGE:` header line; that line is what CI pairs on.
+- **The script never invents steps.** It mirrors the page's commands in the page's order, then
+  adds presenter context around them. If the demo needs a new step, it goes on **both**.
+- **Every script ends with a `RESET` region.** Demos overwrite tracked files; a demo's working
+  state committed to `main` breaks the demo for whoever runs it next. Reset regions name every
+  file they touch and never `git clean` the whole repository.
+- **Attendees may read these scripts.** Nothing in them should embarrass us or mislead them.
+- CI enforces the mechanical half — see the `demos` job in `.github/workflows/ci.yml` and
+  [`check-demo-paths.py`](.github/scripts/check-demo-paths.py). Run it before pushing:
+  `python .github/scripts/check-demo-paths.py`. It cannot tell you the prose has drifted; it can
+  tell you the command is wrong.
+
+**Jess's comments are hers.** Comments in code she has written — `.tf`, `.sql`, `.sqlproj`, `.md`
+— may be **added to**, never rewritten, unless they are technically incorrect. Presenter scripts
+add context in their own file rather than editing hers.
+
 ## 8. 🔁 The learnings loop (do not skip)
 
 At the **end of every working session**, before you stop:

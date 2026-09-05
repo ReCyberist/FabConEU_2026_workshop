@@ -15,6 +15,14 @@ Format:
 
 ---
 
+## 2026-09-05 — Demo path check distinguishes documented branch examples
+**Context:** The CI demo-sync job treated the documented `demo/wrapup-azure-sql-reset`
+branch example as a repository path.
+**Learning:** A slash in a Markdown code span is not sufficient evidence that it is a
+repository path. Branch-name examples must be excluded from path validation.
+**Action:** Updated [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py) to
+recognise branch-name examples alongside Git branch commands.
+
 ## 2026-08-30 — Increment 3 built: the pre-deploy migration gotcha, and how to prove DACPAC behaviour offline
 **Context:** Building Increment 3 of the ship-changes demo (safe retire of `Player.ShirtNumber`)
 as runnable code (task #21). The design in `increment-3_safe-retire.md` had drafted a pre-deploy
@@ -1433,15 +1441,52 @@ page mid-flow — the Windows WAM/Graph-token fix now sits on `infra/azure-sql.m
 its "final boss" demo lived inside `migrations-drift-teardown.md`, so it was split out to
 `wrap-up/demo.md` (content moved byte-for-byte) to match every other section.
 
-**Still open:** the demo pages themselves carry stale paths — `infra/demo.md` and `wrap-up/demo.md`
-both use `infra/azure-sql/terraform`, but the module actually lives in
-`infra/azure-sql/terraform/demo` (the parent folder is now just a container for `demo/` and
-`shared-endpoint/`). Deliberately left for the follow-up demo-code pass rather than fixed here.
+**Follow-up:** those stale demo paths were fixed in the demo-code pass (task #32): `infra/demo.md`
+now uses `infra/azure-sql/terraform/demo`, and `wrap-up/demo.md` now points at
+`infra/azure-sql/terraform/demo/variables.tf`.
 
 **Action:** Rewrote the eight overview pages, added the "Two kinds of page" section to
 [`../docs/setup/welcome.md`](../docs/setup/welcome.md), created
 [`../docs/wrap-up/demo.md`](../docs/wrap-up/demo.md), and added it to the nav in `mkdocs.yml`
 (commented, plus `exclude_docs`) and `mkdocs.local.yml`. Both configs build clean under
 `mkdocs build --strict`. Jess's four `demo.md` pages were not touched.
+
+## 2026-08-31 — Presenter demos, and the drift that had already been committed
+
+**Learning:** Building the presenter scripts turned up the thing they were meant to prevent, sitting
+on `main`. `database_auto_pause_delay` in the Azure SQL module was `75`, not `60` — commit `33cf375`
+committed a demo run's value. Step 8 of the wrap-up demo says to reset it and nobody had. The whole
+beat of that demo is "change 60 to 75, look at the plan", so as it stood `terraform plan` would have
+reported `0 to change` in front of the room. The demo would have died on stage and nobody would have
+known why.
+
+That is the actual argument for a **RESET region**, and it is why every presenter script now ends
+with one. `03-database.ps1` is the worst offender: the ship-changes demo overwrites three *tracked*
+files (`Tables/Player.sql`, `Scripts/PostDeployment/Seed.sql`, `FabConFootball.sqlproj`) and creates
+four more. The attendee page has no reset step and should not grow one — it is presenter
+housekeeping, not an attendee step.
+
+**The `break` guard rail works, and is worth knowing.** `break` at the top level of a PowerShell
+script terminates it, so F5 does nothing; F8 (Run Selection) never sends that line, so running a
+block at a time is unaffected. Verified both ways rather than assumed. It is two characters and it
+removes the entire "I pressed F5 in front of 300 people" class of disaster.
+
+**"The path exists" is a useless check.** The first version of `check-demo-paths.py` passed happily
+on the exact bug it was written to catch: `cd infra/azure-sql/terraform` resolves to a real
+directory — it is just the *container* for `demo/` and `shared-endpoint/`, with no `.tf` files in
+it. The check that works is **"a `cd` that is followed by a `terraform` command must land somewhere
+holding tracked `.tf` files"**, and it has to ask *git*, not the filesystem: a leftover gitignored
+`backend_local_override.tf` from someone's demo run (there is one in that very folder) makes the
+wrong directory look right. Worth remembering generally — a checker that passes on the known bug is
+worse than no checker, because now you trust it.
+
+**Also:** resolving demo paths the way the demo does — walking the file, tracking `cd`, resolving
+`..\` against it — is what makes the check meaningful, and it means one wrong `cd` lights up every
+command after it.
+
+**Action:** Added [`demo/`](../demo/) — five presenter scripts plus a README. Added CLAUDE.md §7a
+(the two halves of a demo, and that Jess's comments may be added to but not rewritten), the `demos`
+job in `ci.yml`, and [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py). Fixed six
+bugs, listed in [the design doc](../planning/2026-08-31-presenter-demo-scripts-design.md).
 
 <!-- Add new entries above this line -->
