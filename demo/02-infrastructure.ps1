@@ -53,6 +53,7 @@ Get-Location
 #region 02 · Sign in, and be very sure which subscription                           [~40s]
 az login
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
+# $env:ARM_SUBSCRIPTION_ID = (Get-Secret -Name "beard-mvp-subscription" -AsPlainText) # if Rob doing demo
 az account show --query "{subscription:name, id:id}" --output table
 #endregion
 
@@ -64,7 +65,9 @@ code terraform.tfvars
 
 
 #region 04 · Finding the object id, if you must                                     [~20s]
-az ad group show --group "fabcon26-sql-admins" --query id -o tsv
+$groupName = "fabcon26-sql-admins"
+# $groupName = "SQLAdmins" # if Rob doing demo
+az ad group show --group $groupName --query id -o tsv
 #endregion
 
 
