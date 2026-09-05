@@ -83,10 +83,11 @@ MD_BACKTICK = re.compile(r"`([^`\n]+)`")
 TERRAFORM_CMD = re.compile(r"^\s*terraform\s+(?:init|plan|apply|destroy)\b", re.MULTILINE)
 
 # Git refs are not paths, and `demo/source-control` looks exactly like one.
-BRANCH_DECL = re.compile(
+GIT_BRANCH_DECL = re.compile(
     r"git\s+(?:switch\s+(?:-c|--create)|checkout\s+-b|branch\s+-D"
     r"|push\s+origin\s+--delete)\s+(\S+)"
 )
+BRANCH_NAME_EXAMPLE = re.compile(r"branch name \(for example, `([^`]+)`\)", re.IGNORECASE)
 
 
 def clean(token: str) -> str:
@@ -152,7 +153,8 @@ def scan(text: str, is_markdown: bool) -> tuple[set[str], set[str]]:
     above the actual module, with no .tf files in it. "The path exists" was
     true and useless.
     """
-    branches = set(BRANCH_DECL.findall(text))
+    branches = set(GIT_BRANCH_DECL.findall(text))
+    branches.update(BRANCH_NAME_EXAMPLE.findall(text))
     found: set[str] = set()
     tf_modules: set[str] = set()
     cwd = ""

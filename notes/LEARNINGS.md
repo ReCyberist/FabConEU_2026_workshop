@@ -15,6 +15,14 @@ Format:
 
 ---
 
+## 2026-09-05 — Demo path check distinguishes documented branch examples
+**Context:** The CI demo-sync job treated the documented `demo/wrapup-azure-sql-reset`
+branch example as a repository path.
+**Learning:** A slash in a Markdown code span is not sufficient evidence that it is a
+repository path. Branch-name examples must be excluded from path validation.
+**Action:** Updated [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py) to
+recognise branch-name examples alongside Git branch commands.
+
 ## 2026-08-30 — Increment 3 built: the pre-deploy migration gotcha, and how to prove DACPAC behaviour offline
 **Context:** Building Increment 3 of the ship-changes demo (safe retire of `Player.ShirtNumber`)
 as runnable code (task #21). The design in `increment-3_safe-retire.md` had drafted a pre-deploy
