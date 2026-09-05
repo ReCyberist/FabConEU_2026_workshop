@@ -1489,4 +1489,14 @@ command after it.
 job in `ci.yml`, and [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py). Fixed six
 bugs, listed in [the design doc](../planning/2026-08-31-presenter-demo-scripts-design.md).
 
+**Syncing a demo's two halves is not a copy — presenter-only lines don't cross.** When
+`02-infrastructure.ps1` gained `# if Rob doing demo` lines (`Get-Secret` for the subscription id,
+`$groupName = "SQLAdmins"`), mirroring them onto `docs/infra/demo.md` would have been wrong:
+attendees have no `beard-mvp-subscription`/`sewells-subscription-id` secret and no `SQLAdmins`
+group. Presenter context stays in the script (§7a). The only change that legitimately synced was
+the *shape* of an attendee-facing command — region 04 refactored the object-id lookup to a
+`$groupName` variable — because that changed a command the page mirrors, and it fits the page's
+existing "update for your group name" wording. Rule of thumb: sync a change only if it alters a
+command the attendee actually runs; skip anything gated on "if Rob/Jess doing demo".
+
 <!-- Add new entries above this line -->
