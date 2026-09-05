@@ -74,9 +74,12 @@ Get-Item .\bin\Release\FabConFootball.dacpac
 
 
 #region 04 · Show them it is just files                                             [~90s]
+Get-childItem .\bin\Release | Select-Object Name, Length
+
+code ./bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
 #
 # STOP HERE FOR LUNCH. The DACPAC is built; publishing it is the afternoon.
-code .\Tables
+code ./Tables
 #endregion
 
 
