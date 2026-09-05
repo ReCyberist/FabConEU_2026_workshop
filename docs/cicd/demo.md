@@ -122,7 +122,8 @@ tear down on schedule.
 ## Gotchas
 
 - `azure-sql-plan.yml` runs on **pull requests**, not manual dispatch. To show the plan check,
-  open a PR that touches `infra/azure-sql/terraform` or `infra/azure-sql/shared-endpoint`.
+  open a PR that touches `infra/azure-sql/terraform/demo` or
+  `infra/azure-sql/terraform/shared-endpoint`.
 - Deploy workflows must run on `main` to match the configured OIDC credential subject.
 - If deployment fails in the publish step, check Entra access for the CI principal first.
 

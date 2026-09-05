@@ -49,3 +49,7 @@ Thumbs.db
 *.pptx
 *.potx
 *.ppt
+
+# SqlPackage deploy reports — the ship-changes demo writes these into the
+# tracked database/sql-projects folder. They are demo output, never source.
+deploy-report*.xml

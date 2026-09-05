@@ -34,11 +34,11 @@ Run one Terraform module from the repository and let it build the target platfor
 1. In the repository root folder, move into the Azure SQL Terraform module.
 
 	```powershell
-	cd infra/azure-sql/terraform
+	cd infra/azure-sql/terraform/demo
 	Get-Location
 	```
 
-	The path ends with `infra\azure-sql\terraform`.
+	The path ends with `infra\azure-sql\terraform\demo`.
 
 2. Sign in to Azure and set the subscription the demo should deploy into.
 
@@ -151,10 +151,10 @@ Run one Terraform module from the repository and let it build the target platfor
 	Get-Location
 	```
 
-	If you are currently in `infra/azure-sql/terraform`, move up first and then across:
+	If you are currently in `infra/azure-sql/terraform/demo`, move up first and then across:
 
 	```powershell
-	cd ../../fabric-sql/terraform
+	cd ../../../fabric-sql/terraform
 	Get-Location
 	```
 
@@ -256,7 +256,7 @@ Do this when you finish. Workshop resources that survive the workshop become a b
 
 ### Azure SQL
 
-From `infra/azure-sql/terraform`, destroy the resources you just created:
+From `infra/azure-sql/terraform/demo`, destroy the resources you just created:
 
 ```powershell
 terraform destroy
