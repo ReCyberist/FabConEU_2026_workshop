@@ -136,6 +136,7 @@ Get-Location
 #region 13 · Two subscriptions' worth of environment                                [~45s]
 az login
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
+# $env:ARM_SUBSCRIPTION_ID = (Get-Secret -Name sewells-subscription-id -AsPlainText) # if Rob doing demo
 $env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID
 az account show --query "{subscription:name, id:id}" --output table
 #endregion
