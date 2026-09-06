@@ -118,10 +118,18 @@ sqlpackage /Action:Publish `
 
 
 #region 08 · Increment 0 - prove the data is real                                   [~20s]
-$queryParams = @{
+
+$ConnectionParams = @{
     SqlInstance = $server
     Database    = $db
     AccessToken = $token
+}
+$server = Connect-DbaInstance @ConnectionParams
+
+$queryParams = @{
+    SqlInstance = $server
+    Database    = $db
+
     Query       = "SELECT TOP (5) PlayerId, FirstName, LastName, ShirtNumber FROM football.Player WHERE ShirtNumber IS NOT NULL"
 }
 Invoke-DbaQuery @queryParams
