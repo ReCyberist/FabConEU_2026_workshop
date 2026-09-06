@@ -18,4 +18,6 @@ Do you want to perform these actions?
 - fabric demo
 docs can be updated I have gone as far as the plan
 
+The paths should be correct for none windows also in the attendee demo descriptions
 
+Need to show the actions for infra as well as the direct deploy.
