@@ -124,10 +124,10 @@ $ConnectionParams = @{
     Database    = $db
     AccessToken = $token
 }
-$server = Connect-DbaInstance @ConnectionParams
+$serverSMO = Connect-DbaInstance @ConnectionParams
 
 $queryParams = @{
-    SqlInstance = $server
+    SqlInstance = $serverSMO
     Database    = $db
 
     Query       = "SELECT TOP (5) PlayerId, FirstName, LastName, ShirtNumber FROM football.Player WHERE ShirtNumber IS NOT NULL"
