@@ -21,3 +21,6 @@ docs can be updated I have gone as far as the plan
 The paths should be correct for none windows also in the attendee demo descriptions
 
 Need to show the actions for infra as well as the direct deploy.
+
+Increment 2b does not work as the dacpac is not in the right place. Need to fix the path or move the dacpac to the right place.
+
