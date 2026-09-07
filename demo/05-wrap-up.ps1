@@ -46,7 +46,7 @@ break
 
 
 #region 01 · Preflight -- is the number still 60?                                   [~10s]
-Select-String -Path .\infra\azure-sql\terraform\demo\variables.tf `
+Select-String -Path ./infra/azure-sql/terraform/demo/variables.tf `
               -Pattern 'default     = \d+' -Context 4, 0 |
     Where-Object { $_.Context.PreContext -match 'database_auto_pause_delay' }
 #endregion
@@ -60,12 +60,12 @@ git checkout -b demo/wrapup-azure-sql-change
 
 
 #region 03 · Change one number                                                      [~60s]
-code .\infra\azure-sql\terraform\demo\variables.tf
+code ./infra/azure-sql/terraform/demo/variables.tf
 #endregion
 
 
 #region 04 · Commit and push                                                        [~30s]
-git add .\infra\azure-sql\terraform\demo\variables.tf
+git add ./infra/azure-sql/terraform/demo/variables.tf
 git commit -m "demo: change Azure SQL auto-pause delay to 75 minutes"
 git push -u origin demo/wrapup-azure-sql-change
 #endregion
@@ -93,7 +93,7 @@ gh run view --web
 #region 08 · Close the loop -- code AND runtime                                     [~90s]
 git switch main
 git pull
-git --no-pager show -- .\infra\azure-sql\terraform\demo\variables.tf
+git --no-pager show -- ./infra/azure-sql/terraform/demo/variables.tf
 #endregion
 
 
@@ -107,8 +107,8 @@ gh run watch
 #region 99 · RESET -- put the number back. THIS IS THE ONE PEOPLE FORGET.           [~40s]
 git switch main
 git pull
-code .\infra\azure-sql\terraform\demo\variables.tf   # change 75 back to 60, and save
-git add .\infra\azure-sql\terraform\demo\variables.tf
+code ./infra/azure-sql/terraform/demo/variables.tf   # change 75 back to 60, and save
+git add ./infra/azure-sql/terraform/demo/variables.tf
 git commit -m "demo: reset Azure SQL auto-pause delay to 60 minutes"
 git push
 git status --short

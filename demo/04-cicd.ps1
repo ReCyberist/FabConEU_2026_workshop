@@ -41,17 +41,17 @@ break
 
 
 #region 01 · Read: what runs on every change                                        [~2m]
-code .\.github\workflows\ci.yml
+code ./.github/workflows/ci.yml
 #endregion
 
 
 #region 02 · Read: the read-only plan on a pull request                             [~2m]
-code .\.github\workflows\azure-sql-plan.yml
+code ./.github/workflows/azure-sql-plan.yml
 #endregion
 
 
 #region 03 · Read: the one that actually deploys                                    [~2m]
-code .\.github\workflows\azure-sql-apply.yml
+code ./.github/workflows/azure-sql-apply.yml
 #endregion
 
 
@@ -84,7 +84,7 @@ gh run view --web
 
 
 #region 09 · And the thing that cleans up after us                                  [~90s]
-code .\.github\workflows\azure-sql-destroy.yml
+code ./.github/workflows/azure-sql-destroy.yml
 #endregion
 
 

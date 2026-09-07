@@ -8,6 +8,17 @@ change will be Terraform or T-SQL; the workflow stays the same.
 	You need a local clone of **your fork** and the **GitHub CLI** signed in. See
 	[Prerequisites](../setup/prerequisites.md) and [Source control for databases](source-control.md).
 
+!!! note "Run these commands in PowerShell"
+	Every command on this page is PowerShell. If your prompt is bash or zsh, start PowerShell
+	first:
+
+	```powershell
+	pwsh
+	```
+
+	The prompt changes to `PS>`. PowerShell 7 runs on Windows, macOS and Linux, and every
+	command on this page works the same on all three.
+
 ## What you'll do
 
 Create a branch, add one harmless note to the repository, commit it with a clear message, push the
@@ -43,8 +54,8 @@ branch to your fork, and open a pull request against `main`.
 3. In the `notes` folder, create a new file called `fabcon.md` and add something you have learnt so far.
 
 	```powershell
-	New-Item -Path notes/fabcon.md -ItemType File 
-    code notes/fabcon.md
+	New-Item -Path notes/fabcon.md -ItemType File
+	code notes/fabcon.md
 	```
 
 	Add your notes:
@@ -52,9 +63,9 @@ branch to your fork, and open a pull request against `main`.
 	```markdown
 	# Fabcon 2026 - Best Workshop so far!
 
-    So far I have learnt:
-    - Jess loves breakfast
-    - Rob has a beard
+	So far I have learnt:
+	- Jess loves breakfast
+	- Rob has a beard
 	```
 
 	Save the file.
@@ -77,13 +88,14 @@ branch to your fork, and open a pull request against `main`.
 	git status
 	```
 
-	The status output shows: 
-    ```text
-    On branch demo/source-control
-    Change to be committed:
-    (use "git restore --staged <file>..." to unstage)
-            new file:   notes/fabcon.md
-    ```
+	The status output shows:
+
+	```text
+	On branch demo/source-control
+	Changes to be committed:
+	(use "git restore --staged <file>..." to unstage)
+	        new file:   notes/fabcon.md
+	```
 
 6. In the repository root folder, commit the change with a message that says what changed.
 
