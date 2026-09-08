@@ -1617,4 +1617,6 @@ the *shape* of an attendee-facing command — region 04 refactored the object-id
 existing "update for your group name" wording. Rule of thumb: sync a change only if it alters a
 command the attendee actually runs; skip anything gated on "if Rob/Jess doing demo".
 
+**SQL project analysis emits a build artifact alongside the DACPAC.** Demo 03's `dotnet build` writes `bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml`. It is intentionally absent from a clean checkout, so it belongs in both `.gitignore` and `check-demo-paths.py`'s documented `EXPECTED_ABSENT` list.
+
 <!-- Add new entries above this line -->

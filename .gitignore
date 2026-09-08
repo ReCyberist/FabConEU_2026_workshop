@@ -30,6 +30,7 @@ override.tf.json
 bin/
 obj/
 *.dacpac
+*.StaticCodeAnalysis.Results.xml
 
 # Packaged attendee downloads (produced by pipeline)
 dist/

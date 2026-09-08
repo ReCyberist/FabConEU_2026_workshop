@@ -61,6 +61,7 @@ EXPECTED_ABSENT = {
     "database/sql-projects/Scripts/PreDeployment/Migrate-ShirtNumber.sql": "created by demo 03, increment 3A",
     "database/sql-projects/FabConFootball.refactorlog": "created by demo 03, increment 3B",
     "database/sql-projects/bin/Release/FabConFootball.dacpac": "build output of demo 03, part 1",
+    "database/sql-projects/bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml": "build output of demo 03, part 1",
     "database/sql-projects/deploy-report.xml": "written by demo 03; gitignored",
     "database/sql-projects/deploy-report-increment-0.xml": "written by demo 03; gitignored",
     "infra/azure-sql/terraform/demo/terraform.tfvars": "copied from the .example by demo 02; gitignored",
