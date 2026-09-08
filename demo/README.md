@@ -9,13 +9,27 @@ failure looks like, and how to put the repository back afterwards.
 | Script | Attendee page | Slot |
 |---|---|---|
 | [`01-source-control.ps1`](01-source-control.ps1) | [`docs/foundations/demo.md`](../docs/foundations/demo.md) | Morning 1 · 09:00–10:30 |
+| [`01b-merge-conflict.ps1`](01b-merge-conflict.ps1) | **none** — presenter-only | Morning 1 · 10:00–10:25 |
 | [`02-infrastructure.ps1`](02-infrastructure.ps1) | [`docs/infra/demo.md`](../docs/infra/demo.md) | Morning 2 · 11:00–12:15 |
 | [`03-database.ps1`](03-database.ps1) | [`docs/database/demo.md`](../docs/database/demo.md) | Morning 3 (Part 1) + Afternoon 1 & 2 (Part 2) |
 | [`04-cicd.ps1`](04-cicd.ps1) | [`docs/cicd/demo.md`](../docs/cicd/demo.md) | Afternoon 2 · 15:45–17:00 |
 | [`05-wrap-up.ps1`](05-wrap-up.ps1) | [`docs/wrap-up/demo.md`](../docs/wrap-up/demo.md) | Afternoon 2 · 15:45–17:00 |
 
 Who drives which demo is deliberately not written down. It is fluid, and it may well change
-halfway through.
+halfway through. The exception is [`01b-merge-conflict.ps1`](01b-merge-conflict.ps1), which needs
+**two people on two laptops** and so names them: fold the file, and each of you runs only the
+regions with your own name on them. Swap the names if you like — all that matters is that one of
+you pushes first and the other one hits the conflict.
+
+## Presenter-only demos
+
+Most demos have two halves, a script and an attendee page. A few cannot: a demo that needs two
+laptops and two people is one the room **watches**, and there is nothing useful for an attendee to
+follow along with. Those declare `ATTENDEE PAGE: none` in the header, and the `demos` CI job skips
+the pairing check for them — their paths are still checked like everything else.
+
+If you write one, say *out loud on the day* that there is nothing to type. Otherwise half the room
+will try, and fall behind.
 
 ## How to run one
 
