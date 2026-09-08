@@ -229,8 +229,21 @@ review by eye.
 
 - **One script per attendee demo page, and exactly one.** The script names its page in an
   `ATTENDEE PAGE:` header line; that line is what CI pairs on.
+- **A demo the room can only watch has no page, and says so.** A two-laptop, two-presenter demo
+  gives an attendee nothing to follow, so it declares `ATTENDEE PAGE: none` and CI skips the pairing
+  check (its paths are still checked). Use this sparingly — it is an admission that a demo is not
+  reproducible by the reader, so the slide before it must tell them to sit back.
 - **The script never invents steps.** It mirrors the page's commands in the page's order, then
   adds presenter context around them. If the demo needs a new step, it goes on **both**.
+- **The pair is the only description of a demo.** The attendee page and its script are the source
+  of truth; nothing else restates the steps. A third copy always drifts — `ATTENDEES.md` spent a
+  week telling attendees to edit a file the demo had stopped touching, and the same demo was
+  described three different ways at once.
+- **A `CMD` slide is a third copy, so treat it as one.** [`slides/content.py`](slides/content.py)
+  mirrors the script and the page command for command, and its speaker note names the script and
+  the regions it mirrors. CI cannot check this one — the deck is gitignored, generated output — so
+  it is checked by hand every time a demo changes. Slide timings come from
+  [`agenda/speaker-guide.md`](agenda/speaker-guide.md), never invented on the slide.
 - **Every script ends with a `RESET` region.** Demos overwrite tracked files; a demo's working
   state committed to `main` breaks the demo for whoever runs it next. Reset regions name every
   file they touch and never `git clean` the whole repository.

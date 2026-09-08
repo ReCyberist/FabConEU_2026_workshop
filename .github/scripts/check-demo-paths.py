@@ -15,6 +15,10 @@ So this script checks the mechanical half of CLAUDE.md 7a:
 
   1. PAIRING  every demo/*.ps1 names a real attendee page, and every
               docs/**/demo.md is claimed by exactly one script.
+              A presenter-only demo -- one the room watches rather than follows,
+              so it has no attendee page at all -- declares
+              `ATTENDEE PAGE: none` and is skipped by this half. Its paths are
+              still checked.
   2. PATHS    every repository path either half mentions actually exists.
 
 Paths are resolved the way the demo would resolve them: the script walks each
@@ -50,6 +54,7 @@ DOCS_DIR = REPO / "docs"
 # ---------------------------------------------------------------------------
 EXPECTED_ABSENT = {
     "notes/fabcon.md": "created by demo 01, step 3",
+    "notes/team-notes.md": "created by demo 01b on both branches, which is the whole point",
     "database/sql-projects/Views/vw_SquadAges.sql": "created by demo 03, increment 1",
     "database/sql-projects/Views/vw_TeamRosterSizes.sql": "created by demo 03, increment 2",
     "database/sql-projects/Scripts/PreDeployment": "created by demo 03, increment 3A",
@@ -228,6 +233,9 @@ def main() -> int:
             findings.append(f"{rel}: no 'ATTENDEE PAGE:' line in the header block")
             continue
         page = match.group(1)
+        if page.lower() == "none":
+            # Presenter-only: the room watches, so there is nothing to pair with.
+            continue
         if not (REPO / page).is_file():
             findings.append(f"{rel}: ATTENDEE PAGE names {page}, which does not exist")
             continue
