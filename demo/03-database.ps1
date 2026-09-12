@@ -91,7 +91,7 @@ Get-childItem ./bin/Release | Select-Object Name, Length
 code ./bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
 #
 # STOP HERE FOR LUNCH. The DACPAC is built; publishing it is the afternoon.
-code ./Tables
+code ./Tables/Club.sql    # opens a file in the current window; the Explorer already shows the folder tree
 #endregion
 
 
@@ -113,8 +113,8 @@ az login
 #          database sqldb-attendeeNN, and /TargetUser /TargetPassword in place of
 #          /AccessToken. The attendee page has both paths in tabs.
 $token   = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
-$server  = "<your-server-name>"
-$db      = "<your-database-name>"
+$server  = "sql-fabcon26-dev-uks-pn74o7.database.windows.net"
+$db      = "sqldb-football-dev"
 $profile = "PublishProfiles/AzureSql.publish.xml"
 #endregion
 
