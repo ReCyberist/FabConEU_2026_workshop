@@ -80,6 +80,20 @@ are still open, gated on #1 as originally decided.
 `…:pull_request`, not a branch ref, so `…:ref:refs/heads/main` doesn't match it). Cements
 plan-on-PR as the taught CI/CD pattern for the module and keeps `apply` deliberate.
 
+**Update 2026-09-12 — reversed: apply now runs on merge to main.** The 2026-07-29 "apply on
+intent (`workflow_dispatch`-only)" posture is retired. `azure-sql-apply.yml` now also triggers
+on `push` to `main` for its own paths (`infra/azure-sql/terraform/demo/**`,
+`infra/azure-sql/terraform/shared-endpoint/**`, `database/sql-projects/**`, and the workflow
+file). A `detect-changes` job (`dorny/paths-filter`) routes the push so only the flow whose
+files changed applies — a demo-only change never spins up the attendee endpoint, and vice
+versa. `workflow_dispatch` with the `target` input is retained for hand re-runs. **Why:** Jess &
+Rob (chat 2026-09-12) want the workshop to *show* the full loop — a merged change reaching Azure
+with no second click — so "plan on PR, apply on merge" is the taught pattern end to end;
+manual-apply-on-intent left the demo half-told. **Trade accepted:** merges to these paths now
+create real, billed resources automatically (the shared-endpoint flow deploys N attendee DBs);
+that cost is deliberate and bounded by the nightly destroy workflows. No new federated
+credential needed — a push to `main` reuses the existing `…:ref:refs/heads/main` subject.
+
 ## D6 — Attendee sandbox: bring-your-own, two independent lab parts, one unsupported shared endpoint
 **Date:** 2026-07-18
 **Decision:** We do **not** provision per-attendee sandboxes. Attendees use **whatever cloud

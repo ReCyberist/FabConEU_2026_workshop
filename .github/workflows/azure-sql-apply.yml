@@ -1,12 +1,19 @@
 name: Azure SQL — Terraform apply
 
-# Manually provisions Azure SQL infra into the personal sandbox subscription. TWO independent
-# Terraform flows live here as separate jobs; the `target` input picks which run:
+# Provisions Azure SQL infra into the personal sandbox subscription. TWO independent
+# Terraform flows live here as separate jobs:
 #   • demo     — the taught module (infra/azure-sql/terraform/demo) + DACPAC publish/smoke test.
 #   • attendee — the shared, unsupported attendee endpoint (infra/azure-sql/terraform/shared-endpoint):
 #                elastic pool + a database/login per attendee, for the "bump the count" demo.
-#   • both     — both flows (default).
-# workflow_dispatch-only — these create real, billed resources, so nothing runs on a push.
+#
+# Two ways in:
+#   • push to main — auto-apply on merge (the GitOps half of "plan on PR, apply on merge"),
+#     so a merged Terraform change lands in Azure without a second click — this is what makes
+#     the workshop's end-to-end demo hang together. The `detect-changes` job routes: only the
+#     flow(s) whose files changed apply. Yes, this creates real, billed resources on merge —
+#     that trade is deliberate (see notes/decisions.md, 2026-09-12).
+#   • workflow_dispatch — pick the flow(s) by hand with the `target` input (both/demo/attendee),
+#     for a re-run or an out-of-band apply.
 #
 # Auth: OIDC (no secrets) — see notes/decisions.md D5. State: remote azurerm backend in the
 # persistent rg-fabcon26-state-weu resource group (separate from the workload RGs so the
@@ -18,6 +25,15 @@ name: Azure SQL — Terraform apply
 # AZURE_LOCATION/AZURE_LOCATION_ABBREVIATION (=uksouth/uks) drive the region.
 
 on:
+  push:
+    branches: [main]
+    # Only trigger on files a flow here actually deploys. detect-changes then decides
+    # which flow(s) to run; a push touching only one flow's paths applies only that flow.
+    paths:
+      - 'infra/azure-sql/terraform/demo/**'
+      - 'infra/azure-sql/terraform/shared-endpoint/**'
+      - 'database/sql-projects/**'
+      - '.github/workflows/azure-sql-apply.yml'
   workflow_dispatch:
     inputs:
       target:
@@ -40,9 +56,41 @@ env:
   ARM_USE_OIDC: true
 
 jobs:
+  # On a push, route to the flow(s) whose files changed so an unrelated demo change never
+  # spins up the attendee endpoint (and vice versa). On workflow_dispatch this job still
+  # runs but its outputs are ignored — the `target` input drives the gate instead.
+  detect-changes:
+    name: detect changed flows
+    runs-on: ubuntu-latest
+    outputs:
+      demo: ${{ steps.filter.outputs.demo }}
+      shared_endpoint: ${{ steps.filter.outputs.shared_endpoint }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # paths-filter diffs against the push's before-commit
+
+      - name: Detect changed flows
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            demo:
+              - 'infra/azure-sql/terraform/demo/**'
+              - 'database/sql-projects/**'
+              - '.github/workflows/azure-sql-apply.yml'
+            shared_endpoint:
+              - 'infra/azure-sql/terraform/shared-endpoint/**'
+              - '.github/workflows/azure-sql-apply.yml'
+
   apply:
     name: terraform apply (demo)
-    if: ${{ inputs.target == 'demo' || inputs.target == 'both' }}
+    needs: detect-changes
+    # Run on a dispatch that selects demo/both, or on a push that changed the demo flow's files.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && (inputs.target == 'demo' || inputs.target == 'both')) ||
+      (github.event_name == 'push' && needs.detect-changes.outputs.demo == 'true')
     runs-on: ubuntu-latest
     # Shares a group with azure-sql-destroy.yml so demo apply/destroy can't overlap.
     concurrency:
@@ -232,7 +280,11 @@ jobs:
   # -------------------------------------------------------------------------------------
   attendee-endpoint:
     name: terraform apply (attendee endpoint)
-    if: ${{ inputs.target == 'attendee' || inputs.target == 'both' }}
+    needs: detect-changes
+    # Run on a dispatch that selects attendee/both, or on a push that changed the shared endpoint.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && (inputs.target == 'attendee' || inputs.target == 'both')) ||
+      (github.event_name == 'push' && needs.detect-changes.outputs.shared_endpoint == 'true')
     runs-on: ubuntu-latest
     # Shares a group with shared-endpoint-destroy.yml so this flow's apply/destroy can't overlap.
     concurrency:

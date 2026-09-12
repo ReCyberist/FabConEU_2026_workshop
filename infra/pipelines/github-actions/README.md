@@ -5,8 +5,10 @@ changes automatically.
 
 Landed workflows:
 - **[`azure-sql-apply.yml`](../../../.github/workflows/azure-sql-apply.yml)** —
-  manual (`workflow_dispatch`): `terraform apply` for `infra/azure-sql/terraform/demo` against
-  the personal sandbox subscription. OIDC auth, remote `azurerm` state.
+  `terraform apply` against the personal sandbox subscription. Runs on **push to `main`**
+  (a `detect-changes` job routes to the demo and/or shared-endpoint flow whose files changed —
+  "plan on PR, apply on merge") and on manual `workflow_dispatch` with a `target` input.
+  OIDC auth, remote `azurerm` state.
 - **[`azure-sql-destroy.yml`](../../../.github/workflows/azure-sql-destroy.yml)** —
   nightly at 21:00 UTC + manual: `terraform destroy` for the same module,
   so nothing is left running (and billing) overnight.

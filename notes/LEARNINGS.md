@@ -15,6 +15,21 @@ Format:
 
 ---
 
+## 2026-09-12 — Azure SQL apply now runs on merge to main (reversing "apply on intent")
+**Context:** Jess & Rob want the workshop demo to show the whole CI/CD loop, not stop at a
+manual apply. `azure-sql-apply.yml` was `workflow_dispatch`-only by the 2026-07-29 decision.
+**Learning:** With a multi-flow apply workflow you can't just add `on: push` — the demo and
+attendee jobs were gated on the `workflow_dispatch` `target` input, which is empty on a push,
+so every job would have skipped. The fix is a `detect-changes` job (`dorny/paths-filter`,
+`fetch-depth: 0` so it can diff the push) whose outputs each job's `if` reads: run when
+`workflow_dispatch` selects the flow **or** when `push` changed that flow's files. Path routing
+matters — a demo-only merge must not deploy the attendee endpoint's N databases. No new OIDC
+federated credential: a push to `main` already matches the existing `…:ref:refs/heads/main`
+subject (unlike the PR plan, which needed `…:pull_request`).
+**Action:** Added `push`+`detect-changes` to [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml),
+corrected the stale "apply is dispatch-only" note in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml),
+and logged the reversal under D5 in [`decisions.md`](decisions.md).
+
 ## 2026-09-12 — `az ... --output table` silently hides any column literally named `id`
 **Context:** The infra demo prints the signed-in subscription with
 `az account show --query "{subscription:name, id:id}" --output table`, and only the subscription
