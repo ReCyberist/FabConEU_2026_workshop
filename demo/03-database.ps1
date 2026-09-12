@@ -157,6 +157,9 @@ Invoke-DbaQuery @queryParams
 
 #region 10 · Increment 1 - add a view                                               [~25s]
 Copy-Item ../demo/ship-changes/increment-1_vw_SquadAges.sql ./Views/vw_SquadAges.sql
+# Show them what just landed: a read-only SELECT with a computed AgeYears column. Additive,
+# so nothing existing is touched -- which is why the next report is clean.
+code ./Views/vw_SquadAges.sql
 dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
 #endregion
 

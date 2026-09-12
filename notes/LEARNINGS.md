@@ -15,6 +15,22 @@ Format:
 
 ---
 
+## 2026-09-12 — The database demo spans three slots, so it carries three clocks
+**Context:** The database demo (`docs/database/demo.md`) is one page but is taught across two
+timeslots either side of lunch — Part 1 before, Part 2 after — and Part 2 itself straddles the
+15:15 break. It had a single `clock-morning-3` include at the very top, which was only true for
+Part 1.
+**Learning:** The earlier "one clock per section" mapping (database = Morning 3) assumed each
+teaching section sits in exactly one slot. This one does not: Part 1 = Morning 3, Part 2 (increments
+0–2b) = Afternoon 1, Increment 3 = Afternoon 2. A page can legitimately need more than one clock.
+**Action:** Removed the top-of-page clock and placed the correct clock at the top of each part —
+`clock-morning-3` under Part 1, `clock-afternoon-1` under Part 2, `clock-afternoon-2` at Increment 3
+— with stable `{ #part-1 }` / `{ #part-2 }` anchors and jump links between the two parts. Also added
+an "open the view" step to Increment 1 (mirrored in `demo/03-database.ps1` and the Increment 1 slide
+in `slides/content.py`), and filled the attendee `$password` placeholder with the real throwaway
+credential (`Taylor==Metallica`, the intentional public-secret from the shared-endpoint
+`variables.tf`). Verified with a `mkdocs build -f mkdocs.local.yml --strict` and the demo-path check.
+
 ## 2026-09-12 — A whole-repo demo reset + Pester readiness check (git-clean is not demo-clean)
 **Context:** Re-running the demos to rehearse, `git switch -c demo/source-control` failed with
 *"a branch named 'demo/source-control' already exists"* — a previous run's throwaway branch was

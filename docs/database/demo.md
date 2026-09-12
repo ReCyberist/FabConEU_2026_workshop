@@ -1,7 +1,5 @@
 # Database demo
 
---8<-- "includes/clock-morning-3.md"
-
 This is the database half of the day in the order we actually teach it. **Part 1** stops before
 lunch with a DACPAC built and ready. **Part 2** resumes after lunch and uses that DACPAC to show
 how safe and unsafe schema changes behave.
@@ -36,10 +34,13 @@ how safe and unsafe schema changes behave.
 - `sqlpackage /Action:DeployReport` is the database's version of `terraform plan`: it tells you
   what the deploy would do before it does it.
 
-## Part 1 — Before Lunch
+## Part 1 — Before Lunch { #part-1 }
+
+--8<-- "includes/clock-morning-3.md"
 
 This is the **Morning 3** slot in the agenda: **12:15–12:45**, right before lunch. The goal here
-is to build the artifact, not deploy it.
+is to build the artifact, not deploy it. The demo continues after lunch in
+[Part 2 — After Lunch](#part-2).
 
 ### Run it
 
@@ -144,12 +145,15 @@ is to build the artifact, not deploy it.
 
 !!! info "Stop here for lunch"
     This is where the agenda pauses. By **12:45** the DACPAC is built; the live publish and change
-    story start **after lunch**.
+    story start **after lunch**, in [Part 2 — After Lunch](#part-2).
 
-## Part 2 — After Lunch
+## Part 2 — After Lunch { #part-2 }
+
+--8<-- "includes/clock-afternoon-1.md"
 
 This is the **Afternoon 1** and **Afternoon 2** story. Increment 1 and increment 2 happen before
-the **15:15 break**. Increment 3 resumes after that break.
+the **15:15 break**. Increment 3 resumes after that break. This part follows on from
+[Part 1 — Before Lunch](#part-1).
 
 ### Set up the target
 
@@ -212,7 +216,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
         ```powershell
         $login    = "attendee$attendee"
-        $password = "<shared-attendee-password>"
+        $password = "Taylor==Metallica"
         ```
 
         In all `sqlpackage` commands below, replace:
@@ -388,7 +392,17 @@ the **15:15 break**. Increment 3 resumes after that break.
 
     The project now contains `Views/vw_SquadAges.sql`.
 
-8. Rebuild the DACPAC.
+8. Open the view to show what it does.
+
+    ```powershell
+    code ./Views/vw_SquadAges.sql
+    ```
+
+    VS Code opens the view. It is a read-only `SELECT` over `football.Player` that adds a
+    computed `AgeYears` column. It creates a new object and changes nothing that already
+    exists, which is why the deploy report in the next steps is clean.
+
+9. Rebuild the DACPAC.
 
     ```powershell
     dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
@@ -411,7 +425,7 @@ the **15:15 break**. Increment 3 resumes after that break.
         Time Elapsed 00:00:12.53
         ```
 
-9. Generate the deploy report before you publish.
+10. Generate the deploy report before you publish.
 
     === "Presenter path (Entra token)"
 
@@ -446,7 +460,7 @@ the **15:15 break**. Increment 3 resumes after that break.
         Time elapsed 0:02:07.84
         ```
 
-10. Publish the safe change.
+11. Publish the safe change.
 
     === "Presenter path (Entra token)"
 
@@ -490,7 +504,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
 ### Increment 2 — The destructive trap
 
-11. Prove that `ShirtNumber` currently holds real data.
+12. Prove that `ShirtNumber` currently holds real data.
 
     === "Presenter path (Entra token)"
 
@@ -519,7 +533,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
     The query returns rows with real `ShirtNumber` values.
 
-12. Add the harmless view that hides the destructive change.
+13. Add the harmless view that hides the destructive change.
 
     ```powershell
     Copy-Item ../demo/ship-changes/increment-2_vw_TeamRosterSizes.sql ./Views/vw_TeamRosterSizes.sql
@@ -527,7 +541,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
     The project now contains `Views/vw_TeamRosterSizes.sql`.
 
-13. Remove `ShirtNumber` from the project definition and the seed.
+14. Remove `ShirtNumber` from the project definition and the seed.
 
     ```powershell
     Copy-Item ../demo/ship-changes/increment-2_Player.sql ./Tables/Player.sql -Force
@@ -536,7 +550,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
     Both files are overwritten. Nothing is printed.
 
-14. Review what those two files changed.
+15. Review what those two files changed.
 
     ```powershell
     git --no-pager diff -- ./Tables/Player.sql ./Scripts/PostDeployment/Seed.sql
@@ -552,7 +566,7 @@ the **15:15 break**. Increment 3 resumes after that break.
     This is the whole change, and it looks small. That is the point: one deleted line in a
     table definition is a dropped column in production.
 
-15. Confirm `ShirtNumber` is gone from both files.
+16. Confirm `ShirtNumber` is gone from both files.
 
     ```powershell
     Select-String -Path ./Tables/Player.sql,./Scripts/PostDeployment/Seed.sql -Pattern "ShirtNumber"
@@ -562,7 +576,7 @@ the **15:15 break**. Increment 3 resumes after that break.
     definition and from the seed. If it prints a line, one of the two copies in step 13 did not
     land, and the rest of this increment will not behave as described.
 
-16. Rebuild the DACPAC and generate a fresh deploy report.
+17. Rebuild the DACPAC and generate a fresh deploy report.
 
     ```powershell
     dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
@@ -616,7 +630,7 @@ the **15:15 break**. Increment 3 resumes after that break.
         Time elapsed 0:01:57.74
         ```
 
-17. Show the anti-pattern by forcing the publish through.
+18. Show the anti-pattern by forcing the publish through.
 
     === "Presenter path (Entra token)"
 
@@ -641,7 +655,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
     The publish succeeds, even though it removes a populated column.
 
-18. Prove the damage.
+19. Prove the damage.
 
     === "Presenter path (Entra token)"
 
@@ -675,7 +689,7 @@ the **15:15 break**. Increment 3 resumes after that break.
 
 The obvious reaction is to redeploy the last good version. Do that, and watch what it gets back.
 
-19. Restore the baseline project files from git and rebuild the DACPAC.
+20. Restore the baseline project files from git and rebuild the DACPAC.
 
     ```powershell
     git restore ./Tables/Player.sql ./Scripts/PostDeployment/Seed.sql
@@ -685,7 +699,7 @@ The obvious reaction is to redeploy the last good version. Do that, and watch wh
     The build succeeds. The DACPAC now describes `Player` with `ShirtNumber` again, exactly as it
     was before increment 2.
 
-20. Publish that DACPAC to put the column back.
+21. Publish that DACPAC to put the column back.
 
     === "Presenter path (Entra token)"
 
@@ -709,7 +723,7 @@ The obvious reaction is to redeploy the last good version. Do that, and watch wh
     The publish succeeds and adds `ShirtNumber` back to `football.Player`. Adding a column loses no
     data, so the shipped profile allows it with no override.
 
-21. Ask for the data back.
+22. Ask for the data back.
 
     === "Presenter path (Entra token)"
 
@@ -772,7 +786,7 @@ The obvious reaction is to redeploy the last good version. Do that, and watch wh
 The database now has `ShirtNumber` back, so the destructive change has something to destroy again.
 This time, publish it without the override.
 
-22. Put the destructive change back and rebuild.
+23. Put the destructive change back and rebuild.
 
     ```powershell
     Copy-Item ../demo/ship-changes/increment-2_Player.sql ./Tables/Player.sql -Force
@@ -782,7 +796,7 @@ This time, publish it without the override.
 
     The build succeeds. This is the same DACPAC as step 16.
 
-23. Publish it under the shipped profile, with no override.
+24. Publish it under the shipped profile, with no override.
 
     === "Presenter path (Entra token)"
 
@@ -820,6 +834,8 @@ This time, publish it without the override.
 
 ### Increment 3 — Retire it safely
 
+--8<-- "includes/clock-afternoon-2.md"
+
 Increment 3 keeps Increment 2's goal — retire `ShirtNumber` — but preserves the data. There are
 two safe patterns. **Option A** is the general one: a data-preserving migration you can adapt to
 any change. **Option B** is the clean special case when the change is only a rename. Both are
@@ -838,7 +854,7 @@ side of the schema change.
     purely a rename. You do not need both — pick the one that fits your change. The deploy reports
     below are what `sqlpackage` produces for each.
 
-24. Confirm the target still holds `ShirtNumber` data.
+25. Confirm the target still holds `ShirtNumber` data.
 
     === "Presenter path (Entra token)"
 
@@ -878,7 +894,7 @@ side of the schema change.
 
 #### Option A — a data-preserving migration
 
-25. Copy in the Option A files.
+26. Copy in the Option A files.
 
     ```powershell
     New-Item -ItemType Directory -Path ./Scripts/PreDeployment -Force | Out-Null
@@ -891,7 +907,7 @@ side of the schema change.
     The pre-deployment script copies `ShirtNumber` into a staging table before the drop; the
     post-deployment step lands those values in `SquadNumber` after the schema change creates it.
 
-26. Build the DACPAC.
+27. Build the DACPAC.
 
     ```powershell
     dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
@@ -905,7 +921,7 @@ side of the schema change.
         0 Error(s)
     ```
 
-27. Generate the deploy report.
+28. Generate the deploy report.
 
     === "Presenter path (Entra token)"
 
@@ -935,7 +951,7 @@ side of the schema change.
     <Alert Name="DataIssue"><Issue Value="The column [football].[Player].[ShirtNumber] is being dropped, data loss could occur." Id="1" /></Alert>
     ```
 
-28. Publish, explicitly allowing the drop.
+29. Publish, explicitly allowing the drop.
 
     === "Presenter path (Entra token)"
 
@@ -961,7 +977,7 @@ side of the schema change.
     The publish succeeds. This is the same flag as the Increment 2 forced publish, used
     deliberately here: the migration already moved the data to safety before the drop.
 
-29. Confirm the data survived in the new column.
+30. Confirm the data survived in the new column.
 
     === "Presenter path (Entra token)"
 
@@ -997,7 +1013,7 @@ the intent, so the publish emits `sp_rename` instead of drop-and-add: no data-lo
 override needed. Demonstrate it from a target that still has `ShirtNumber` (re-establish the
 baseline on a fresh database if Option A already ran here).
 
-30. Copy in the Option B files.
+31. Copy in the Option B files.
 
     ```powershell
     Copy-Item ../demo/ship-changes/increment-3_Player.sql                 ./Tables/Player.sql -Force
@@ -1008,7 +1024,7 @@ baseline on a fresh database if Option A already ran here).
 
     There is no pre-deployment migration this time. The refactorlog carries the rename intent.
 
-31. Build the DACPAC.
+32. Build the DACPAC.
 
     ```powershell
     dotnet build FabConFootball.sqlproj --configuration Release -warnaserror
@@ -1016,7 +1032,7 @@ baseline on a fresh database if Option A already ran here).
 
     The build succeeds with zero warnings and zero analysis findings.
 
-32. Generate the deploy report.
+33. Generate the deploy report.
 
     Run the same `sqlpackage /Action:DeployReport` command as in Option A above. This time the
     report is clean, because the change is a rename, not a drop:
@@ -1025,21 +1041,21 @@ baseline on a fresh database if Option A already ran here).
     <Alerts />
     ```
 
-33. Publish under the shipped profile.
+34. Publish under the shipped profile.
 
     Run the same `sqlpackage /Action:Publish` command as in Option A above, but without
     `/p:BlockOnPossibleDataLoss=false`. The shipped profile keeps `BlockOnPossibleDataLoss=True`,
     and the publish still succeeds because a rename loses no data. The generated script contains
     `EXECUTE sp_rename ... 'COLUMN'`.
 
-34. Confirm the data is in the renamed column.
+35. Confirm the data is in the renamed column.
 
     Run the same `SquadNumber` query as in Option A above. The values are present because the
     column was renamed in place, with no copy and no drop.
 
 #### Gate the destructive deploy
 
-35. Require a human approval before the deploy lands.
+36. Require a human approval before the deploy lands.
 
     ```yaml
     jobs:
