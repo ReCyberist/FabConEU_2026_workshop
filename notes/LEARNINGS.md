@@ -31,6 +31,39 @@ in `slides/content.py`), and filled the attendee `$password` placeholder with th
 credential (`Taylor==Metallica`, the intentional public-secret from the shared-endpoint
 `variables.tf`). Verified with a `mkdocs build -f mkdocs.local.yml --strict` and the demo-path check.
 
+## 2026-09-12 — A whole-repo demo reset + Pester readiness check (git-clean is not demo-clean)
+**Context:** Re-running the demos to rehearse, `git switch -c demo/source-control` failed with
+*"a branch named 'demo/source-control' already exists"* — a previous run's throwaway branch was
+still there. The per-script `RESET` regions each tidy only their own demo, and only if run; nothing
+put the *whole* environment back at once or told you it was ready.
+**Learning:** Several things a plain `git status` will not show you:
+1. **Gitignored scratch survives a "clean" status.** `terraform.tfvars` and `*_override.tf` (demo
+   02) are gitignored, so a checkout reads clean while the Fabric module still had a stale `tfvars`
+   and `backend_local_override.tf` on disk from an abandoned run. A readiness check has to test the
+   filesystem, not just `git status`.
+2. **A demo commit can leak onto a working branch.** While mid-testing, the repo's HEAD had drifted
+   onto the demo commit `d7ca952` (the "add FabCon source control demo note" that demo 01 makes), so
+   `notes/fabcon.md` was **tracked** — present on disk, absent from `git status`, and it rode into a
+   new branch cut from what looked like `main`. The reset now detects a *tracked* scratch file and
+   refuses to `Remove-Item` it (that only stages a deletion); it flags it for a git-level fix.
+3. **The 60-vs-75 trap is invisible to status.** If demo 05's `database_auto_pause_delay` change is
+   committed, the tree is clean but the wrap-up plan reads *"0 to change"*. The check asserts the
+   committed value with a whitespace-tolerant regex, because `git status` cannot.
+4. **Keep reset and verify off one list.** Both [`Reset-DemoEnvironment.ps1`](../demo/Reset-DemoEnvironment.ps1)
+   and [`DemoEnvironment.Tests.ps1`](../tests/DemoEnvironment.Tests.ps1) read
+   [`DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1) so they cannot drift — the same "no third
+   copy" rule as the demo pairs (§7a). `check-demo-paths.py` keeps its own Python `EXPECTED_ABSENT`
+   (different job, cannot read a psd1) — cross-referenced by comment.
+**Action:** Added [`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1) (the inventory),
+[`demo/Reset-DemoEnvironment.ps1`](../demo/Reset-DemoEnvironment.ps1) (`-WhatIf`/`ShouldProcess`,
+`-SkipRemote`; deletes only the four demo-run branches, restores only the four overwritten tracked
+files, never `git clean`), and [`tests/DemoEnvironment.Tests.ps1`](../tests/DemoEnvironment.Tests.ps1)
+(Pester 5, tags `Repo`/`Tooling`/`Auth`). Documented both in [`demo/README.md`](../demo/README.md).
+Verified: reset cleared two real leftover branches + two gitignored scratch files; tests run 35
+checks, 33 green on a dev branch (the two reds are the "on main"/"clean tree" checks correctly
+failing mid-development). Deliberately **not** wired into CI — the tooling/auth checks need a real
+presenter machine. Feeds task #13 (the dry run) and #28 (morning-of checklist).
+
 ## 2026-09-12 — The session-clock timing bar now covers every teaching-section page
 **Context:** The timing strip (`session-clock`) was only on the two foundations content pages and
 `lunch.md` — the demo pages, and the infra/database/cicd/wrap-up content pages, had no bar. Asked to
