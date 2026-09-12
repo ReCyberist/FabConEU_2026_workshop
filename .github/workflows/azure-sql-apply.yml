@@ -176,6 +176,11 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Record checked-out main commit
+        id: base
+        shell: bash
+        run: echo "main_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       # Rewrite region 06's two assignment lines in place. The `^\$server\s*=\s*".*"$`
       # anchors match only the bare assignments, not `$serverSMO` or any `/TargetServerName`
       # usage, and preserve the alignment. `$$` in the replacement is a literal `$`. The
@@ -194,7 +199,14 @@ jobs:
 
       - name: Commit and push if changed
         shell: bash
+        env:
+          BASE_MAIN_SHA: ${{ steps.base.outputs.main_sha }}
         run: |
+          git fetch origin main
+          if ! git diff --quiet "$BASE_MAIN_SHA" origin/main -- demo/03-database.ps1; then
+            echo "demo/03-database.ps1 changed on origin/main after checkout; skipping stale write-back."
+            exit 0
+          fi
           if git diff --quiet -- demo/03-database.ps1; then
             echo "Presenter script already names the current server/database — nothing to commit."
             exit 0
