@@ -26,9 +26,12 @@ server/database names after the newer environment is already live; and even with
 `demo/03-database.ps1`. The safe, small fix is a separate concurrency group on the
 `update-presenter-script` job with `cancel-in-progress: true`, **plus** a freshness check against
 `origin/main` just before commit: if `demo/03-database.ps1` changed upstream since this job checked
-out `main`, skip the write-back. Terraform apply itself keeps its existing non-cancelling state
-lock concurrency.
-**Action:** Added the dedicated concurrency group and the pre-commit freshness check to
+out `main`, skip the write-back. And because a second fetch can reintroduce the race, rebase only
+onto the already-fetched `origin/main` you just checked — if `main` moves again after that, a
+normal push fails safely instead of replaying a stale edit. Terraform apply itself keeps its
+existing non-cancelling state lock concurrency.
+**Action:** Added the dedicated concurrency group, the pre-commit freshness check, and the
+single-fetch `git rebase origin/main` guard to
 [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml).
 
 ## 2026-09-12 — Wrap-up demo now carries a database change, and it trips the guard rail on purpose
