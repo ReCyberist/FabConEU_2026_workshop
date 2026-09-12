@@ -1,8 +1,9 @@
-# Resources & next steps
+# Resources, contacts & next steps
 
 --8<-- "includes/clock-afternoon-2.md"
 
-Everything you saw today is in the repo, and here's where to go deeper.
+This is where the day lands: **16:30–17:00** is questions and where to go next. Everything you saw
+today is in the repo, here's where to go deeper, and here's how to find us afterwards.
 
 ## Downloads
 
@@ -30,6 +31,25 @@ specifics:
 - **Passwordless CI/CD** — [authenticate GitHub Actions to Azure with OIDC](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect).
 - **Naming** — the [Cloud Adoption Framework naming conventions](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming)
   the modules follow.
+
+## Find us
+
+Come and say hello at the break or after the session — questions, war stories, and disagreements
+all welcome. If a question is only useful to you, grab us in the room; if it is useful to everyone,
+ask it in the Q&A.
+
+You can also reach us after the day:
+
+<!--
+  TODO (Jess & Rob): confirm the handles/links to publish here, then replace the placeholders
+  below. Keep it to what you are happy to see on a public page. Suggested rows to fill in:
+-->
+
+- **Jess Pomfret** — <!-- TODO: blog / Bluesky / LinkedIn / email -->
+- **Rob Sewell** — <!-- TODO: blog / Bluesky / LinkedIn / email -->
+- **The workshop repository** —
+  [github.com/JessAndRob/FabConEU_2026_workshop](https://github.com/JessAndRob/FabConEU_2026_workshop)
+  — fork it, open an issue, or take it home and deploy it into your own world.
 
 ## Feedback
 

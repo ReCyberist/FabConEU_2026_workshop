@@ -1,7 +1,7 @@
 <#
     DEMO 04 - CI/CD: validate automatically, deploy deliberately, tear down on schedule
     ATTENDEE PAGE: docs/cicd/demo.md
-    SLOT:          Afternoon 2 - 15:45-17:00
+    SLOT:          Afternoon 2 - 15:45-16:00 (opens the block; the wrap-up demo follows at 16:00)
     RUNTIME:       ~15 min, most of it watching runs
 
     THE POINT

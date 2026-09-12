@@ -1,6 +1,6 @@
 # CI/CD part 2 — deploy infrastructure
 
---8<-- "includes/clock-afternoon-1.md"
+--8<-- "includes/clock-afternoon-2.md"
 
 Now provision for real — **`terraform apply` from the pipeline**. Deployment is a *deliberate*,
 passwordless action: you dispatch it from `main`, it stands up the Azure SQL infrastructure, and a

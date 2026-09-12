@@ -1791,4 +1791,32 @@ instead of "prompts for confirmation". Removed the Fabric not-tested banner from
 
 **SQL project analysis emits a build artifact alongside the DACPAC.** Demo 03's `dotnet build` writes `bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml`. It is intentionally absent from a clean checkout, so it belongs in both `.gitignore` and `check-demo-paths.py`'s documented `EXPECTED_ABSENT` list.
 
+## 2026-09-12 — Afternoon re-slotted: all of database part 2 into Afternoon 1
+
+**The whole database demo part 2 now fits one slot.** Increments 0 → 3 (baseline, additive view,
+the trap + recovery + guard, and the safe retire) all run in **Afternoon 1, 14:00–15:15**, before
+the break — Increment 3 no longer waits until Afternoon 2. Afternoon 2 (15:45–17:00) is now three
+beats: **CI/CD 15:45–16:00**, the **whole-loop wrap-up demo 16:00–16:30**, then **close + Q&A
+16:30–17:00**.
+
+**The session clocks are slot-level, so most of the change was re-pointing includes, not editing
+times.** `includes/clock-*.md` are keyed to the fixed venue slots (Morning 1/2/3, Afternoon 1/2,
+Lunch), so re-slotting content = swapping which `--8<--` a page pulls in. The CI/CD pages moved
+`clock-afternoon-1` → `clock-afternoon-2`; `database/demo.md` dropped its second
+(`clock-afternoon-2`) clock before Increment 3 because part 2 is now entirely Afternoon 1. Change
+slot *times* in `agenda/agenda.md` first, then the clock include; change slot *content* by
+re-pointing the include.
+
+**Part 2 now has almost no slack.** ~62 min of runtime (mostly waiting on `sqlpackage`) in a 75-min
+slot. The cut lever is documented in `03-database.ps1` and the speaker guide: run only Increment 3
+**Option B** (the rename — clean, no override) and *describe* Option A. Never cut the Increment 2
+trap or the silence after it.
+
+**Files touched (kept both halves of every demo in sync):** `agenda/agenda.md`,
+`agenda/speaker-guide.md`, demo headers `03-database.ps1` / `04-cicd.ps1` / `05-wrap-up.ps1`,
+`docs/database/demo.md`, the four `docs/cicd/*.md` clocks, `docs/lunch.md` (return pointer now goes
+to database part 2, not build-validate), `docs/setup/welcome.md` schedule table, and
+`docs/wrap-up/resources.md` (now "Resources, contacts & next steps" — a Find-us section awaits Jess
+& Rob's handles). `check-demo-paths.py` clean; `mkdocs build -f mkdocs.local.yml --strict` green.
+
 <!-- Add new entries above this line -->
