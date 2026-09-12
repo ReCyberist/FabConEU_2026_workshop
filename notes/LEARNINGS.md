@@ -15,6 +15,30 @@ Format:
 
 ---
 
+## 2026-09-12 — The session-clock "90 min" badge now counts down and warns in colour
+**Context:** The teaching-slot clocks showed a static slot length ("90 min") on the right while
+the fill bar moved. Only the break clock (`.session-clock__remaining`) counted down; the room had
+no at-a-glance "how long is left" on a normal slot.
+**Learning:** The countdown maths was already in `session-clock.js` for the break clock, so making
+the `.session-clock__duration` badge live was a small addition, not a rewrite — one shared
+`minutesLeft` drives both. The badge is `display:none` on narrow screens, so a warning band has to
+re-show it or a phone loses exactly the readout that matters.
+**Action:** `docs/javascripts/session-clock.js` now writes "N min left" to `.session-clock__duration`
+while the slot runs (static length before it starts, "done" after) and sets `data-warn` =
+`soon` (≤10 min) / `urgent` (≤5 min) **on the whole `.session-clock` container**, so the box
+background and border colour, not just the badge text. `docs/stylesheets/session-clock.css` tints
+the box blue (`rgba(37,99,235,.14)` + `#2563eb` border) then a strong red (`rgba(220,20,20,.18)` +
+`#dc1414` border), colours the badge to match, and keeps the badge visible on narrow screens once
+warning.
+rgba tints are used so the box reads on both light and dark schemes. Break clocks are untouched
+(they use `__remaining`, not `__duration`). Verified in Chrome against a harness forcing 30/9/4 min
+left. Done in worktree `worktree-session-clock-countdown`.
+Also fixed a pre-existing Impeccable `layout-transition` finding on `.session-clock__fill` in the
+same pass: the fill now animates `transform: scaleX()` (origin left, `width:100%`) instead of
+`width`, keeping the every-30s tick off the layout path. The JS sets `fill.style.transform =
+"scaleX(fraction)"` instead of a width percentage; the track's `overflow:hidden` still rounds the
+visible corners, so the fill dropped its own `border-radius`.
+
 ## 2026-09-12 — The database demo spans three slots, so it carries three clocks
 **Context:** The database demo (`docs/database/demo.md`) is one page but is taught across two
 timeslots either side of lunch — Part 1 before, Part 2 after — and Part 2 itself straddles the

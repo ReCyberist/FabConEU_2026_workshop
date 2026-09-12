@@ -30,6 +30,8 @@
   position: sticky;
   top: var(--md-header-height, 2.4rem);
   z-index: 2;
+  /* Fade rather than snap when a warning band changes the box colour. */
+  transition: background-color .3s ease, border-color .3s ease;
 }
 
 /* The agenda name for the slot — "Morning 1". Hidden on narrow screens. */
@@ -59,14 +61,17 @@
   overflow: hidden;
 }
 
-/* Elapsed portion of the session. Width is set by the script; 0 by default. */
+/* Elapsed portion of the session. The script scales it along X (0 by default).
+   Animating transform, not width, keeps the every-30s tick off the layout path —
+   the track's overflow:hidden rounds the visible corners, so the fill needs none. */
 .session-clock__fill {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 0;
-  border-radius: .25rem;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
   background: var(--md-primary-fg-color);
-  transition: width .6s ease;
+  transition: transform .6s ease;
 }
 
 /* "You are here" needle, shown only while the session is running. */
@@ -93,6 +98,31 @@
 .session-clock__duration {
   font-variant-numeric: tabular-nums;
   color: var(--md-default-fg-color--light);
+  transition: color .3s ease;
+}
+
+/* While the session runs, the badge counts down. Two warning bands draw the eye
+   as time runs out: blue under 10 minutes left, a strong red under 5. Set by the
+   script via data-warn on the whole clock, so the box background and border colour
+   too, not just the badge text. Tints are rgba so they read on light and dark. */
+.session-clock[data-warn="soon"] {
+  background: rgba(37, 99, 235, .14);
+  border-color: #2563eb;
+}
+
+.session-clock[data-warn="urgent"] {
+  background: rgba(220, 20, 20, .18);
+  border-color: #dc1414;
+}
+
+.session-clock[data-warn="soon"] .session-clock__duration {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.session-clock[data-warn="urgent"] .session-clock__duration {
+  color: #dc1414;
+  font-weight: 700;
 }
 
 /* Optional live countdown readout (breaks). Filled by the script; the markup carries a
@@ -109,10 +139,15 @@
   background: var(--md-default-fg-color--lighter);
 }
 
-/* Narrow screens: drop the slot name and duration, keep times and the bar. */
+/* Narrow screens: drop the slot name and duration, keep times and the bar.
+   Exception: once the badge is counting down inside a warning band, keep it —
+   "N min left" turning pink then red is the one thing worth the space. */
 @media screen and (max-width: 44.98em) {
   .session-clock__label,
   .session-clock__duration { display: none; }
+
+  .session-clock[data-warn="soon"] .session-clock__duration,
+  .session-clock[data-warn="urgent"] .session-clock__duration { display: inline; }
 }
 
 /* Respect a reduced-motion preference. */

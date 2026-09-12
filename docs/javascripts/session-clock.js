@@ -29,6 +29,9 @@
     var needle = clock.querySelector(".session-clock__now");
     // Optional live countdown readout — only present on clocks that opt in (e.g. a break).
     var remaining = clock.querySelector(".session-clock__remaining");
+    // The "90 min" slot-length badge on teaching clocks. While the session runs it
+    // becomes a live "N min left" readout that colours as the end approaches.
+    var duration = clock.querySelector(".session-clock__duration");
     if (start === null || end === null || end <= start || !fill) return;
 
     var now = new Date();
@@ -38,9 +41,11 @@
     if (fraction <= 0) {
       // Before the slot: a plain, empty bar.
       clock.setAttribute("data-state", "upcoming");
-      fill.style.width = "0";
+      fill.style.transform = "scaleX(0)";
       if (needle) needle.style.left = "0";
       if (remaining) remaining.textContent = "starts " + clock.getAttribute("data-start");
+      // Before the slot the badge keeps its static slot length ("90 min") and no warning colour.
+      clock.removeAttribute("data-warn");
       return;
     }
 
@@ -48,21 +53,29 @@
       // After the slot: leave it full rather than snapping back to empty at the
       // moment the session ends. The needle hides itself via the data-state.
       clock.setAttribute("data-state", "done");
-      fill.style.width = "100%";
+      fill.style.transform = "scaleX(1)";
       if (needle) needle.style.left = "100%";
       if (remaining) remaining.textContent = "done";
+      // Slot over: the badge reads "done" and drops any warning colour.
+      clock.removeAttribute("data-warn");
+      if (duration) duration.textContent = "done";
       return;
     }
 
     var percent = (fraction * 100).toFixed(2) + "%";
     clock.setAttribute("data-state", "running");
-    fill.style.width = percent;
+    fill.style.transform = "scaleX(" + fraction.toFixed(4) + ")";
     if (needle) needle.style.left = percent;
+    var nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+    var minutesLeft = Math.max(1, Math.ceil(end - nowMinutes));
     if (remaining) {
-      var nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-      var minutesLeft = Math.max(1, Math.ceil(end - nowMinutes));
       remaining.textContent = minutesLeft + " min left";
     }
+    if (duration) duration.textContent = minutesLeft + " min left";
+    // Two warning bands, set on the whole clock so the box (not just the badge)
+    // colours: blue under 10 minutes left, red under 5, so the room can see the
+    // slot running out.
+    clock.setAttribute("data-warn", minutesLeft <= 5 ? "urgent" : minutesLeft <= 10 ? "soon" : "none");
   }
 
   function paintAll() {
