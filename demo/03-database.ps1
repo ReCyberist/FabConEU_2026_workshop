@@ -117,7 +117,7 @@ az login
 #          database sqldb-attendeeNN, and /TargetUser /TargetPassword in place of
 #          /AccessToken. The attendee page has both paths in tabs.
 $token   = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
-$server  = "sql-fabcon26-dev-uks-pn74o7.database.windows.net"
+$server  = "sql-fabcon26-dev-uks-jnkojv.database.windows.net"
 $db      = "sqldb-football-dev"
 $profile = "PublishProfiles/AzureSql.publish.xml"
 #endregion
@@ -348,11 +348,14 @@ sqlpackage /Action:DeployReport `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
     /OutputPath:"deploy-report.xml"
+code deploy-report.xml
+
 sqlpackage /Action:Publish `
     /SourceFile:"bin/Release/FabConFootball.dacpac" `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
     /p:BlockOnPossibleDataLoss=false
+
 $verifyParams = @{
     SqlInstance = $serverSMO
     Database    = $db
@@ -363,6 +366,7 @@ Invoke-DbaQuery @verifyParams
 
 
 #region 28 · Increment 3 Option B - model it as a rename                            [~35s]
+Remove-Item ./Scripts/PreDeployment/Migrate-ShirtNumber.sql -ErrorAction SilentlyContinue           # not needed for this version
 Copy-Item ../demo/ship-changes/increment-3_Player.sql                 ./Tables/Player.sql -Force
 Copy-Item ../demo/ship-changes/increment-3_Seed.sql                   ./Scripts/PostDeployment/Seed.sql -Force
 Copy-Item ../demo/ship-changes/increment-3_FabConFootball.refactorlog ./FabConFootball.refactorlog -Force
@@ -377,10 +381,12 @@ sqlpackage /Action:DeployReport `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
     /OutputPath:"deploy-report.xml"
+
 sqlpackage /Action:Publish `
     /SourceFile:"bin/Release/FabConFootball.dacpac" `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token
+
 Invoke-DbaQuery @verifyParams
 #endregion
 
