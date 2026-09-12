@@ -572,6 +572,7 @@ DECK = [
 
 (CONTENT, "Increment 1 — additive change", [
     "Add a view: vw_SquadAges",
+    "Open it and read it — a read-only SELECT, nothing existing touched",
     "Rebuild the project, produce a new DACPAC",
     "Run a deploy report — one object to create, no data issues",
     "Publish it. It just works, and that's the confidence-builder.",
