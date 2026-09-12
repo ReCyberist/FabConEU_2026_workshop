@@ -134,3 +134,15 @@ Fill in on each run. Planned is from [`speaker-guide.md`](../agenda/speaker-guid
 | Date | Demo | Planned | Actual | Notes |
 |---|---|---|---|---|
 | | | | | |
+
+## Earlier feedback to action
+
+- The source-control attendee demo needs to specify `pwsh`, or mark the `New-Item` command as
+  optional because the code command creates the file.
+- The source-control presenter demo's F5 guard rail does not work on Debian.
+- Explain the reason for the Azure SQL overrides.
+- Make the Terraform approval prompt clear on the attendee page:
+  `Do you want to perform these actions?` and `Only 'yes' will be accepted to approve.`
+- Update the Fabric demo documentation through the `plan` step.
+- Use paths that work on non-Windows systems in attendee demo descriptions.
+- Show the infrastructure actions as well as the direct deployment.

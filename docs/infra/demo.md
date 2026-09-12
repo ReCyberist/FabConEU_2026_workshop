@@ -59,10 +59,11 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	Set `entra_admin_login` and `entra_admin_object_id`, then save the file.
 
-	If you need the object ID for the demo Entra admin group, run the following - updating for your group name:
+	If you need the object ID for the demo Entra admin group, set your group name and run:
 
 	```powershell
-	az ad group show --group "fabcon26-sql-admins" --query id -o tsv
+	$groupName = "fabcon26-sql-admins"
+	az ad group show --group $groupName --query id -o tsv
 	```
 
 	The command prints the object ID you can paste into `entra_admin_object_id`.

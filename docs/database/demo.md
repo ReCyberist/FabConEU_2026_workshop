@@ -102,13 +102,31 @@ is to build the artifact, not deploy it.
 
     PowerShell prints the DACPAC path and file details.
 
-4. Open the sample-database page or the project files and point out what just went into the build.
+4. List the build output to see the DACPAC alongside the other files the build produced.
 
-    In the repository Explorer, browse to these folders under `database/sql-projects`:
-    `Tables`, `Views`, and `Programmability`.
+    ```powershell
+    Get-ChildItem .\bin\Release | Select-Object Name, Length
+    ```
+
+    The listing includes `FabConFootball.dacpac`, `FabConFootball.dll`, and
+    `FabConFootball.StaticCodeAnalysis.Results.xml`.
+
+5. Open the static code analysis results from the build.
+
+    ```powershell
+    code .\bin\Release\FabConFootball.StaticCodeAnalysis.Results.xml
+    ```
+
+    VS Code opens the analysis output. With a clean build it records no problems.
+
+6. Open the project's `Tables` folder and point out what just went into the build.
+
+    ```powershell
+    code .\Tables
+    ```
 
     You can now show that the schema is just code in git: tables, views, procedures, and the
-    post-deploy seed.
+    post-deploy seed. Look at `Views` and `Programmability` too.
 
 !!! info "Stop here for lunch"
     This is where the agenda pauses. By **12:45** the DACPAC is built; the live publish and change
