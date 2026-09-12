@@ -217,11 +217,14 @@ def tracked_tf_files(directory: str) -> list[str]:
 def main() -> int:
     findings: list[str] = []
 
-    scripts = sorted(DEMO_DIR.glob("*.ps1"))
+    # Demo scripts follow the NN-<section>.ps1 convention (they start with a digit,
+    # in run order). Other .ps1 files in demo/ are tooling (e.g. Reset-DemoEnvironment.ps1),
+    # not presenter demos, so they carry no ATTENDEE PAGE and are not pair-checked.
+    scripts = sorted(p for p in DEMO_DIR.glob("*.ps1") if p.name[:1].isdigit())
     pages = sorted(DOCS_DIR.glob("*/demo.md"))
 
     if not scripts:
-        print("no demo/*.ps1 found -- is this running from the repo root?")
+        print("no demo/NN-*.ps1 found -- is this running from the repo root?")
         return 1
 
     # --- 1. pairing --------------------------------------------------------

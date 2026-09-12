@@ -72,6 +72,38 @@ Reset regions name every file they touch. None of them runs `git clean` across t
 repository, because losing an afternoon of someone else's work to a demo tidy-up would be a poor
 way to end the day.
 
+### One command to reset them all
+
+A per-script `RESET` only tidies its own demo, and only if you remember to run it. When a run was
+abandoned half-way, or you just want to be sure before walking on, undo **every** demo at once:
+
+```powershell
+./demo/Reset-DemoEnvironment.ps1 -WhatIf   # show what it would do, change nothing
+./demo/Reset-DemoEnvironment.ps1           # do it (prompts before deleting), add -SkipRemote to stay offline
+```
+
+It only ever touches the branches and files the demos own — listed in
+[`DemoEnvironment.psd1`](DemoEnvironment.psd1), the single source both this script and the tests
+read. It deletes the throwaway demo branches (the reason `git switch -c demo/source-control` fails
+on a re-run), restores the tracked files the demos overwrite, and removes the scratch files they
+create — including the gitignored ones (`terraform.tfvars`, `*_override.tf`) that a plain
+`git status` never shows. It never runs `git clean`.
+
+### Check the environment is ready
+
+The read-only companion. Run it before a rehearsal to confirm nothing from a previous run is
+lingering — it verifies the reset is done, the tooling is present, and `gh`/`az` are signed in:
+
+```powershell
+Invoke-Pester ./tests/DemoEnvironment.Tests.ps1              # everything
+Invoke-Pester ./tests/DemoEnvironment.Tests.ps1 -Tag Repo    # just git + files, fast + offline
+Invoke-Pester ./tests/DemoEnvironment.Tests.ps1 -ExcludeTag Auth   # skip sign-in checks
+```
+
+It is deliberately **not** in CI — the `Auth` and `Tooling` checks want a real signed-in presenter
+machine (`az login`, `dbatools`, `sqlpackage`), which a CI runner does not have. It is a
+before-you-present check, not a gate.
+
 ## Keeping these in sync with the site
 
 **A change to a demo touches the presenter script and the attendee page, or it is not finished.**
