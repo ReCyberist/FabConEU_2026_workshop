@@ -137,9 +137,10 @@ is to build the artifact, not deploy it. The demo continues after lunch in
 6. Open the project's `Tables` folder and point out what just went into the build.
 
     ```powershell
-    code ./Tables
+    code -r ./Tables
     ```
 
+    The `-r` flag reuses the current VS Code window instead of opening a new one.
     You can now show that the schema is just code in git: tables, views, procedures, and the
     post-deploy seed. Look at `Views` and `Programmability` too.
 
