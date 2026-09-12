@@ -15,6 +15,25 @@ Format:
 
 ---
 
+## 2026-09-12 — Azure SQL apply writes the provisioned server/db back into the presenter script
+**Context:** The logical SQL server name carries a random 6-char suffix (main.tf), so it changes
+on every destroy/recreate. Region 06 of `demo/03-database.ps1` held `<your-server-name>` /
+`<your-database-name>` placeholders the presenters had to hand-edit after every apply.
+**Learning:** The apply job already exposes `server_fqdn` / `database_name` outputs (added for the
+publish job). A new `update-presenter-script` job (`needs: apply`) rewrites just the two region-06
+assignment lines with a `(?m)^\$server\s*=\s*".*"$` anchor (matches the bare assignment, never
+`$serverSMO` or `/TargetServerName:$server`) and commits back to `main`. Two gotchas worth keeping:
+(1) in a PowerShell `-replace` the replacement string must escape a literal `$` as `$$`, or
+`$server` is parsed as a capture-group reference; (2) the attendee page keeps its placeholders on
+purpose — each attendee targets their own database, so pinning the presenters' ephemeral server
+into `docs/database/demo.md` would be wrong. This is the one config value where the two halves of a
+demo legitimately differ, and CLAUDE.md 7a's "touch both halves" is about *step* drift, not targets.
+**Action:** Added the job to [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml).
+`demo/**` is not a trigger path and the commit carries `[skip ci]`, so it never loops. **Live-verify
+open:** the built-in `GITHUB_TOKEN` push to `main` only works if branch protection allows it — if a
+PR/review is required the push is rejected and this must become a PR or use a deploy key/PAT (noted
+on task #9).
+
 ## 2026-09-12 — Azure SQL apply now runs on merge to main (reversing "apply on intent")
 **Context:** Jess & Rob want the workshop demo to show the whole CI/CD loop, not stop at a
 manual apply. `azure-sql-apply.yml` was `workflow_dispatch`-only by the 2026-07-29 decision.
