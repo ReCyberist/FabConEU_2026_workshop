@@ -93,6 +93,10 @@ terraform init
 
 
 #region 08 · plan -- the proposal                                                   [~40s]
+# SAY: in a pipeline we'd run `terraform plan -out=tfplan` to save this to a file, publish
+# tfplan as a build artefact, then `terraform apply tfplan` in the apply job -- so what ships
+# is exactly the plan a human reviewed, not a fresh re-plan that might have drifted. Live we
+# just run plain `plan` then `apply` for speed. (Attendee page has this as a tip.)
 terraform plan
 #endregion
 
