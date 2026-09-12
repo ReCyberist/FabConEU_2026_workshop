@@ -203,8 +203,8 @@ jobs:
           BASE_MAIN_SHA: ${{ steps.base.outputs.main_sha }}
         run: |
           git fetch origin main
-          if ! git diff --quiet "$BASE_MAIN_SHA" origin/main -- demo/03-database.ps1; then
-            echo "demo/03-database.ps1 changed on origin/main after checkout; skipping stale write-back."
+          if [ "$(git rev-parse origin/main)" != "$BASE_MAIN_SHA" ]; then
+            echo "main advanced after checkout; skipping stale write-back."
             exit 0
           fi
           if git diff --quiet -- demo/03-database.ps1; then
@@ -215,7 +215,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add demo/03-database.ps1
           git commit -m "chore(demo): point 03-database.ps1 at the provisioned Azure SQL server/database [skip ci]"
-          git rebase origin/main
           git push origin HEAD:main
 
   # -------------------------------------------------------------------------------------
