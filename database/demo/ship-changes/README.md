@@ -104,10 +104,12 @@ with `Player.SquadNumber` and share the same seed
 ([`increment-3_Seed.sql`](increment-3_Seed.sql), which populates `SquadNumber`).
 
 > **Start from a populated database.** Increment 3 needs `ShirtNumber` present *and populated*.
-> Run Increment 2's destructive forced-publish against a **throwaway** database and keep your main
-> Test database intact — or publish the baseline DACPAC to a **fresh** database and use that.
-> Re-publishing the baseline over a database that already had the column dropped will **not**
-> refill it: the seed only inserts missing rows, it does not update existing ones.
+> Increment 2 leaves it present but empty (the recovery re-adds the column, and the seed only
+> inserts missing rows — it does not update existing ones). So before Increment 3, run
+> [`increment-2_Restore-ShirtNumber.sql`](increment-2_Restore-ShirtNumber.sql), a data-only
+> `UPDATE` that refills the values, and the whole demo stays on one database. This is a demo
+> convenience — the real recovery from Increment 2 is a point-in-time restore or a database copy,
+> which we describe rather than run.
 
 ### Option A — preserve the data with a pre-deploy migration (the general pattern)
 
