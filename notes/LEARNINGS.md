@@ -1326,7 +1326,7 @@ think they broke something.
 **Action:** Added [`../docs/foundations/hardest-part-of-it.md`](../docs/foundations/hardest-part-of-it.md)
 (discussion register, no steps) and rewrote
 [`../docs/foundations/source-control.md`](../docs/foundations/source-control.md) with a nine-step
-first-PR walkthrough; added [`../ATTENDEES.md`](../ATTENDEES.md) as the safe thing to change; added
+first-PR walkthrough; added `ATTENDEES.md` as the safe thing to change (dropped 2026-09-05); added
 the clock component (`includes/clock-morning-1.md`, `docs/stylesheets/session-clock.css`,
 `docs/javascripts/session-clock.js`); `carries the can` added to the glossary.
 **Deliberately scoped to Morning 1 only.** The clock was briefly rolled out to all eleven teaching
@@ -1489,6 +1489,124 @@ command after it.
 job in `ci.yml`, and [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py). Fixed six
 bugs, listed in [the design doc](../planning/2026-08-31-presenter-demo-scripts-design.md).
 
+## 2026-09-05 — Nothing pairs a slide with the demo it describes, so the deck drifted for weeks
+
+**Context:** First reconciliation pass over the **morning** of the deck against the demos and the
+attendee pages it describes, plus a walk-in slide for the doors opening. `CLAUDE.md` §7a pairs a
+presenter script with its attendee page, and the `demos` job in CI enforces the mechanical half of
+that. **Nothing pairs either of them with the slide** — and it showed. All four morning `CMD`
+slides were wrong.
+
+**Learning — the commands.** Each was wrong in a way the room would have noticed:
+
+- `terraform init -backend=false` — the exact command the **2026-08-28** entry above records as
+  *not a working local path*. It only unblocks `fmt`/`validate`; `plan` then fails with *"Backend
+  initialization required"*. That was fixed the same day in the module README and in
+  [`../docs/infra/azure-sql.md`](../docs/infra/azure-sql.md). The slide kept it — and its speaker
+  note instructed the presenter to **call it out specially**. A fix that lands in the docs does not
+  land in the deck.
+- `dotnet build … -warnaserror` with **no `--configuration Release`**, on a slide whose very next
+  line claims the artifact is `bin/Release/FabConFootball.dacpac`. Without it the build lands in
+  `bin/Debug` and every path on the slide is wrong.
+- `git add .` on the source-control slide — two slides after *"What never goes in the repo"*, and
+  against a demo whose entire beat is staging one **named** file.
+- The Fabric slide omitted `TF_VAR_fabric_subscription_id` — which is not optional, because the
+  module's `azurerm` provider has no default for it and `plan` stops and prompts without it — and
+  offered `FABRIC_TENANT_ID` instead, which nothing in the module reads.
+
+**Learning — the timetable.** The deck ran the **old** schedule throughout: break at 11:00 for
+fifteen minutes, lunch 12:45–13:45. Worse than the numbers, it still split the IaC block across the
+break with an *"Off it goes — see you after coffee"* slide, long after
+[`../agenda/agenda.md`](../agenda/agenda.md) explicitly reversed that decision. **The slide was
+teaching the opposite of the plan**, and it would have sent the room to coffee half an hour late.
+
+**Learning — why this drift is invisible.** The docs and the demo scripts get edited *while* the
+code is edited, so they stay close to true. The deck is edited only when someone opens
+`content.py`, and its output is gitignored and rarely rebuilt — so **nothing ever shows you the
+drift**. Reading the prose does not catch a missing `--configuration Release`. The deck is the one
+artefact in this repo with no reader between writing it and standing in front of 300 people.
+
+**Learning — a third description of a demo is always a liability.** The source-control demo edited
+a different file in three places: `ATTENDEES.md` said the first pull request edits `ATTENDEES.md`,
+the speaker guide agreed, and the demo script and the attendee page both used `notes/fabcon.md`.
+Task #31 had already dropped the `ATTENDEES.md` exercise on 2026-08-31 but left the file behind,
+still describing it. **Rob's rule, 2026-09-05: the attendee demo page and the demo script are the
+only source of truth for a demo, and they must match.** `ATTENDEES.md` removed.
+
+**Action:** Re-cut the morning of [`../slides/content.py`](../slides/content.py) to the venue
+anchors; moved the break slide **before** the Azure SQL block and dropped the coffee slide; pulled
+*"So what did we just build?"* back inside Morning 2 and cut its drift promise (#29 is still not
+built, so the slide no longer offers a demo we cannot run). Mirrored all four morning `CMD` slides
+to their scripts and pages, each speaker note now naming the script and the regions it mirrors.
+Added the **walk-in slide** (`WALK_IN_*` in `content.py`, rendered ahead of the conference splash)
+carrying the site address, so the first thing the room sees is where the written steps live.
+Removed `ATTENDEES.md` and pointed [`../agenda/speaker-guide.md`](../agenda/speaker-guide.md) at
+`notes/fabcon.md`. Added the third-copy rule to `CLAUDE.md` §7a. Logged the `attendee_count` bump
+gap as **#34** and the afternoon re-cut under **#25**.
+
+**Verified, same day.** Rob supplied the template and the deck was built (70 slides) and rendered.
+The walk-in slide sits comfortably on the section-break layout; every re-cut morning slide fits with
+room to spare, including the 72-character `dotnet build` line and both 13-line command slides. Two
+things only the render could show: the walk-in's body text **inherited the layout's gold**, so it
+competed with the URL and gave the smallest text on the slide the weakest contrast (now explicitly
+white, leaving the URL as the only accent); and three run-of-day entries wrapped, since a `DUAL`
+column breaks at about **47 characters** at 16pt.
+
+**A fourth pass added the demo slides and the merge demo.** Every demo now gets a `DEMO` slide in
+front of it — big title, one quip, then two plain lines whose only job is to say *follow along* or
+*sit back*. That last distinction turned out to need a mechanism, not just wording: the merge-conflict
+demo needs **two laptops and two people**, so there is nothing an attendee can follow, and
+[`check-demo-paths.py`](../.github/scripts/check-demo-paths.py) would have failed it for not naming an
+attendee page. Rather than inventing a page nobody would use, presenter-only demos now declare
+`ATTENDEE PAGE: none` and CI skips the pairing half while still checking every path they mention.
+Use it sparingly — it is an admission that a demo is not reproducible by the reader, which is why the
+rule now says the slide in front of it *has* to tell the room to sit back.
+
+**The two-presenter demo is one script, not two.** [`01b-merge-conflict.ps1`](../demo/01b-merge-conflict.ps1)
+interleaves `ROB` and `JESS` regions in run order with a choreography table in the header, rather than
+shipping a file each. Two files would have duplicated the dance in two places, and this repository's
+entire failure history is duplicated things drifting apart. Both presenters fold the same file and run
+only the regions with their own name on them.
+
+**A third pass turned the morning into overview-plus-demo.** Rob's call: the slides are the quick
+overview that *leads into* a demo, not a parallel teaching track. So every `CMD` slide in a module
+that has a `demo/` script behind it came out (`Getting started`, `Run it on your own kit`, `The
+Fabric module`, `Build the DACPAC`) — they were the third copy of a demo, which `CLAUDE.md` §7a had
+just finished warning about. `Check your toolchain` stayed, because the room types that one itself.
+Also out: `How this repo is laid out` (its own speaker note said *"show the actual repo rather than
+reading the slide"*), `What you'll leave with`, and `So what did we just build?`. Morning went **45
+slides to 39** while gaining two — the merge-conflict pair the source-control slot has room for,
+since that slot is 25 minutes and the branch-and-PR demo runs eight.
+
+**The 09:30 module is the exception that proves the rule.** Thirty minutes with no demo at all, so
+"lead into the demo" does not apply — instead each of the five lessons became an `IMAGE` slide:
+three short bullets and a dashed box carrying a **written prompt** for Napkin/Eraser/Claude. Twelve
+placeholders across the morning. Worth recording *why* the prompt lives in `content.py` rather than
+in someone's chat history: the picture is the argument, and six months from now the only way to
+regenerate or correct it is to still have the sentence that asked for it.
+
+**A python-pptx trap, found by rendering.** A placeholder inherits its position from the layout, and
+writing **one** dimension (`width`) drops the other three to zero — the bullets jumped to the top-left
+corner and printed straight through the slide title. Set all four (`left`, `top`, `width`, `height`)
+or none. Measured off the template: the light content layout's body box is L=0.81 T=1.86 W=11.75
+H=4.63 inches, now a constant in `build.py`.
+
+**Then it immediately paid for itself.** A second pass the same day (rainbow walk-in with image
+placeholders, one intro slide each, a "being good to each other" housekeeping slide, the site
+address repeated mid-deck) produced three layout bugs that **reading the code could not have
+found**: an autoshape **centres its first paragraph by default**, so the walk-in title was centred
+while every line under it was left; `add_textbox` applies a default left inset, so the URL strip sat
+indented from the title it was meant to line up with; and two bullets wrapped a single word onto a
+line of its own. All three were invisible in the source and obvious in a PNG. Budget a render for
+every deck change, not just the risky ones.
+
+**And the reason nobody had ever looked.** `slides/README.md` documented the sanity check as
+`python /mnt/skills/public/pptx/scripts/office/validate.py …` — a **Linux sandbox path**, which
+cannot run on either presenter's Windows machine. The one documented step for checking the deck was
+unrunnable, so it was never run, which is exactly how a deck drifts for eight days without anyone
+noticing. Replaced with a PowerShell snippet that drives the installed PowerPoint to export the
+changed slides to PNG. **A verification step nobody can execute is not a verification step.**
+
 **Syncing a demo's two halves is not a copy — presenter-only lines don't cross.** When
 `02-infrastructure.ps1` gained `# if Rob doing demo` lines (`Get-Secret` for the subscription id,
 `$groupName = "SQLAdmins"`), mirroring them onto `docs/infra/demo.md` would have been wrong:
@@ -1556,5 +1674,7 @@ the `Select-String` so each result gets explained rather than scrolling past. Ad
 and the token rarely survive lunch. Showed Terraform's actual `Only 'yes' will be accepted` prompt
 instead of "prompts for confirmation". Removed the Fabric not-tested banner from the attendee page;
 `02-infrastructure.ps1` region 11 now states plainly that it is verified to `plan` and no further.
+
+**SQL project analysis emits a build artifact alongside the DACPAC.** Demo 03's `dotnet build` writes `bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml`. It is intentionally absent from a clean checkout, so it belongs in both `.gitignore` and `check-demo-paths.py`'s documented `EXPECTED_ABSENT` list.
 
 <!-- Add new entries above this line -->
