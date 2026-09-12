@@ -1,5 +1,7 @@
 # Source control demo
 
+--8<-- "includes/clock-morning-1.md"
+
 This is the shortest possible version of the workflow we use all day: make one small change in
 your fork, review it, commit it on a branch, push it, and open a pull request. Later, the file you
 change will be Terraform or T-SQL; the workflow stays the same.

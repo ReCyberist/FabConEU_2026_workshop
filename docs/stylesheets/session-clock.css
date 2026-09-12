@@ -24,6 +24,12 @@
   font-size: .7rem;
   line-height: 1.3;
   white-space: nowrap;
+  /* Stick just below Material's fixed header so the room can always see the
+     slot progress while scrolling. --md-header-height is set by the theme;
+     2.4rem is the header's height on the versions that don't expose it. */
+  position: sticky;
+  top: var(--md-header-height, 2.4rem);
+  z-index: 2;
 }
 
 /* The agenda name for the slot — "Morning 1". Hidden on narrow screens. */

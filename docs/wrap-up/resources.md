@@ -1,5 +1,7 @@
 # Resources & next steps
 
+--8<-- "includes/clock-afternoon-2.md"
+
 Everything you saw today is in the repo, and here's where to go deeper.
 
 ## Downloads

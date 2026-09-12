@@ -1,5 +1,7 @@
 # Migrations, drift & teardown
 
+--8<-- "includes/clock-afternoon-2.md"
+
 The last section of the day pulls every piece together and runs the whole loop once, end to end:
 edit Azure SQL infrastructure as code, raise a pull request, read the plan, merge, apply from
 `main` — and then tear it down.

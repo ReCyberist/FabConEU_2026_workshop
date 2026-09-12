@@ -1,5 +1,7 @@
 # Database demo
 
+--8<-- "includes/clock-morning-3.md"
+
 This is the database half of the day in the order we actually teach it. **Part 1** stops before
 lunch with a DACPAC built and ready. **Part 2** resumes after lunch and uses that DACPAC to show
 how safe and unsafe schema changes behave.
