@@ -1,6 +1,6 @@
 # CI/CD part 1 — build & validate
 
---8<-- "includes/clock-afternoon-1.md"
+--8<-- "includes/clock-afternoon-2.md"
 
 Every change is a **pull request**, and the pipeline checks it *before* anything merges — it builds
 the database, runs static analysis, and shows a read-only `terraform plan`. Nothing is deployed

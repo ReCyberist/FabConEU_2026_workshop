@@ -2,9 +2,10 @@
     DEMO 03 - Database as code, and shipping changes to it
     ATTENDEE PAGE: docs/database/demo.md
     SLOT:          PART 1  Morning 3   - 12:15-12:45 (build the DACPAC, then lunch)
-                   PART 2  Afternoon 1 - 14:00-15:15 (increments 0, 1, 2)
-                           Afternoon 2 - 15:45-17:00 (increment 3)
+                   PART 2  Afternoon 1 - 14:00-15:15 (increments 0 through 3, all in one slot)
     RUNTIME:       Part 1 ~10 min. Part 2 ~62 min, most of it waiting on sqlpackage.
+                   Part 2 now fills the whole Afternoon 1 slot end to end -- there is almost
+                   no slack. If behind, run only increment 3 Option B and describe Option A.
 
     THE POINT
     Part 1: the schema is code, and `dotnet build` turns it into one deployable artifact.
@@ -295,10 +296,11 @@ sqlpackage /Action:Publish `
 
 
 # ---------------------------------------------------------------------------------------
-#  BREAK  15:15-15:45.  Increment 3 resumes after it.
-#  Before you walk off: point $db at a database that still HAS a populated ShirtNumber --
-#  NOT the throwaway you just used, where the recovery left the column empty. Then rerun
-#  region 05 and 06 after the break: the terminal may have closed and the token expires.
+#  Increment 3 continues straight on, in the SAME Afternoon 1 slot -- no break between it
+#  and 2b any more. The break (15:15-15:45) now comes AFTER the whole database demo.
+#  Before increment 3: point $db at a database that still HAS a populated ShirtNumber --
+#  NOT the throwaway you just used, where the recovery left the column empty. If the token
+#  has expired mid-slot, rerun region 06.
 # ---------------------------------------------------------------------------------------
 
 

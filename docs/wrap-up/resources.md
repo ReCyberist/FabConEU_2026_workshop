@@ -1,17 +1,23 @@
-# Resources & next steps
+# Resources, contacts & next steps
 
 --8<-- "includes/clock-afternoon-2.md"
 
-Everything you saw today is in the repo, and here's where to go deeper.
+This is where the day lands: **16:30–17:00** is questions and where to go next. Everything you saw
+today is in the repo, here's where to go deeper, and here's how to find us afterwards.
 
-## Downloads
+## The code
 
-!!! info "Per-module code bundles — coming soon"
-    Downloadable bundles for each module will land here closer to the event (they're produced by a
-    packaging pipeline — [task #12](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/planning/tasks.md)).
-    Until then, all the code lives in the
-    [workshop repo](https://github.com/JessAndRob/FabConEU_2026_workshop) — fork it, and each page
-    links to the exact files it walks through.
+Everything you saw today, and the day itself, in four links:
+
+- **Repo** — [github.com/JessAndRob/FabConEU_2026_workshop](https://github.com/JessAndRob/FabConEU_2026_workshop)
+  — fork it, and each page links to the exact files it walks through.
+- **Site** — [jessandrob.github.io/FabConEU_2026_workshop](https://jessandrob.github.io/FabConEU_2026_workshop/)
+  — these pages, to read again at your own pace.
+- **Code bundles** — downloadable per module. (Produced by a packaging pipeline —
+  [task #12](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/planning/tasks.md) —
+  and landing here closer to the event. Until then, take the whole repo above.)
+- **Learnings log** — [every gotcha we hit, with the fix](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/notes/LEARNINGS.md).
+  The honest running notes from building this workshop, edges and all.
 
 ## Further reading
 
@@ -30,6 +36,24 @@ specifics:
 - **Passwordless CI/CD** — [authenticate GitHub Actions to Azure with OIDC](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect).
 - **Naming** — the [Cloud Adoption Framework naming conventions](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming)
   the modules follow.
+
+## Find us
+
+Come and say hello at the break or after the session — questions, war stories, and disagreements
+all welcome. If a question is only useful to you, grab us in the room; if it is useful to everyone,
+ask it in the Q&A.
+
+You can also reach us after the day:
+
+- **Jess Pomfret** — [jesspomfret.com](https://jesspomfret.com)
+- **Rob Sewell** — [blog.robsewell.com](https://blog.robsewell.com)
+
+And two open-source projects we help maintain, if you want to go further with PowerShell and SQL
+Server:
+
+- **dbatools** — [dbatools.io](https://dbatools.io) — the community PowerShell toolkit for SQL Server.
+- **dbachecks** — [dbachecks.io](https://dbachecks.io) — configurable, environment-wide SQL Server
+  validation.
 
 ## Feedback
 

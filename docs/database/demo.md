@@ -151,8 +151,8 @@ is to build the artifact, not deploy it. The demo continues after lunch in
 
 --8<-- "includes/clock-afternoon-1.md"
 
-This is the **Afternoon 1** and **Afternoon 2** story. Increment 1 and increment 2 happen before
-the **15:15 break**. Increment 3 resumes after that break. This part follows on from
+This is the **Afternoon 1** slot: **14:00–15:15**, straight after lunch. All of Part 2 —
+Increment 0 through Increment 3 — runs here, before the **15:15 break**. This part follows on from
 [Part 1 — Before Lunch](#part-1).
 
 ### Set up the target
@@ -829,12 +829,10 @@ This time, publish it without the override.
     and it is the default. The only thing that let step 17 through was a human adding
     `/p:BlockOnPossibleDataLoss=false` to the command line.
 
-!!! info "Stop here for the afternoon break"
-    The agenda break is **15:15–15:45**. Increment 3 starts after that break.
-
 ### Increment 3 — Retire it safely
 
---8<-- "includes/clock-afternoon-2.md"
+Increment 3 runs straight on in the same **Afternoon 1** slot — there is no break before it. The
+**15:15 break** comes after the whole database demo.
 
 Increment 3 keeps Increment 2's goal — retire `ShirtNumber` — but preserves the data. There are
 two safe patterns. **Option A** is the general one: a data-preserving migration you can adapt to
@@ -881,9 +879,9 @@ side of the schema change.
         Invoke-DbaQuery @queryParams
         ```
 
-    If you closed the terminal over the break, `$token` and `$serverSMO` are gone. Run the
-    Set up the target steps again, then the `Connect-DbaInstance` block from step 6, before this
-    query.
+    If the terminal has closed or the token has expired during the slot, `$token` and
+    `$serverSMO` are gone. Run the Set up the target steps again, then the `Connect-DbaInstance`
+    block from step 6, before this query.
 
     The query returns rows with `ShirtNumber` values.
 

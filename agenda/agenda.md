@@ -20,9 +20,9 @@
 | **11:00 – 12:15** | **Morning 2** · 75 min | Infrastructure as code — Azure SQL + Fabric SQL, side by side |
 | **12:15 – 12:45** | **Morning 3** · 30 min | Database as code — database → DACPAC |
 | 12:45 – 14:00 | 🍽 Lunch | |
-| **14:00 – 15:15** | **Afternoon 1** · 75 min | SQL projects — making changes, breaking things, testing |
+| **14:00 – 15:15** | **Afternoon 1** · 75 min | Database as code, part 2 — publish, break, recover, and retire a column safely (increments 0–3) |
 | 15:15 – 15:45 | ☕ Break | |
-| **15:45 – 17:00** | **Afternoon 2** · 75 min | Pulling it together · Q&A |
+| **15:45 – 17:00** | **Afternoon 2** · 75 min | CI/CD (15:45) · the whole loop end to end (16:00) · Q&A and where to go next (16:30) |
 | 17:00 | End | |
 
 **Next:** feed real durations into the full dry run (task #13 in
@@ -99,38 +99,57 @@ that framing first. It hands straight off into the **source control** part of th
 - Point at the ER diagram page ([`docs/database/sample-database.md`](../docs/database/sample-database.md)).
 - **No live deploy here** — this section produces the artifact; deploying it is the afternoon.
 
-## Afternoon 1 — SQL projects: making changes, breaking things, testing
+## Afternoon 1 — Database as code, part 2: making changes, breaking things, testing
 
-*14:00 – 15:15 · 75 min · the "ship changes as code" story starts.* Increments 1–2 of the
-[ship-changes design](../planning/ship-changes-increments.md).
+*14:00 – 15:15 · 75 min · the "ship changes as code" story, start to finish.* The **whole** of
+[`demo/03-database.ps1`](../demo/03-database.ps1) part 2 — increments 0 through 3 of the
+[ship-changes design](../planning/ship-changes-increments.md) — runs in this one slot, before the
+15:15 break. It is the demo-heaviest block of the day; most of the 75 minutes is spent waiting on
+`sqlpackage`, so there is very little slack (flag for #13).
 
 **Demos:**
+- **Increment 0 — the baseline.** Publish the DACPAC as-is and prove `ShirtNumber` holds real
+  data, so the trap has something to destroy.
 - **Increment 1 — additive, hands-off.** A PR adds `vw_SquadAges`. The pipeline's
   **`sqlpackage /Action:DeployReport`** (the DB's `terraform plan`) shows *"1 view to create,
   0 data-loss operations"*; merge → auto-publish. Safe changes automate end to end.
 - **Increment 2 — the trap (the punchline).** A PR **drops the populated `Player.ShirtNumber`**,
   bundled with an innocent view add so it's easy to miss in review. Show it **two ways**:
-  the YOLO `BlockOnPossibleDataLoss=false` publish that **silently loses the data**, then the
-  guardrail we already ship (`BlockOnPossibleDataLoss=True`) that **fails loudly** — and the
-  DeployReport that flagged it *before* merge. Leave time for the silent-loss moment to land.
+  the YOLO `BlockOnPossibleDataLoss=false` publish that **silently loses the data**, then — after
+  the "just redeploy the last good version" recovery proves the pipeline gets the *column* back
+  but never the *data* — the guardrail we already ship (`BlockOnPossibleDataLoss=True`) that
+  **fails loudly**. Leave time for the silent-loss moment to land.
+- **Increment 3 — ship the destructive change *safely*.** Retire `ShirtNumber` **without data
+  loss**: a **pre-deploy migration** (Option A) or a rename via SqlPackage's refactorlog
+  (Option B) that moves the data first, plus a **human approval gate** (GitHub Environment
+  required reviewer — documented pattern; see the
+  [increment-3 write-up](../database/demo/ship-changes/increment-3_safe-retire.md)).
 - **Both platforms** — identical flow, per-target publish profile only.
 - **Follow-along:** Increment 1 is the safe one to invite attendees to try on their own kit;
-  Increment 2 is presenter-led (easier to *watch* the trap than to hit it).
+  Increments 2 and 3 are presenter-led (easier to *watch* the trap than to hit it).
 
 ## Afternoon 2 — Pulling it together · Q&A
 
-*15:45 – 17:00 · 75 min · close the loop, then questions.*
+*15:45 – 17:00 · 75 min · CI/CD, the whole loop once, then questions.* Three beats, in order.
 
-**Demos:**
-- **Increment 3 — ship the destructive change *safely*.** Retire `ShirtNumber` **without data
-  loss**: a **pre-deploy migration** (or a rename via SqlPackage's refactorlog) that moves the
-  data first, plus a **human approval gate** (GitHub Environment required reviewer — documented
-  pattern; see the [increment-3 write-up](../database/demo/ship-changes/increment-3_safe-retire.md)).
-- **The whole pipeline, both platforms:** apply → **deploy-report** → publish → **smoke test**,
-  green end to end on Azure SQL *and* Fabric SQL — the payoff of the day in one run.
-- **Teardown & drift:** the `*-destroy.yml` workflows (nothing bills overnight), plus the
-  migrations/drift/teardown wrap-up ([`docs/wrap-up/migrations-drift-teardown.md`](../docs/wrap-up/migrations-drift-teardown.md)).
-- **Q&A** — leave a genuine buffer; this is the flex if the afternoon ran long.
+**CI/CD (15:45 – 16:00, ~15 min):**
+- Walk what runs and when: **validate** on every change (`ci.yml`), **plan** on a PR
+  (`azure-sql-plan.yml`, read-only), **apply** only on intent (`azure-sql-apply.yml`,
+  `workflow_dispatch`), **destroy** on a schedule (`*-destroy.yml`, nothing bills overnight).
+  Read the YAML first; watch a green tick second. See [`demo/04-cicd.ps1`](../demo/04-cicd.ps1).
+
+**The whole loop, end to end (16:00 – 16:30, ~30 min):**
+- **The wrap-up demo** ([`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1)): change one number in
+  Terraform → PR → read the plan on it → merge → apply from `main` → confirm the result in **both**
+  git and the running database → **tear it down**. Nothing new is taught; the payoff is that the
+  room recognises every step.
+- **Teardown & drift:** the `*-destroy.yml` workflows, plus the migrations/drift/teardown wrap-up
+  ([`docs/wrap-up/migrations-drift-teardown.md`](../docs/wrap-up/migrations-drift-teardown.md)).
+
+**Q&A and where to go next (16:30 – 17:00, ~30 min):**
+- Point at the [resources & contacts page](../docs/wrap-up/resources.md) — references, downloads,
+  and how to reach us — then **Q&A**. This is the flex; it absorbs the day's slippage. Finish at
+  17:00, not after.
 
 ## Backup / stretch material (if ahead of schedule)
 - Bicep equivalents of each Terraform demo.
