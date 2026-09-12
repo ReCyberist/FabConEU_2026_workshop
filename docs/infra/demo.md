@@ -211,8 +211,12 @@ Run one Terraform module from the repository and let it build the target platfor
 	code terraform.tfvars
 	```
 
-	Review the file and save any changes you need. If you plan to bind to an existing capacity,
-	set the relevant capacity values before you continue.
+	Review the file and save any changes you need.
+
+	!!! note "Binding to an existing capacity"
+
+		If you plan to bind to an existing capacity, set the relevant capacity values before you
+		continue.
 
 4. In `terraform.tfvars`, change the demo overrides to deploy the `test` environment in `uksouth`.
 
