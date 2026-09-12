@@ -48,6 +48,23 @@ checks, 33 green on a dev branch (the two reds are the "on main"/"clean tree" ch
 failing mid-development). Deliberately **not** wired into CI — the tooling/auth checks need a real
 presenter machine. Feeds task #13 (the dry run) and #28 (morning-of checklist).
 
+## 2026-09-12 — The session-clock timing bar now covers every teaching-section page
+**Context:** The timing strip (`session-clock`) was only on the two foundations content pages and
+`lunch.md` — the demo pages, and the infra/database/cicd/wrap-up content pages, had no bar. Asked to
+put it on the demo pages "to match the content page", we did a full rollout to every teaching-section
+page (content **and** demo).
+**Learning:** Only two clock includes existed (`clock-morning-1`, `clock-lunch`). The other four
+agenda slots had none, so "match the content page" wasn't literally possible for most sections — the
+content pages had no bar either. Section→slot mapping comes straight from
+[`agenda/agenda.md`](../agenda/agenda.md): foundations = Morning 1, infra = Morning 2, database =
+Morning 3, cicd = Afternoon 1, wrap-up = Afternoon 2.
+**Action:** Added `includes/clock-morning-2.md` (11:00–12:15, 75 min), `clock-morning-3.md`
+(12:15–12:45, 30 min), `clock-afternoon-1.md` (14:00–15:15, 75 min), `clock-afternoon-2.md`
+(15:45–17:00, 75 min), each following the `clock-morning-1.md` template. Added the matching
+`--8<--` include as line 3 on all 14 previously-bare teaching pages. `mkdocs build -f
+mkdocs.local.yml --strict` passes; labels render (Morning 2 / Afternoon 1 / Afternoon 2 confirmed).
+Times were taken from `agenda/agenda.md` per the existing includes' "change them THERE first" rule.
+
 ## 2026-09-05 — Demo path check distinguishes documented branch examples
 **Context:** The CI demo-sync job treated the documented `demo/wrapup-azure-sql-reset`
 branch example as a repository path.
@@ -1649,6 +1666,64 @@ the *shape* of an attendee-facing command — region 04 refactored the object-id
 `$groupName` variable — because that changed a command the page mirrors, and it fits the page's
 existing "update for your group name" wording. Rule of thumb: sync a change only if it alters a
 command the attendee actually runs; skip anything gated on "if Rob/Jess doing demo".
+
+**A fix made live on stage is only half a fix.** On 6 September, `Invoke-DbaQuery` with a server
+*name* plus `AccessToken` did not work, so `03-database.ps1` was changed to build the connection
+once with `Connect-DbaInstance` and pass the resulting `$serverSMO` as `SqlInstance` (commits
+`18d84b1`, `00a3a19`). Two things went unfinished. The attendee page still showed the old form in
+all five of its presenter-path tabs — attendees would have hit the exact failure we had already
+fixed. And the script itself only fixed the *first* query: `$verifyParams` in increment 3 still used
+the broken pattern, so the demo would have failed again at the payoff. `check-demo-paths.py` cannot
+see either, because both are variables, not paths. When a demo is fixed under pressure, the whole
+fix is: **every occurrence in the script, then the page.**
+
+**A page that contradicts itself is worse than one that contradicts the script.** `docs/wrap-up/demo.md`
+told attendees to change `database_auto_pause_delay` from `75` to `90`, then committed it with the
+message "…to 75 minutes", then reset "`75` back to `60`". Three different starting values on one
+page. The repo baseline is `60` and the presenter script does `60 → 75`; the page is now the same,
+and says out loud what to do if the file is not `60` (a previous run committed and never reset —
+the failure `05-wrap-up.ps1` region 01 already preflights for).
+
+**Action:** Synced all five pairs. Page changes: the `Connect-DbaInstance` pattern and a note on
+reviving it after the 15:15 break, two wrong expected-output values, the wrap-up numbers, and the
+tab/space indentation in `docs/foundations/demo.md` that was leaking 4-space padding into rendered
+code blocks. Script changes: `$verifyParams` → `$serverSMO`, and the `Select-String "ShirtNumber"`
+check that the page had and region 13 did not.
+
+**Increment 2b never worked, and the reason is worth teaching.** The demo forced a
+column-dropping publish through with `/p:BlockOnPossibleDataLoss=false` (2a), then published the
+same DACPAC under the shipped profile to show the guard refusing it (2b). It never refused
+anything: 2a had already dropped the column, so the second publish had nothing left to drop and
+succeeded quietly. **`BlockOnPossibleDataLoss` only fires when there is something to lose.** The
+guard needs a populated column in front of it, and after 2a there wasn't one.
+
+**The fix turned a bug into the best five minutes of the section.** Between 2a and 2b there is now
+a recovery attempt — `git restore` the two files, rebuild, republish — which is the thing every room
+will suggest anyway. It puts the **column** back and not the **data**: the post-deploy seed only
+inserts players that are missing, and none are. "Source control has your schema. It has never had
+your data." That republish is also what re-arms 2b, so one sequence does both jobs. Point-in-time
+restore is named as the real recovery and described rather than run (several minutes of nothing,
+and the 15:45–17:00 slot has not got them).
+
+**`git` pathspecs with backslashes fail silently on Linux.** `git diff -- .\Tables\Player.sql`
+matches nothing and prints nothing — exit code 0, no error, and it looks exactly like a clean diff.
+Verified both forms in `pwsh` here. **Forward slashes work in PowerShell *and* git on Windows,
+macOS and Linux**, so every demo path in both halves is now `./Tables/Player.sql`. That is one line
+that works everywhere rather than a Windows line plus a commented-out alternative to maintain —
+fewer places for the two halves to drift. The one backslash left in the demos is the `\d+` in
+`05-wrap-up.ps1`'s preflight regex, which is not a path.
+
+**`pwsh` is the first command of the day.** Attendees on a Mac or Linux land in bash, and the
+symptom is not "command not found" but subtly wrong behaviour a few steps later. Every demo page
+now opens with a note to run `pwsh` first.
+
+**Action:** All five pairs re-synced. Increment 2 rebuilt as force → damage → failed recovery →
+guard blocks (page steps 13–23, script regions 14–24, both renumbered). Split the `git diff` from
+the `Select-String` so each result gets explained rather than scrolling past. Added an after-lunch
+`Test-Path ./FabConFootball.sqlproj` and a fresh `az login` to both halves, because the terminal
+and the token rarely survive lunch. Showed Terraform's actual `Only 'yes' will be accepted` prompt
+instead of "prompts for confirmation". Removed the Fabric not-tested banner from the attendee page;
+`02-infrastructure.ps1` region 11 now states plainly that it is verified to `plan` and no further.
 
 **SQL project analysis emits a build artifact alongside the DACPAC.** Demo 03's `dotnet build` writes `bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml`. It is intentionally absent from a clean checkout, so it belongs in both `.gitignore` and `check-demo-paths.py`'s documented `EXPECTED_ABSENT` list.
 

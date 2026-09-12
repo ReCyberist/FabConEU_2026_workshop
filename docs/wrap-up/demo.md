@@ -1,5 +1,7 @@
 # Wrap-up demo — from pull request to deployment
 
+--8<-- "includes/clock-afternoon-2.md"
+
 This is the final end-to-end run of the day: change Azure SQL infrastructure as code, raise a pull
 request, read the plan, merge, apply from `main`, then tear it down. Everything from this morning,
 in one loop.
@@ -8,6 +10,17 @@ in one loop.
     You need a fork of the repository, GitHub CLI signed in, and Azure access configured for the
     workflows. See [Prerequisites](../setup/prerequisites.md) and
     [Migrations, drift & teardown](migrations-drift-teardown.md).
+
+!!! note "Run these commands in PowerShell"
+    Every command on this page is PowerShell. If your prompt is bash or zsh, start PowerShell
+    first:
+
+    ```powershell
+    pwsh
+    ```
+
+    The prompt changes to `PS>`. PowerShell 7 runs on Windows, macOS and Linux, and every
+    command on this page works the same on all three.
 
 ## Run it
 
@@ -26,19 +39,21 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      Open the variables file:
 
      ```powershell
-     code .\infra\azure-sql\terraform\demo\variables.tf
+     code ./infra/azure-sql/terraform/demo/variables.tf
      ```
 
      In `database_auto_pause_delay`, change:
-     - `default = 75`
-     - to `default = 90`
+     - `default     = 60`
+     - to `default     = 75`
 
-     Save the file.
+     Save the file. The repository baseline is `60`. If the file already says something else, a
+     previous run of this demo was committed and not reset; put it back to `60` before you start,
+     or the plan in step 4 reports `0 to change`.
 
 3. Commit the change.
 
      ```powershell
-     git add .\infra\azure-sql\terraform\demo\variables.tf
+     git add ./infra/azure-sql/terraform/demo/variables.tf
      git commit -m "demo: change Azure SQL auto-pause delay to 75 minutes"
      ```
 
@@ -78,7 +93,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      ```powershell
      git switch main
      git pull
-     git --no-pager show -- .\infra\azure-sql\terraform\demo\variables.tf
+     git --no-pager show -- ./infra/azure-sql/terraform/demo/variables.tf
      ```
 
      In the workflow run log, point to the same change being applied to the database.
@@ -86,7 +101,7 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
 8. Reset the demo default back to 60 for the next run.
 
      Repeat steps 1-7, but use a new branch name (for example, `demo/wrapup-azure-sql-reset`), with:
-     - `default = 75` changed back to `default = 60`.
+     - `default     = 75` changed back to `default     = 60`.
 
      This keeps the repository baseline consistent for future sessions.
 

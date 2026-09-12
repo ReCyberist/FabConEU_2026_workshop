@@ -1,5 +1,7 @@
 # Source control demo
 
+--8<-- "includes/clock-morning-1.md"
+
 This is the shortest possible version of the workflow we use all day: make one small change in
 your fork, review it, commit it on a branch, push it, and open a pull request. Later, the file you
 change will be Terraform or T-SQL; the workflow stays the same.
@@ -7,6 +9,17 @@ change will be Terraform or T-SQL; the workflow stays the same.
 !!! note "Follow along — or just watch"
 	You need a local clone of **your fork** and the **GitHub CLI** signed in. See
 	[Prerequisites](../setup/prerequisites.md) and [Source control for databases](source-control.md).
+
+!!! note "Run these commands in PowerShell"
+	Every command on this page is PowerShell. If your prompt is bash or zsh, start PowerShell
+	first:
+
+	```powershell
+	pwsh
+	```
+
+	The prompt changes to `PS>`. PowerShell 7 runs on Windows, macOS and Linux, and every
+	command on this page works the same on all three.
 
 ## What you'll do
 
@@ -43,8 +56,8 @@ branch to your fork, and open a pull request against `main`.
 3. In the `notes` folder, create a new file called `fabcon.md` and add something you have learnt so far.
 
 	```powershell
-	New-Item -Path notes/fabcon.md -ItemType File 
-    code notes/fabcon.md
+	New-Item -Path notes/fabcon.md -ItemType File
+	code notes/fabcon.md
 	```
 
 	Add your notes:
@@ -52,9 +65,9 @@ branch to your fork, and open a pull request against `main`.
 	```markdown
 	# Fabcon 2026 - Best Workshop so far!
 
-    So far I have learnt:
-    - Jess loves breakfast
-    - Rob has a beard
+	So far I have learnt:
+	- Jess loves breakfast
+	- Rob has a beard
 	```
 
 	Save the file.
@@ -77,13 +90,14 @@ branch to your fork, and open a pull request against `main`.
 	git status
 	```
 
-	The status output shows: 
-    ```text
-    On branch demo/source-control
-    Change to be committed:
-    (use "git restore --staged <file>..." to unstage)
-            new file:   notes/fabcon.md
-    ```
+	The status output shows:
+
+	```text
+	On branch demo/source-control
+	Changes to be committed:
+	(use "git restore --staged <file>..." to unstage)
+	        new file:   notes/fabcon.md
+	```
 
 6. In the repository root folder, commit the change with a message that says what changed.
 
@@ -122,6 +136,12 @@ branch to your fork, and open a pull request against `main`.
 
 You now have one branch, one commit on that branch, and one pull request against `main`. The
 change is small, reviewable and isolated from the default branch.
+
+!!! note "Watch the next demo"
+    Straight after this, we run a **merge conflict** live on two laptops: two people change the
+    same file, and Git asks a human which version to keep. There is nothing to type or follow
+    along with, so sit back and watch. The idea is explained on
+    [Source control for databases](source-control.md#when-two-people-change-the-same-file).
 
 ## Gotchas
 

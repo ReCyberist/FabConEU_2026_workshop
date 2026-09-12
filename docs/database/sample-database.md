@@ -1,5 +1,7 @@
 # The sample database
 
+--8<-- "includes/clock-morning-3.md"
+
 Every demo in this workshop deploys **one canonical sample database**: a small
 football schema that covers **both the men's and women's game**. It's deliberately compact
 — big enough to be realistic, small enough to reason about while you focus on the *real*

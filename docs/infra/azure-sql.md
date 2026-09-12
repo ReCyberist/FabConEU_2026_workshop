@@ -1,5 +1,7 @@
 # Azure SQL as code (Terraform)
 
+--8<-- "includes/clock-morning-2.md"
+
 Provision an Azure SQL server and database with **Terraform** — a resource group, a logical server,
 a serverless database, and a firewall rule, all from a handful of `.tf` files. No portal clicking,
 no admin password, fully repeatable.

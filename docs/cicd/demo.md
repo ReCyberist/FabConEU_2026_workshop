@@ -1,5 +1,7 @@
 # CI/CD demo
 
+--8<-- "includes/clock-afternoon-1.md"
+
 This is the shortest live path through the CI/CD story: trigger validation, trigger a deliberate
 apply, then confirm teardown. It keeps the "plan before apply" pattern visible while staying
 practical in a workshop slot.
@@ -8,6 +10,17 @@ practical in a workshop slot.
     You need a fork of the repository, GitHub CLI signed in, and Azure access configured for the
     workflows. See [Prerequisites](../setup/prerequisites.md), [CI/CD part 1](build-validate.md),
     [CI/CD part 2](deploy-infra.md), and [CI/CD part 3](ship-database-changes.md).
+
+!!! note "Run these commands in PowerShell"
+    Every command on this page is PowerShell. If your prompt is bash or zsh, start PowerShell
+    first:
+
+    ```powershell
+    pwsh
+    ```
+
+    The prompt changes to `PS>`. PowerShell 7 runs on Windows, macOS and Linux, and every
+    command on this page works the same on all three.
 
 ## What you'll do
 
@@ -28,7 +41,7 @@ Open a few workflow files first so attendees can see the controls before they wa
 1. Open the CI workflow YAML.
 
     ```powershell
-    code .\.github\workflows\ci.yml
+    code ./.github/workflows/ci.yml
     ```
 
     Point out these details:
@@ -40,7 +53,7 @@ Open a few workflow files first so attendees can see the controls before they wa
 2. Open the Azure SQL plan workflow YAML.
 
     ```powershell
-    code .\.github\workflows\azure-sql-plan.yml
+    code ./.github/workflows/azure-sql-plan.yml
     ```
 
     Point out these details:
@@ -52,7 +65,7 @@ Open a few workflow files first so attendees can see the controls before they wa
 3. Open the Azure SQL apply workflow YAML.
 
     ```powershell
-    code .\.github\workflows\azure-sql-apply.yml
+    code ./.github/workflows/azure-sql-apply.yml
     ```
 
     Point out these details:
@@ -109,7 +122,7 @@ Open a few workflow files first so attendees can see the controls before they wa
 6. Confirm that teardown is in place.
 
     ```powershell
-    code .\.github\workflows\azure-sql-destroy.yml
+    code ./.github/workflows/azure-sql-destroy.yml
     ```
 
     The workflow shows a nightly schedule and manual dispatch.
