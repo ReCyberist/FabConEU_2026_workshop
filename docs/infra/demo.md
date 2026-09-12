@@ -58,7 +58,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	```powershell
 	az login
 	$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
-	az account show --query "{subscription:name, id:id}" --output table
+	az account show --query "{subscription:name, subscriptionId:id}" --output table
 	```
 
 	The table shows the subscription you want to use.
@@ -195,7 +195,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	az login
 	$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 	$env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID
-	az account show --query "{subscription:name, id:id}" --output table
+	az account show --query "{subscription:name, subscriptionId:id}" --output table
 	```
 
 	The table shows the subscription you want to use for the Fabric capacity.
