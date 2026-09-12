@@ -58,6 +58,16 @@ authenticate from `main` — OIDC federated credentials don't trust branches.)*
 ## 3 · Presenter machines
 - [ ] Toolchain sanity on **both** laptops: `terraform`, `sqlpackage` / `dotnet` (the repo pins
       .NET 8 via [`../global.json`](../global.json)), `mkdocs`, `gh auth status`, `az`.
+- [ ] **Reset the demo repo and confirm it's ready on _both_ laptops** — a previous run's throwaway
+      branch or scratch file (including gitignored `tfvars`/`*_override.tf` a clean `git status` hides)
+      will break a re-run. On a clean `main`:
+
+      ```powershell
+      ./demo/Reset-DemoEnvironment.ps1                 # add -SkipRemote if offline
+      Invoke-Pester ./tests/DemoEnvironment.Tests.ps1  # 35 checks: git state, tooling, sign-in
+      ```
+
+      All green means the environment is demo-ready. See [`../demo/README.md`](../demo/README.md) § Reset.
 - [ ] Rebuild the slide deck — it's gitignored, so regenerate it, don't assume it's there:
 
       ```powershell
