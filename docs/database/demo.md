@@ -134,15 +134,15 @@ is to build the artifact, not deploy it. The demo continues after lunch in
 
     VS Code opens the analysis output. With a clean build it records no problems.
 
-6. Open the project's `Tables` folder and point out what just went into the build.
+6. Open a table file and point out what just went into the build.
 
     ```powershell
-    code -r ./Tables
+    code ./Tables/Club.sql
     ```
 
-    The `-r` flag reuses the current VS Code window instead of opening a new one.
-    You can now show that the schema is just code in git: tables, views, procedures, and the
-    post-deploy seed. Look at `Views` and `Programmability` too.
+    The file opens as a tab in your current VS Code window. In the Explorer, the schema is
+    just code in git: tables, views, procedures, and the post-deploy seed. Look at `Tables`,
+    `Views`, and `Programmability`.
 
 !!! info "Stop here for lunch"
     This is where the agenda pauses. By **12:45** the DACPAC is built; the live publish and change

@@ -91,7 +91,7 @@ Get-childItem ./bin/Release | Select-Object Name, Length
 code ./bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
 #
 # STOP HERE FOR LUNCH. The DACPAC is built; publishing it is the afternoon.
-code -r ./Tables    # -r reuses this VS Code window instead of opening a new one
+code ./Tables/Club.sql    # opens a file in the current window; the Explorer already shows the folder tree
 #endregion
 
 
