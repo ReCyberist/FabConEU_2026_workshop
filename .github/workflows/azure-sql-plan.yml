@@ -2,9 +2,9 @@ name: Azure SQL — Terraform plan (PR)
 
 # Read-only verification for pull requests that touch the Azure SQL infra modules.
 # Runs `terraform fmt`/`validate`/`plan` only — it NEVER applies — so reviewers can see the
-# intended change in the PR checks before anything is provisioned. Actually creating or
-# changing resources stays a deliberate, manual action from main (see azure-sql-apply.yml,
-# which is workflow_dispatch-only and named "apply" on purpose).
+# intended change in the PR checks before anything is provisioned. The apply is the merge:
+# once this PR lands on main, azure-sql-apply.yml applies the changed flow(s) automatically
+# (it also still takes a manual workflow_dispatch). "Plan on PR, apply on merge."
 #
 # TWO Terraform flows run here as separate jobs:
 #   1. plan               — the taught module (infra/azure-sql/terraform/demo).
