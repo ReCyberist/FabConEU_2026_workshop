@@ -135,6 +135,12 @@ branch to your fork, and open a pull request against `main`.
 You now have one branch, one commit on that branch, and one pull request against `main`. The
 change is small, reviewable and isolated from the default branch.
 
+!!! note "Watch the next demo"
+    Straight after this, we run a **merge conflict** live on two laptops: two people change the
+    same file, and Git asks a human which version to keep. There is nothing to type or follow
+    along with, so sit back and watch. The idea is explained on
+    [Source control for databases](source-control.md#when-two-people-change-the-same-file).
+
 ## Gotchas
 
 - If `git status` is not empty at the start, do not mix this demo with unrelated work.
