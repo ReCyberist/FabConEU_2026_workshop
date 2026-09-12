@@ -98,6 +98,8 @@ terraform plan
 
 
 #region 09 · apply -- START THIS, THEN TALK                                       [~4m31s]
+# It stops on "Only 'yes' will be accepted to approve." -- read that line out, type yes,
+# THEN start narrating the module. Do not type yes and go quiet for four and a half minutes.
 terraform apply
 #endregion
 
@@ -111,14 +113,11 @@ Start-Process "https://portal.azure.com"
 #  FABRIC SQL
 # =======================================================================================
 
-#region 11 · !! NOT LIVE-VERIFIED !! -- read before presenting                      [~0s]
+#region 11 · How far this one has actually been run                                 [~0s]
 # ---------------------------------------------------------------------------------------
-# The attendee page carries a danger admonition on this section, and it is there for a
-# reason: this Fabric path has not been run live end to end.
-#
-# So do not say "and this works exactly the same". Say what is true: the module is built,
-# the Azure SQL half is verified, and this is the shape the Fabric one takes. If the room
-# asks whether we have run it, the answer is honest.
+# Verified to `terraform plan`. The apply in region 18 has not been run end to end, so do
+# not say "and this works exactly the same". Say what is true: the module is built, the
+# plan is clean, and this is the shape the Fabric one takes.
 #
 # If you have five minutes rather than ten, show regions 12 and 17 (the plan) and skip
 # the apply. The teaching point is capacity -> workspace -> database and the two
@@ -171,6 +170,7 @@ terraform plan
 
 
 #region 18 · apply                                                                  [~3m]
+# Same prompt as region 09: only 'yes' approves.
 terraform apply
 #endregion
 

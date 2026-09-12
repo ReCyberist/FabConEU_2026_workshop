@@ -9,6 +9,17 @@ the same on both platforms; the main difference is what gets created.
 	capacity**. See [Prerequisites](../setup/prerequisites.md), [Azure SQL as code](azure-sql.md),
 	and [Fabric SQL as code](fabric-sql.md).
 
+!!! note "Run these commands in PowerShell"
+	Every command on this page is PowerShell. If your prompt is bash or zsh, start PowerShell
+	first:
+
+	```powershell
+	pwsh
+	```
+
+	The prompt changes to `PS>`. PowerShell 7 runs on Windows, macOS and Linux, and every
+	command on this page works the same on all three.
+
 ## What you'll do
 
 Run one Terraform module from the repository and let it build the target platform from code.
@@ -38,7 +49,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	Get-Location
 	```
 
-	The path ends with `infra\azure-sql\terraform\demo`.
+	The path ends with `infra/azure-sql/terraform/demo`.
 
 2. Sign in to Azure and set the subscription the demo should deploy into.
 
@@ -112,8 +123,18 @@ Run one Terraform module from the repository and let it build the target platfor
 	terraform apply
 	```
 
-	Terraform prompts for confirmation, then creates the resources and finishes with `Apply
-	complete!`.
+	Terraform stops and waits for you:
+
+	```text
+	Do you want to perform these actions?
+	  Terraform will perform the actions described above.
+	  Only 'yes' will be accepted to approve.
+
+	  Enter a value:
+	```
+
+	Type `yes` and press Enter. Nothing else is accepted: `y`, `Y` and `YES` all cancel the
+	apply. Terraform then creates the resources and finishes with `Apply complete!`.
 
 	!!! note "Jess's test run"
 		Jess's deploy to the `test` environment in `uksouth` took **4m31s**.
@@ -140,9 +161,6 @@ Run one Terraform module from the repository and let it build the target platfor
 
 ## Fabric SQL
 
-!!! danger "Jess & Rob"
-	**This Fabric demo is not tested yet. Do not present it as live-verified.**
-
 ### Run it
 
 1. Move into the Fabric SQL Terraform module.
@@ -159,7 +177,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	Get-Location
 	```
 
-	The path ends with `infra\fabric-sql\terraform`.
+	The path ends with `infra/fabric-sql/terraform`.
 
 2. Sign in to Azure and set the subscription that holds, or can create, the Fabric capacity.
 
@@ -231,8 +249,18 @@ Run one Terraform module from the repository and let it build the target platfor
 	terraform apply
 	```
 
-	Terraform prompts for confirmation, then creates the resources and finishes with `Apply
-	complete!`.
+	Terraform stops and waits for you:
+
+	```text
+	Do you want to perform these actions?
+	  Terraform will perform the actions described above.
+	  Only 'yes' will be accepted to approve.
+
+	  Enter a value:
+	```
+
+	Type `yes` and press Enter. Nothing else is accepted: `y`, `Y` and `YES` all cancel the
+	apply. Terraform then creates the resources and finishes with `Apply complete!`.
 
 9. Open the Azure and Fabric portals and confirm that the resources now exist.
 
@@ -263,7 +291,17 @@ From `infra/azure-sql/terraform/demo`, destroy the resources you just created:
 terraform destroy
 ```
 
-Terraform shows the resources it will remove, prompts for confirmation, and finishes with `Destroy
+Terraform lists the resources it will remove, then waits for you:
+
+```text
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value:
+```
+
+Type `yes` and press Enter. Terraform then removes the resources and finishes with `Destroy
 complete!`.
 
 !!! note "Jess's test run"
@@ -283,7 +321,17 @@ From `infra/fabric-sql/terraform`, destroy the resources you just created:
 terraform destroy
 ```
 
-Terraform shows the resources it will remove, prompts for confirmation, and finishes with `Destroy
+Terraform lists the resources it will remove, then waits for you:
+
+```text
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value:
+```
+
+Type `yes` and press Enter. Terraform then removes the resources and finishes with `Destroy
 complete!`.
 
 If you set `use_existing_capacity = true`, `terraform destroy` removes only the **workspace** and
