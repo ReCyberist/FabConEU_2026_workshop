@@ -4,6 +4,7 @@
     SLOT:          Morning 1 - 10:00-10:25, straight after demo 01
     RUNTIME:       ~9 minutes at a comfortable pace
     SLIDES:        "Two people, one file" (the demo slide before it says "sit back")
+    PRESENTER:     The presenter known as JESS shares the screen
 
     PRESENTER-ONLY. THE ROOM WATCHES.
     This one needs two laptops and two people, so there is deliberately no attendee page
@@ -155,7 +156,8 @@ git merge origin/demo/merge-rob
 
 #region 10 · JESS · Keep both, delete the markers                                   [~75s]
 #
-# On screen, in the editor. Delete the three marker lines and keep BOTH bullets:
+# On screen, in the editor. Click the 'Keep both' and then review.
+# There are other options, Copilot fix it, manually fix it.
 #
 #   # FabCon 2026 - team notes
 #
