@@ -161,6 +161,12 @@ jobs:
     name: write provisioned names into presenter script
     needs: apply
     runs-on: ubuntu-latest
+    # Only the newest apply to main should be allowed to rewrite demo/03-database.ps1.
+    # Without this, two applies that finish out of order can leave the presenter script
+    # pointing at an older environment after the newer one has already succeeded.
+    concurrency:
+      group: azure-sql-demo-presenter-script-main
+      cancel-in-progress: true
     permissions:
       contents: write   # this job alone commits the provisioned names back to main
     steps:

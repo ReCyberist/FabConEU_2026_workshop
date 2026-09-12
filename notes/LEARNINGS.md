@@ -15,6 +15,19 @@ Format:
 
 ---
 
+## 2026-09-12 — The presenter-script write-back needs its own "latest wins" concurrency
+**Context:** `azure-sql-apply.yml` now writes the provisioned Azure SQL server/database names back
+into `demo/03-database.ps1` after the demo apply completes, so the presenters do not have to
+hand-edit Region 06 after every destroy/recreate.
+**Learning:** Sharing a rebase-and-push step across multiple successful applies is not enough on
+its own. If two applies to `main` overlap, the one that finishes last can still push **older**
+server/database names after the newer environment is already live. The safe, small fix is a
+separate concurrency group on the `update-presenter-script` job with `cancel-in-progress: true`,
+so only the newest completed apply is allowed to rewrite the presenter script; Terraform apply
+itself keeps its existing non-cancelling state lock concurrency.
+**Action:** Added the dedicated concurrency group to
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml).
+
 ## 2026-09-12 — Wrap-up demo now carries a database change, and it trips the guard rail on purpose
 **Context:** Revamping demo 05 (the end-to-end wrap-up) so its single pull request carries both
 an infra change (the auto-pause number) and a database change — and so the database change is
