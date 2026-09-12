@@ -104,14 +104,18 @@
 /* While the session runs, the badge counts down. Two warning bands draw the eye
    as time runs out: blue under 10 minutes left, a strong red under 5. Set by the
    script via data-warn on the whole clock, so the box background and border colour
-   too, not just the badge text. Tints are rgba so they read on light and dark. */
+   too, not just the badge text. The tint is layered over the opaque base bg rather
+   than replacing it: a page can carry two clocks (a morning slot and an afternoon
+   one), both sticky at the same offset, and the running one must fully hide the
+   finished one it stacks over — a bare rgba tint would let it bleed through. The
+   rgba tint still reads on light and dark because the base token tracks the scheme. */
 .session-clock[data-warn="soon"] {
-  background: rgba(37, 99, 235, .14);
+  background: linear-gradient(rgba(37, 99, 235, .14), rgba(37, 99, 235, .14)), var(--md-code-bg-color);
   border-color: #2563eb;
 }
 
 .session-clock[data-warn="urgent"] {
-  background: rgba(220, 20, 20, .18);
+  background: linear-gradient(rgba(220, 20, 20, .18), rgba(220, 20, 20, .18)), var(--md-code-bg-color);
   border-color: #dc1414;
 }
 
