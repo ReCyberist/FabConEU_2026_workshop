@@ -15,6 +15,22 @@ Format:
 
 ---
 
+## 2026-09-12 — A page with two session clocks needs the running one to be opaque
+**Context:** The database demo page carries two session clocks — Morning 3 (Part 1) and
+Afternoon 1 (Part 2) — because the demo spans lunch. In the afternoon slot the red "urgent"
+Afternoon banner appeared to sit *over* the morning banner, with the grey morning bar bleeding
+through the red.
+**Learning:** Both clocks are `position: sticky` at the same `top`, so during Part 2 the
+afternoon clock sticks at the exact spot the morning clock is still stuck. Later in the DOM, it
+paints on top — that part is correct and is what "replaces" the morning banner. The bug was that
+the `data-warn` background was a bare `rgba()` tint, which *replaces* the opaque base bg, so the
+morning banner showed through the transparency. Fix: layer the tint over the opaque base with
+`background: linear-gradient(tint, tint), var(--md-code-bg-color)` so the running banner is fully
+opaque and cleanly covers the finished one. This is general — it applies to any page carrying two
+stacked clocks, not just the database demo.
+**Action:** Fixed the `soon`/`urgent` rules in
+[`session-clock.css`](../docs/stylesheets/session-clock.css).
+
 ## 2026-09-12 — Azure SQL apply writes the provisioned server/db back into the presenter script
 **Context:** The logical SQL server name carries a random 6-char suffix (main.tf), so it changes
 on every destroy/recreate. Region 06 of `demo/03-database.ps1` held `<your-server-name>` /
