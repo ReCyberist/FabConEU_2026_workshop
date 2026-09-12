@@ -91,7 +91,7 @@ Get-childItem ./bin/Release | Select-Object Name, Length
 code ./bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
 #
 # STOP HERE FOR LUNCH. The DACPAC is built; publishing it is the afternoon.
-code ./Tables
+code ./Tables/Club.sql    # opens a file in the current window; the Explorer already shows the folder tree
 #endregion
 
 
