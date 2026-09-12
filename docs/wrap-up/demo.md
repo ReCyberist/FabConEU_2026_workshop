@@ -1,5 +1,7 @@
 # Wrap-up demo — from pull request to deployment
 
+--8<-- "includes/clock-afternoon-2.md"
+
 This is the final end-to-end run of the day: change Azure SQL infrastructure as code, raise a pull
 request, read the plan, merge, apply from `main`, then tear it down. Everything from this morning,
 in one loop.

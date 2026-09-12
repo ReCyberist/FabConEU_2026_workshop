@@ -15,6 +15,23 @@ Format:
 
 ---
 
+## 2026-09-12 — The session-clock timing bar now covers every teaching-section page
+**Context:** The timing strip (`session-clock`) was only on the two foundations content pages and
+`lunch.md` — the demo pages, and the infra/database/cicd/wrap-up content pages, had no bar. Asked to
+put it on the demo pages "to match the content page", we did a full rollout to every teaching-section
+page (content **and** demo).
+**Learning:** Only two clock includes existed (`clock-morning-1`, `clock-lunch`). The other four
+agenda slots had none, so "match the content page" wasn't literally possible for most sections — the
+content pages had no bar either. Section→slot mapping comes straight from
+[`agenda/agenda.md`](../agenda/agenda.md): foundations = Morning 1, infra = Morning 2, database =
+Morning 3, cicd = Afternoon 1, wrap-up = Afternoon 2.
+**Action:** Added `includes/clock-morning-2.md` (11:00–12:15, 75 min), `clock-morning-3.md`
+(12:15–12:45, 30 min), `clock-afternoon-1.md` (14:00–15:15, 75 min), `clock-afternoon-2.md`
+(15:45–17:00, 75 min), each following the `clock-morning-1.md` template. Added the matching
+`--8<--` include as line 3 on all 14 previously-bare teaching pages. `mkdocs build -f
+mkdocs.local.yml --strict` passes; labels render (Morning 2 / Afternoon 1 / Afternoon 2 confirmed).
+Times were taken from `agenda/agenda.md` per the existing includes' "change them THERE first" rule.
+
 ## 2026-09-05 — Demo path check distinguishes documented branch examples
 **Context:** The CI demo-sync job treated the documented `demo/wrapup-azure-sql-reset`
 branch example as a repository path.

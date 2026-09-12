@@ -1,5 +1,7 @@
 # CI/CD demo
 
+--8<-- "includes/clock-afternoon-1.md"
+
 This is the shortest live path through the CI/CD story: trigger validation, trigger a deliberate
 apply, then confirm teardown. It keeps the "plan before apply" pattern visible while staying
 practical in a workshop slot.

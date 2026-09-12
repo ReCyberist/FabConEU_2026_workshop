@@ -1,5 +1,7 @@
 # Infrastructure as code demo
 
+--8<-- "includes/clock-morning-2.md"
+
 This is the live infrastructure part of the day in its shortest useful form: open the module,
 review the local variables, run `terraform init`, inspect the plan, then apply it. The shape is
 the same on both platforms; the main difference is what gets created.

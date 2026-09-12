@@ -1,5 +1,7 @@
 # Fabric SQL as code (Terraform)
 
+--8<-- "includes/clock-morning-2.md"
+
 Provision **SQL database in Fabric** with **Terraform** — the same "as code" story as Azure SQL,
 one step longer. Where Azure SQL is *server → database*, Fabric is *capacity → workspace →
 database*, and it takes **two providers** to build. No portal clicking, no password, fully

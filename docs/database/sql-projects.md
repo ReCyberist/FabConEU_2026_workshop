@@ -1,5 +1,7 @@
 # Database as code — SQL projects
 
+--8<-- "includes/clock-morning-3.md"
+
 Define your database **schema as code** in a SQL project (`.sqlproj`), build it into a **DACPAC**,
 and publish that to a live database. It's the state-based, native path for SQL Server / Azure SQL /
 Fabric SQL — you describe the *desired* schema and the tooling works out the change.
