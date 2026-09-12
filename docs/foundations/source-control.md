@@ -94,6 +94,20 @@ schema change and the question is whether it will quietly delete a column.
     check as **failed**. That is expected, and it is not something you have broken. The four
     `ci.yml` checks still pass, because they need no credentials at all.
 
+### When two people change the same file
+
+A pull request is where disagreement surfaces, and its sharpest form is the **merge conflict**:
+two people edit the same lines, and git declines to guess which of them is right. It is worth
+saying plainly, because it frightens people it should not — a conflict is **not an error**. It is
+git handing the decision back to the humans, because deciding which change is correct was never
+something a tool could do for you.
+
+We show this one live, on two laptops — one of us pushes first, the other hits the conflict — so
+there is nothing to type along with here. Sit back and watch the markers appear, and then watch
+them disappear as we keep both changes and commit the result. The conflict itself turns out to be
+the easy part; agreeing whose line stays is the actual work, and that is rather the theme of the
+morning.
+
 ## The demo
 
 👉 **[Source control demo](demo.md)** — branch, change a file, review the diff, commit, push, and
