@@ -15,6 +15,19 @@ Format:
 
 ---
 
+## 2026-09-12 — `az ... --output table` silently hides any column literally named `id`
+**Context:** The infra demo prints the signed-in subscription with
+`az account show --query "{subscription:name, id:id}" --output table`, and only the subscription
+name showed — the id column was missing.
+**Learning:** The query was correct (`-o json` returned both fields). Azure CLI's **table
+formatter deliberately drops any column named `id`** — a legacy quirk from when `id` was almost
+always a long ARM resource id that made tables unreadable. It only affects the table/tsv-with-headers
+formatters; json/jsonc show it. Fix: name the key anything else (`subscriptionId:id`), or use
+`-o tsv` / `-o json` when you need the raw id.
+**Action:** Renamed the key to `subscriptionId:id` in both halves of the infra demo —
+[`demo/02-infrastructure.ps1`](../demo/02-infrastructure.ps1) (Azure SQL + Fabric sign-in regions)
+and [`docs/infra/demo.md`](../docs/infra/demo.md).
+
 ## 2026-09-12 — Note the `plan -out` / `apply <plan>` artefact pattern near the infra plan step
 **Context:** The infra demo runs plain `terraform plan` then `terraform apply` on both halves. That
 is right for a live demo, but it hides the pipeline pattern where the reviewed plan is the plan that

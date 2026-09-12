@@ -54,7 +54,7 @@ Get-Location
 az login
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 # $env:ARM_SUBSCRIPTION_ID = (Get-Secret -Name "beard-mvp-subscription" -AsPlainText) # if Rob doing demo
-az account show --query "{subscription:name, id:id}" --output table
+az account show --query "{subscription:name, subscriptionId:id}" --output table
 #endregion
 
 
@@ -141,7 +141,7 @@ az login
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 # $env:ARM_SUBSCRIPTION_ID = (Get-Secret -Name sewells-subscription-id -AsPlainText) # if Rob doing demo
 $env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID
-az account show --query "{subscription:name, id:id}" --output table
+az account show --query "{subscription:name, subscriptionId:id}" --output table
 #endregion
 
 
