@@ -40,6 +40,41 @@ wrap-up now also reflects apply-on-merge (no manual `gh workflow run`). No CMD s
 demo in [`slides/content.py`](../slides/content.py); if one is added later it must mirror both
 halves per CLAUDE.md §7a.
 
+## 2026-09-12 — A page with two session clocks needs the running one to be opaque
+**Context:** The database demo page carries two session clocks — Morning 3 (Part 1) and
+Afternoon 1 (Part 2) — because the demo spans lunch. In the afternoon slot the red "urgent"
+Afternoon banner appeared to sit *over* the morning banner, with the grey morning bar bleeding
+through the red.
+**Learning:** Both clocks are `position: sticky` at the same `top`, so during Part 2 the
+afternoon clock sticks at the exact spot the morning clock is still stuck. Later in the DOM, it
+paints on top — that part is correct and is what "replaces" the morning banner. The bug was that
+the `data-warn` background was a bare `rgba()` tint, which *replaces* the opaque base bg, so the
+morning banner showed through the transparency. Fix: layer the tint over the opaque base with
+`background: linear-gradient(tint, tint), var(--md-code-bg-color)` so the running banner is fully
+opaque and cleanly covers the finished one. This is general — it applies to any page carrying two
+stacked clocks, not just the database demo.
+**Action:** Fixed the `soon`/`urgent` rules in
+[`session-clock.css`](../docs/stylesheets/session-clock.css).
+
+## 2026-09-12 — Azure SQL apply writes the provisioned server/db back into the presenter script
+**Context:** The logical SQL server name carries a random 6-char suffix (main.tf), so it changes
+on every destroy/recreate. Region 06 of `demo/03-database.ps1` held `<your-server-name>` /
+`<your-database-name>` placeholders the presenters had to hand-edit after every apply.
+**Learning:** The apply job already exposes `server_fqdn` / `database_name` outputs (added for the
+publish job). A new `update-presenter-script` job (`needs: apply`) rewrites just the two region-06
+assignment lines with a `(?m)^\$server\s*=\s*".*"$` anchor (matches the bare assignment, never
+`$serverSMO` or `/TargetServerName:$server`) and commits back to `main`. Two gotchas worth keeping:
+(1) in a PowerShell `-replace` the replacement string must escape a literal `$` as `$$`, or
+`$server` is parsed as a capture-group reference; (2) the attendee page keeps its placeholders on
+purpose — each attendee targets their own database, so pinning the presenters' ephemeral server
+into `docs/database/demo.md` would be wrong. This is the one config value where the two halves of a
+demo legitimately differ, and CLAUDE.md 7a's "touch both halves" is about *step* drift, not targets.
+**Action:** Added the job to [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml).
+`demo/**` is not a trigger path and the commit carries `[skip ci]`, so it never loops. **Live-verify
+open:** the built-in `GITHUB_TOKEN` push to `main` only works if branch protection allows it — if a
+PR/review is required the push is rejected and this must become a PR or use a deploy key/PAT (noted
+on task #9).
+
 ## 2026-09-12 — Azure SQL apply now runs on merge to main (reversing "apply on intent")
 **Context:** Jess & Rob want the workshop demo to show the whole CI/CD loop, not stop at a
 manual apply. `azure-sql-apply.yml` was `workflow_dispatch`-only by the 2026-07-29 decision.
@@ -1830,5 +1865,67 @@ instead of "prompts for confirmation". Removed the Fabric not-tested banner from
 `02-infrastructure.ps1` region 11 now states plainly that it is verified to `plan` and no further.
 
 **SQL project analysis emits a build artifact alongside the DACPAC.** Demo 03's `dotnet build` writes `bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml`. It is intentionally absent from a clean checkout, so it belongs in both `.gitignore` and `check-demo-paths.py`'s documented `EXPECTED_ABSENT` list.
+
+## 2026-09-12 — Afternoon re-slotted: all of database part 2 into Afternoon 1
+
+**The whole database demo part 2 now fits one slot.** Increments 0 → 3 (baseline, additive view,
+the trap + recovery + guard, and the safe retire) all run in **Afternoon 1, 14:00–15:15**, before
+the break — Increment 3 no longer waits until Afternoon 2. Afternoon 2 (15:45–17:00) is now three
+beats: **CI/CD 15:45–16:00**, the **whole-loop wrap-up demo 16:00–16:30**, then **close + Q&A
+16:30–17:00**.
+
+**The session clocks are slot-level, so most of the change was re-pointing includes, not editing
+times.** `includes/clock-*.md` are keyed to the fixed venue slots (Morning 1/2/3, Afternoon 1/2,
+Lunch), so re-slotting content = swapping which `--8<--` a page pulls in. The CI/CD pages moved
+`clock-afternoon-1` → `clock-afternoon-2`; `database/demo.md` dropped its second
+(`clock-afternoon-2`) clock before Increment 3 because part 2 is now entirely Afternoon 1. Change
+slot *times* in `agenda/agenda.md` first, then the clock include; change slot *content* by
+re-pointing the include.
+
+**Part 2 now has almost no slack.** ~62 min of runtime (mostly waiting on `sqlpackage`) in a 75-min
+slot. The cut lever is documented in `03-database.ps1` and the speaker guide: run only Increment 3
+**Option B** (the rename — clean, no override) and *describe* Option A. Never cut the Increment 2
+trap or the silence after it.
+
+**Files touched (kept both halves of every demo in sync):** `agenda/agenda.md`,
+`agenda/speaker-guide.md`, demo headers `03-database.ps1` / `04-cicd.ps1` / `05-wrap-up.ps1`,
+`docs/database/demo.md`, the four `docs/cicd/*.md` clocks, `docs/lunch.md` (return pointer now goes
+to database part 2, not build-validate), `docs/setup/welcome.md` schedule table, and
+`docs/wrap-up/resources.md` (now "Resources, contacts & next steps" — a Find-us section awaits Jess
+& Rob's handles). `check-demo-paths.py` clean; `mkdocs build -f mkdocs.local.yml --strict` green.
+
+## 2026-09-12 — Increment 2 recovery: reseed the data so the DB demo runs on ONE database
+
+**The problem, from the room's side:** after Increment 2, the data does not come back. That is
+the intended punchline — a pipeline restores *schema*, not *values* — but it left a practical
+snag: Increment 3 needs `ShirtNumber` present **and populated**, and the recovery leaves it present
+and **empty**. The old fix was "use a throwaway database for Increment 2 and a different, pristine
+one for Increment 3", which meant provisioning and seeding two databases.
+
+**The decision (Jess & Rob):** keep it on **one** database. Increment 2 still destroys the data on
+purpose; then a new **data-only `UPDATE`** puts the values back so Increment 3 can carry on. The
+*real* recovery options — point-in-time restore, database copy (`CREATE DATABASE … AS COPY OF`) —
+are described out loud, not run, because each is several minutes of waiting we do not have in the
+Afternoon 1 slot.
+
+**Why the seed can't do it:** `Seed.sql` guards every insert with `WHERE NOT EXISTS` on the key, so
+re-running it never touches the rows that already exist — it only inserts missing players. To
+refill an existing column you need an `UPDATE`, not the seed. New file
+`database/demo/ship-changes/increment-2_Restore-ShirtNumber.sql` does exactly that (set-based,
+explicit columns, no `MERGE`, `WHERE ShirtNumber IS NULL` so it is safe to re-run), run via
+`Invoke-DbaQuery -File` between 2b and Increment 3.
+
+**Also spotted:** a demo's post-run state had been left in the working tree (`Player.sql` /
+`Seed.sql` in their post-drop, ShirtNumber-removed form, plus the two demo views) — the §7a hazard.
+Committed `main` was fine; it was an un-run RESET region 99. `git restore` + removing the two views
+cleans it. Worth running region 99 before every practice run.
+
+**Files touched (both halves + surrounding notes kept in sync):**
+`database/demo/ship-changes/increment-2_Restore-ShirtNumber.sql` (new), `demo/03-database.ps1`
+(new Reseed region 24b, header shape + throwaway notes updated), `docs/database/demo.md` (new
+step 25 reseed section, Increment 3 steps renumbered 26–37, throwaway note removed), and
+`database/demo/ship-changes/README.md` (the "start from a populated database" callout). No slide
+change needed — the one database CMD slide mirrors DeployReport, which is unchanged.
+`check-demo-paths.py` clean.
 
 <!-- Add new entries above this line -->

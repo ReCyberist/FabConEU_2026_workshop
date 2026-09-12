@@ -153,38 +153,48 @@ Short, tight, and the only thing between the room and lunch. Do not overrun — 
 ### Afternoon 1 · 14:00–15:15 · 75 min · *Jess leads the pipeline, Rob leads the trap*
 
 The post-lunch restart is the hardest slot of the day — open with something moving on screen,
-not with a slide.
+not with a slide. **This is now the whole database part 2 in one block: increments 0 through 3.**
+It is the demo-heaviest slot of the day and most of it is spent waiting on `sqlpackage`, so there
+is almost no slack — see the cut lever below before you start.
 
 | Time | Beat | Notes |
 |---|---|---|
-| 14:00 | Where we got to, what the afternoon does | 5 min. |
-| 14:05 | What CI checks on every push and PR · plan on a PR, apply on purpose · no secrets, not one | 15 min. |
-| 14:20 | The apply workflow end to end · who holds the button · teardown is part of the pipeline | 15 min. |
-| 14:35 | **Increment 1** — additive `vw_SquadAges` PR → DeployReport says *1 view to create, 0 data-loss operations* → merge → auto-publish | 15 min. Invite the follow-along here; this is the safe one. |
-| 14:50 | **Increment 2 — the trap** | 20 min. See below. |
-| 15:10 | Land it, then break | 5 min. "Back at 15:45." |
+| 14:00 | Where we got to, what the afternoon does | 3 min. Straight into the terminal. |
+| 14:03 | **Increment 0** — publish the baseline, prove `ShirtNumber` holds real data | 7 min. The trap needs something to destroy. |
+| 14:10 | **Increment 1** — additive `vw_SquadAges` → DeployReport says *1 view to create, 0 data-loss operations* → publish | 12 min. Invite the follow-along here; this is the safe one. |
+| 14:22 | **Increment 2 — the trap** | 28 min. See below — the recovery is part of it now. |
+| 14:50 | **Increment 3** — retire the column safely: pre-deploy migration (Option A) or rename (Option B), then the approval gate | 22 min. Be straight that the gate is **documented, not wired** — a repo-plan limitation, not a design one. |
+| 15:12 | Land it, then break | 3 min. "Back at 15:45." |
 
 **The trap, in order — do not rush it:**
 1. Show the data existing. Query the shirt numbers. Let them see rows.
 2. Show the PR: a useful view, and a column removed. Two files. Tidy. Nobody typed "DROP".
 3. The YOLO publish (`BlockOnPossibleDataLoss=false`) — the column and the data go. Green tick.
 4. **Stop talking.** The silence of the green tick is the whole lesson. Count to three.
-5. Then the guardrail we ship by default, failing loudly — and the DeployReport that flagged it
-   *before* merge. "This is `terraform plan`, for your database." Say that sentence explicitly.
+5. The recovery: "just redeploy the last good version." The **column** comes back; the **data**
+   does not. Name point-in-time restore as the real answer — describe it, do not wait for one.
+6. Then the guardrail we ship by default, failing loudly now the column exists again — and the
+   DeployReport that flagged it *before* merge. "This is `terraform plan`, for your database."
+   Say that sentence explicitly.
 
 Presenter-led throughout: it's easier to watch the trap than to hit it.
 
+**The cut lever, if you are behind at 14:50:** Increment 3 has two options that reach the same end
+state. Show **Option B (the rename)** only — it is the clean one and needs no override — and
+describe Option A rather than running it. If you are behind at 14:22, skip Increment 1's
+follow-along invitation and keep it presenter-paced. **Never cut** the Increment 2 trap or the
+silence after it.
+
 ### Afternoon 2 · 15:45–17:00 · 75 min · *both, Rob closes*
+
+Three beats: CI/CD, then the whole loop once, then the day's argument and Q&A.
 
 | Time | Beat | Notes |
 |---|---|---|
-| 15:45 | Restart, recap the trap in one line | 5 min. |
-| 15:50 | **Increment 3** — retire the column safely: pre-deploy migration/rename, then the approval gate | 20 min. Be straight that the gate is **documented, not wired** — a repo-plan limitation, not a design one. |
-| 16:10 | **Who is allowed to drop a column?** | 15 min. The callback to 09:30 — the day's argument closes here, not on a pipeline. |
-| 16:25 | The whole pipeline, both platforms: apply → deploy-report → publish → smoke test, green | 15 min. The payoff run. |
-| 16:40 | Migrations honestly · drift · **destroy it, really** | 8 min. |
-| 16:48 | Where everything lives, what to take home | 4 min. |
-| 16:52 | **Q&A** | 8 min minimum — this is the flex and it absorbs the day's slippage. Finish at 17:00, not after. |
+| 15:45 | **CI/CD** — validate on every change, plan on a PR, apply on purpose, destroy on a schedule. Read the YAML first, watch a green tick second | 15 min. [`demo/04-cicd.ps1`](../demo/04-cicd.ps1). No secrets, not one. |
+| 16:00 | **The whole loop, end to end** — one number in Terraform → PR → plan → merge → apply from `main` → confirm in git **and** the database → **destroy it, really** | 30 min. [`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1). Nothing new is taught; the payoff is that the room recognises every step. Migrations/drift covered honestly in the same beat. |
+| 16:30 | **Who is allowed to drop a column?** · where everything lives, what to take home | 12 min. The callback to 09:30 — the day's argument closes here, not on a pipeline. Point at the [resources & contacts page](../docs/wrap-up/resources.md). |
+| 16:42 | **Q&A** | 18 min — this is the flex and it absorbs the day's slippage. Finish at 17:00, not after. |
 
 **The last thing they hear** should be the same thing as the first: the tooling was the easy
 half.

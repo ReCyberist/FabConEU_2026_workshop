@@ -140,6 +140,67 @@ jobs:
           echo "database_name=$(terraform output -raw sql_database_name)" >> "$GITHUB_OUTPUT"
 
   # -------------------------------------------------------------------------------------
+  # Fill the provisioned server/database into the presenter script so Jess & Rob don't
+  # hand-edit region 06 of demo/03-database.ps1 after every apply. The logical SQL server
+  # name carries a random suffix (see infra/azure-sql/terraform/demo/main.tf), so the name
+  # changes on every destroy/recreate — this job re-pins it each time the demo flow applies.
+  #
+  # It rewrites only the `$server` / `$db` assignment lines (region 06); every other use of
+  # those variables, and the attendee page's placeholders, are left alone. The attendee page
+  # (docs/database/demo.md) deliberately keeps `<your-server-name>` / `<your-database-name>`
+  # as placeholders — each attendee fills in their own target, so it must NOT carry the
+  # presenters' ephemeral server. This is the one config value where the two halves of the
+  # demo legitimately differ (CLAUDE.md 7a is about step drift, not per-environment targets).
+  #
+  # PREREQUISITE: main must allow the built-in GITHUB_TOKEN to push. If branch protection
+  # requires a pull request or review for main, this push is rejected — swap the push for a
+  # PR, or grant a deploy key / PAT. demo/** is not in this workflow's trigger paths, so the
+  # commit never re-triggers the apply; `[skip ci]` also keeps it from rebuilding the site.
+  # -------------------------------------------------------------------------------------
+  update-presenter-script:
+    name: write provisioned names into presenter script
+    needs: apply
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # this job alone commits the provisioned names back to main
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # Rewrite region 06's two assignment lines in place. The `^\$server\s*=\s*".*"$`
+      # anchors match only the bare assignments, not `$serverSMO` or any `/TargetServerName`
+      # usage, and preserve the alignment. `$$` in the replacement is a literal `$`. The
+      # match is on the assignment shape, not the old value, so it is idempotent across runs.
+      - name: Fill $server / $db in demo/03-database.ps1
+        shell: pwsh
+        env:
+          SERVER_FQDN: ${{ needs.apply.outputs.server_fqdn }}
+          DATABASE_NAME: ${{ needs.apply.outputs.database_name }}
+        run: |
+          $path = 'demo/03-database.ps1'
+          $raw  = Get-Content -Raw -LiteralPath $path
+          $raw  = $raw -replace '(?m)^\$server\s*=\s*".*"\s*$', ('$$server  = "' + $env:SERVER_FQDN + '"')
+          $raw  = $raw -replace '(?m)^\$db\s*=\s*".*"\s*$',     ('$$db      = "' + $env:DATABASE_NAME + '"')
+          Set-Content -LiteralPath $path -Value $raw -NoNewline
+
+      - name: Commit and push if changed
+        shell: bash
+        run: |
+          if git diff --quiet -- demo/03-database.ps1; then
+            echo "Presenter script already names the current server/database — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add demo/03-database.ps1
+          git commit -m "chore(demo): point 03-database.ps1 at the provisioned Azure SQL server/database [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+  # -------------------------------------------------------------------------------------
   # DB-as-code: publish the FabConFootball DACPAC into the just-provisioned database.
   # Runs only after a successful apply and targets that apply's Terraform outputs, so the
   # whole "infra + database as code" story is one dispatch.

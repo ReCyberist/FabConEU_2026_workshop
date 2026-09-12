@@ -2,9 +2,10 @@
     DEMO 03 - Database as code, and shipping changes to it
     ATTENDEE PAGE: docs/database/demo.md
     SLOT:          PART 1  Morning 3   - 12:15-12:45 (build the DACPAC, then lunch)
-                   PART 2  Afternoon 1 - 14:00-15:15 (increments 0, 1, 2)
-                           Afternoon 2 - 15:45-17:00 (increment 3)
+                   PART 2  Afternoon 1 - 14:00-15:15 (increments 0 through 3, all in one slot)
     RUNTIME:       Part 1 ~10 min. Part 2 ~62 min, most of it waiting on sqlpackage.
+                   Part 2 now fills the whole Afternoon 1 slot end to end -- there is almost
+                   no slack. If behind, run only increment 3 Option B and describe Option A.
 
     THE POINT
     Part 1: the schema is code, and `dotnet build` turns it into one deployable artifact.
@@ -18,10 +19,13 @@
       Increment 2  drop a POPULATED column, bundled with an innocent view
                    2a force it -> the data is silently gone      <- LET THIS LAND
       Recovery     "just redeploy the last good version" -> the COLUMN comes back,
-                   the DATA does not. Then name point-in-time restore as the real
-                   answer, and do not wait for one.
+                   the DATA does not. Then name point-in-time restore (and a DB copy)
+                   as the real answers, and do not wait for one.
                    2b now that the column exists again, publish WITHOUT the override
                       -> the guard fails loudly, as it should have all along
+      Reseed       put the values back with a data-only UPDATE, so the whole demo runs
+                   on ONE database. Say out loud this is a demo convenience, not the
+                   real recovery -- the real recovery is the restore we just described.
       Increment 3  retire the same column WITHOUT losing the data, two ways
 
     WHY 2b COMES AFTER THE RECOVERY
@@ -31,15 +35,16 @@
     are now one sequence rather than two.
 
     !! INCREMENT 2 DESTROYS DATA ON PURPOSE !!
-    Run increment 2, the recovery AND 2b against a THROWAWAY database. Increment 3 needs
-    ShirtNumber present and POPULATED, and the recovery deliberately leaves it present and
-    EMPTY -- the seed only inserts missing rows, it does not update existing ones. That is
-    the teaching point of the recovery, and it is also why increment 3 needs a different
-    database. Ask us how we know.
+    Increment 2a really does drop a populated column. The recovery deliberately leaves it
+    present and EMPTY -- the seed only inserts missing rows, it does not update existing ones.
+    That is the teaching point of the recovery. Increment 3 then needs ShirtNumber present
+    AND populated, so the Reseed region puts the values back with a data-only UPDATE and the
+    whole demo stays on ONE database. Say plainly the reseed is a demo convenience: in
+    production you recover with a restore, not by re-typing the values.
 
     BEFORE YOU START
       - .NET 8 SDK (global.json pins it) and sqlpackage on PATH.
-      - A target database, and a throwaway one for 2a.
+      - A single target database (the reseed removes the old need for a throwaway).
       - dbatools installed, for Invoke-DbaQuery.
       - Increment files live in database/demo/ship-changes/ -- design notes and the
         rationale are in database/demo/ship-changes/README.md and increment-3_safe-retire.md.
@@ -90,7 +95,7 @@ Get-childItem ./bin/Release | Select-Object Name, Length
 code ./bin/Release/FabConFootball.StaticCodeAnalysis.Results.xml
 #
 # STOP HERE FOR LUNCH. The DACPAC is built; publishing it is the afternoon.
-code ./Tables
+code ./Tables/Club.sql    # opens a file in the current window; the Explorer already shows the folder tree
 #endregion
 
 
@@ -112,8 +117,8 @@ az login
 #          database sqldb-attendeeNN, and /TargetUser /TargetPassword in place of
 #          /AccessToken. The attendee page has both paths in tabs.
 $token   = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
-$server  = "<your-server-name>"
-$db      = "<your-database-name>"
+$server  = "sql-fabcon26-dev-uks-jnkojv.database.windows.net"
+$db      = "sqldb-football-dev"
 $profile = "PublishProfiles/AzureSql.publish.xml"
 #endregion
 
@@ -220,8 +225,8 @@ code deploy-report.xml
 
 #region 18 · Increment 2a - THE PUNCHLINE. Slow down.                              [~2m00s]
 # ---------------------------------------------------------------------------------------
-# !! THROWAWAY DATABASE ONLY. This really does destroy the data. If $db is the database
-# !! you need for increment 3, change it NOW, before you run this.
+# !! This really does destroy the data in $db. That is the point -- let it land. The
+# !! Reseed region below puts the values back before increment 3, so one database is fine.
 # ---------------------------------------------------------------------------------------
 sqlpackage /Action:Publish `
     /SourceFile:"bin/Release/FabConFootball.dacpac" `
@@ -270,7 +275,9 @@ sqlpackage /Action:Publish `
 #   az sql db restore --resource-group <rg> --server <server> --name $db `
 #                     --dest-name "$db-restored" --time <utc-timestamp>
 #
-# Describe it, do not run it -- several minutes of nothing, and we do not have them.
+# A database COPY (CREATE DATABASE ... AS COPY OF ...) is the other real option to keep a
+# pristine environment around. Describe both, run neither -- each is several minutes of
+# nothing, and we do not have them. We put the values back a faster way in the Reseed region.
 Invoke-DbaQuery @queryParams
 #endregion
 
@@ -294,15 +301,33 @@ sqlpackage /Action:Publish `
 #endregion
 
 
+#region 24b · Reseed - put the values back so we stay on ONE database               [~15s]
+# 2a destroyed the data, the recovery brought the COLUMN back but left it empty, and 2b was
+# blocked -- so ShirtNumber is present and NULL for everyone. Increment 3 needs it populated.
+# This runs a data-only UPDATE that fills the empty rows with the real shirt numbers.
+#
+# SAY IT OUT LOUD: in production you do NOT re-type your data. This is a point-in-time
+# restore or a database copy (both described a moment ago). We UPDATE here purely so the
+# demo carries on against this one database instead of a second, pristine one.
+$reseedParams = @{
+    SqlInstance = $serverSMO
+    Database    = $db
+    File        = "../demo/ship-changes/increment-2_Restore-ShirtNumber.sql"
+}
+Invoke-DbaQuery @reseedParams
+#endregion
+
+
 # ---------------------------------------------------------------------------------------
-#  BREAK  15:15-15:45.  Increment 3 resumes after it.
-#  Before you walk off: point $db at a database that still HAS a populated ShirtNumber --
-#  NOT the throwaway you just used, where the recovery left the column empty. Then rerun
-#  region 05 and 06 after the break: the terminal may have closed and the token expires.
+#  Increment 3 continues straight on, in the SAME Afternoon 1 slot -- no break between it
+#  and 2b any more. The break (15:15-15:45) now comes AFTER the whole database demo.
+#  The Reseed region above put ShirtNumber back, so this same $db is ready. If the token
+#  has expired mid-slot, rerun region 06.
 # ---------------------------------------------------------------------------------------
 
 
 #region 25 · Increment 3 - confirm the data is back                                 [~20s]
+# Returns rows now, because the Reseed region just refilled ShirtNumber.
 Invoke-DbaQuery @queryParams
 #endregion
 
@@ -323,11 +348,14 @@ sqlpackage /Action:DeployReport `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
     /OutputPath:"deploy-report.xml"
+code deploy-report.xml
+
 sqlpackage /Action:Publish `
     /SourceFile:"bin/Release/FabConFootball.dacpac" `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
     /p:BlockOnPossibleDataLoss=false
+
 $verifyParams = @{
     SqlInstance = $serverSMO
     Database    = $db
@@ -338,6 +366,7 @@ Invoke-DbaQuery @verifyParams
 
 
 #region 28 · Increment 3 Option B - model it as a rename                            [~35s]
+Remove-Item ./Scripts/PreDeployment/Migrate-ShirtNumber.sql -ErrorAction SilentlyContinue           # not needed for this version
 Copy-Item ../demo/ship-changes/increment-3_Player.sql                 ./Tables/Player.sql -Force
 Copy-Item ../demo/ship-changes/increment-3_Seed.sql                   ./Scripts/PostDeployment/Seed.sql -Force
 Copy-Item ../demo/ship-changes/increment-3_FabConFootball.refactorlog ./FabConFootball.refactorlog -Force
@@ -352,10 +381,12 @@ sqlpackage /Action:DeployReport `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token `
     /OutputPath:"deploy-report.xml"
+
 sqlpackage /Action:Publish `
     /SourceFile:"bin/Release/FabConFootball.dacpac" `
     /Profile:$profile `
     /TargetServerName:$server /TargetDatabaseName:$db /AccessToken:$token
+
 Invoke-DbaQuery @verifyParams
 #endregion
 

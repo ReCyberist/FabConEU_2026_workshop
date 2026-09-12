@@ -80,9 +80,9 @@ fixed and we work around them.
 | **11:00 – 12:15** | Infrastructure as code — Azure SQL and Fabric SQL, side by side |
 | **12:15 – 12:45** | Database as code — from database to DACPAC |
 | 12:45 – 14:00 | 🍽 Lunch |
-| **14:00 – 15:15** | SQL projects — making changes, breaking things, testing |
+| **14:00 – 15:15** | Database as code, part 2 — publish, break, recover, and retire a column safely |
 | 15:15 – 15:45 | ☕ Break |
-| **15:45 – 17:00** | Pulling it all together, and your questions |
+| **15:45 – 17:00** | CI/CD, the whole loop end to end, and your questions |
 | 17:00 | End |
 
 Two promises about those times.

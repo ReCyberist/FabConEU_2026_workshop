@@ -1,8 +1,8 @@
 <#
     DEMO 05 - The whole loop, once, end to end
     ATTENDEE PAGE: docs/wrap-up/demo.md
-    SLOT:          Afternoon 2 - 15:45-17:00 (the last thing before Q&A)
-    RUNTIME:       ~22 min
+    SLOT:          Afternoon 2 - 16:00-16:30 (the last demo, before the close and Q&A at 16:30)
+    RUNTIME:       ~15 min
 
     THE POINT
     Everything from the day, in one pull request: change a number in Terraform AND add a

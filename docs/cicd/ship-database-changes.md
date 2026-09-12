@@ -1,6 +1,6 @@
 # CI/CD part 3 — ship database changes
 
---8<-- "includes/clock-afternoon-1.md"
+--8<-- "includes/clock-afternoon-2.md"
 
 The punchline of the day: **a database change is a pull request, and the pipeline tells you exactly
 what it will do to your data before it does it** — the database's answer to `terraform plan`.
