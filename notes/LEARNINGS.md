@@ -1853,4 +1853,38 @@ to database part 2, not build-validate), `docs/setup/welcome.md` schedule table,
 `docs/wrap-up/resources.md` (now "Resources, contacts & next steps" — a Find-us section awaits Jess
 & Rob's handles). `check-demo-paths.py` clean; `mkdocs build -f mkdocs.local.yml --strict` green.
 
+## 2026-09-12 — Increment 2 recovery: reseed the data so the DB demo runs on ONE database
+
+**The problem, from the room's side:** after Increment 2, the data does not come back. That is
+the intended punchline — a pipeline restores *schema*, not *values* — but it left a practical
+snag: Increment 3 needs `ShirtNumber` present **and populated**, and the recovery leaves it present
+and **empty**. The old fix was "use a throwaway database for Increment 2 and a different, pristine
+one for Increment 3", which meant provisioning and seeding two databases.
+
+**The decision (Jess & Rob):** keep it on **one** database. Increment 2 still destroys the data on
+purpose; then a new **data-only `UPDATE`** puts the values back so Increment 3 can carry on. The
+*real* recovery options — point-in-time restore, database copy (`CREATE DATABASE … AS COPY OF`) —
+are described out loud, not run, because each is several minutes of waiting we do not have in the
+Afternoon 1 slot.
+
+**Why the seed can't do it:** `Seed.sql` guards every insert with `WHERE NOT EXISTS` on the key, so
+re-running it never touches the rows that already exist — it only inserts missing players. To
+refill an existing column you need an `UPDATE`, not the seed. New file
+`database/demo/ship-changes/increment-2_Restore-ShirtNumber.sql` does exactly that (set-based,
+explicit columns, no `MERGE`, `WHERE ShirtNumber IS NULL` so it is safe to re-run), run via
+`Invoke-DbaQuery -File` between 2b and Increment 3.
+
+**Also spotted:** a demo's post-run state had been left in the working tree (`Player.sql` /
+`Seed.sql` in their post-drop, ShirtNumber-removed form, plus the two demo views) — the §7a hazard.
+Committed `main` was fine; it was an un-run RESET region 99. `git restore` + removing the two views
+cleans it. Worth running region 99 before every practice run.
+
+**Files touched (both halves + surrounding notes kept in sync):**
+`database/demo/ship-changes/increment-2_Restore-ShirtNumber.sql` (new), `demo/03-database.ps1`
+(new Reseed region 24b, header shape + throwaway notes updated), `docs/database/demo.md` (new
+step 25 reseed section, Increment 3 steps renumbered 26–37, throwaway note removed), and
+`database/demo/ship-changes/README.md` (the "start from a populated database" callout). No slide
+change needed — the one database CMD slide mirrors DeployReport, which is unchanged.
+`check-demo-paths.py` clean.
+
 <!-- Add new entries above this line -->
