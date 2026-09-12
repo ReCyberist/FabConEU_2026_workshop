@@ -15,6 +15,31 @@ Format:
 
 ---
 
+## 2026-09-12 — Wrap-up demo now carries a database change, and it trips the guard rail on purpose
+**Context:** Revamping demo 05 (the end-to-end wrap-up) so its single pull request carries both
+an infra change (the auto-pause number) and a database change — and so the database change is
+broken on purpose, to show CI catching it before it reaches `main`.
+**Learning:** Two separate facts, both verified by building the SQL project locally:
+`SELECT *` in a view **fails** the build under `-warnaserror` — it trips T-SQL static code
+analysis rule **SR0001** ("the shape of the result set … will change if the underlying table
+or view structure changes"). An **emoji in a delimited object name** (e.g. `[football].[vw_⚽Standings]`)
+does **not** fail the build — it is a valid identifier and no analysis rule flags it. So the
+demo splits the two cleanly: the machine catches `SELECT *`; a human reviewer catches the silly
+name. Do not claim CI fails on the emoji. Two mechanics that matter: the broken view lives in
+`database/demo/wrap-up/` (a sibling of `database/sql-projects/`), so it is never compiled by the
+`.sqlproj` and never breaks unrelated PRs — it is only copied into `Views/` transiently during
+the demo; and because the fixed view gets merged to `main`, the RESET region must `git rm` it as
+well as reverting the number, or the next run finds the SQL build already green with nothing to
+catch. The copied-in `Views/vw_Standings.sql` is registered in `EXPECTED_ABSENT` in
+`check-demo-paths.py`.
+**Action:** Rewrote [`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1) and
+[`docs/wrap-up/demo.md`](../docs/wrap-up/demo.md) (kept in sync), added the bad/fixed view
+sources under [`database/demo/wrap-up/`](../database/demo/wrap-up/), and added the
+`EXPECTED_ABSENT` entry in [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py). The
+wrap-up now also reflects apply-on-merge (no manual `gh workflow run`). No CMD slide mirrors this
+demo in [`slides/content.py`](../slides/content.py); if one is added later it must mirror both
+halves per CLAUDE.md §7a.
+
 ## 2026-09-12 — Azure SQL apply now runs on merge to main (reversing "apply on intent")
 **Context:** Jess & Rob want the workshop demo to show the whole CI/CD loop, not stop at a
 manual apply. `azure-sql-apply.yml` was `workflow_dispatch`-only by the 2026-07-29 decision.
