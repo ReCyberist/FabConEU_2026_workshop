@@ -119,6 +119,14 @@ Run one Terraform module from the repository and let it build the target platfor
 	The plan shows the Azure SQL resources to add: the resource group, logical server, serverless
 	database, and firewall rules.
 
+	!!! tip "Save the plan, apply exactly what you reviewed"
+
+		`terraform plan -out=tfplan` writes the plan to a file. Passing that file to
+		`terraform apply tfplan` then applies exactly the changes you reviewed — no second plan,
+		no approval prompt. In a pipeline this is how the plan and apply stay in step: the plan
+		job saves `tfplan` as an artefact, and the apply job downloads it, so the change that
+		ships is the change that was reviewed.
+
 8. Apply the plan.
 
 	```powershell

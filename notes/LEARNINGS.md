@@ -15,6 +15,17 @@ Format:
 
 ---
 
+## 2026-09-12 — Note the `plan -out` / `apply <plan>` artefact pattern near the infra plan step
+**Context:** The infra demo runs plain `terraform plan` then `terraform apply` on both halves. That
+is right for a live demo, but it hides the pipeline pattern where the reviewed plan is the plan that
+ships.
+**Learning:** Worth calling out (not doing) that `terraform plan -out=tfplan` saves the plan to a
+file and `terraform apply tfplan` applies exactly it — no re-plan, no approval prompt — which is how
+a plan job hands a build artefact to an apply job so no drift creeps in between review and apply.
+**Action:** Added a `!!! tip` under the Azure SQL plan step in [`docs/infra/demo.md`](../docs/infra/demo.md)
+and a matching `SAY:` comment at region 08 of [`demo/02-infrastructure.ps1`](../demo/02-infrastructure.ps1).
+Kept it to the focus (Azure SQL) path to avoid the two-copy drift CLAUDE.md §7a warns about.
+
 ## 2026-09-12 — The session-clock "90 min" badge now counts down and warns in colour
 **Context:** The teaching-slot clocks showed a static slot length ("90 min") on the right while
 the fill bar moved. Only the break clock (`.session-clock__remaining`) counted down; the room had
