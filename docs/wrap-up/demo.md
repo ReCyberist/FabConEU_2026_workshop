@@ -138,7 +138,7 @@ check it — the Terraform plan and the SQL build — fix what the build refuses
      Show the apply summary and the Terraform result line.
      Expected shape: `Apply complete! Resources: 0 added, 1 changed, 0 destroyed`.
 
-11. Show the change in code and runtime.
+11. Show the change on `main`.
 
      ```powershell
      git switch main
@@ -147,7 +147,60 @@ check it — the Terraform plan and the SQL build — fix what the build refuses
      Get-Content ./database/sql-projects/Views/vw_Standings.sql
      ```
 
-     In the workflow run log, point to the publish job applying the same view to the database.
+     The variables file shows `default     = 75`, and the view file is present on `main`. Both
+     arrived through the pull request. In the workflow run log, the publish job applied this same
+     view to the database.
+
+12. Query the live view to prove it returns rows.
+
+    Sign in to Azure, get a token, and set the server and database you deployed to.
+
+    ```powershell
+    az login
+    $token  = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+    $server = "<your-server-name>"
+    $db     = "<your-database-name>"
+    ```
+
+    On the shared attendee endpoint, use SQL login instead of a token. Set `$server`, `$db`, and
+    `$sqlCredential` as shown on the [database demo page](../database/demo.md), then use the
+    **Attendee path** tab below.
+
+    === "Presenter path (Entra token)"
+
+        ```powershell
+        $ConnectionParams = @{
+            SqlInstance = $server
+            Database    = $db
+            AccessToken = $token
+        }
+        $serverSMO = Connect-DbaInstance @ConnectionParams
+
+        $queryParams = @{
+            SqlInstance = $serverSMO
+            Database    = $db
+            Query       = "SELECT Competition, Position, Team, Played, Points FROM football.vw_Standings WHERE Position <= 5 ORDER BY Competition, Position"
+        }
+
+        Invoke-DbaQuery @queryParams
+        ```
+
+    === "Attendee path (SQL login)"
+
+        ```powershell
+        $queryParams = @{
+            SqlInstance   = $server
+            Database      = $db
+            SqlCredential = $sqlCredential
+            Query         = "SELECT Competition, Position, Team, Played, Points FROM football.vw_Standings WHERE Position <= 5 ORDER BY Competition, Position"
+        }
+
+        Invoke-DbaQuery @queryParams
+        ```
+
+    The query returns the top five of each competition, ranked by position. The Premier League and
+    the WSL are separate tables, not mixed together. The view you read as a file is now answering
+    from the live database.
 
 ## Teardown
 

@@ -18,12 +18,12 @@
     # A leftover here is what makes `git switch -c demo/source-control` fail on a re-run.
     #   demo/source-control          -> demo/01-source-control.ps1  region 02
     #   demo/merge-rob, merge-jess   -> demo/01b-merge-conflict.ps1 regions 02/04
-    #   demo/wrapup-azure-sql-change -> demo/05-wrap-up.ps1         region 02
+    #   demo/wrapup-change           -> demo/05-wrap-up.ps1         region 02
     DemoRunBranches = @(
         'demo/source-control'
         'demo/merge-rob'
         'demo/merge-jess'
-        'demo/wrapup-azure-sql-change'
+        'demo/wrapup-change'
     )
 
     # Of those, the ones a demo also PUSHES to origin (so a stale remote can linger too).
@@ -32,7 +32,7 @@
     RemoteDemoRunBranches = @(
         'demo/source-control'
         'demo/merge-rob'
-        'demo/wrapup-azure-sql-change'
+        'demo/wrapup-change'
     )
 
     # Tracked files a demo OVERWRITES in place (Copy-Item -Force / an on-stage edit).
@@ -57,6 +57,7 @@
         'infra/fabric-sql/terraform/backend_local_override.tf'               # 02 region 16
         'database/sql-projects/Views/vw_SquadAges.sql'                       # 03 increment 1
         'database/sql-projects/Views/vw_TeamRosterSizes.sql'                 # 03 increment 2
+        'database/sql-projects/Views/vw_Standings.sql'                       # 05 regions 04/08
         'database/sql-projects/Scripts/PreDeployment/Migrate-ShirtNumber.sql' # 03 increment 3A
         'database/sql-projects/FabConFootball.refactorlog'                   # 03 increment 3B
         'database/sql-projects/deploy-report.xml'                            # 03 (gitignored)
@@ -86,7 +87,7 @@
     RequiredCommands = @(
         @{ Name = 'git';        Demo = 'all' }
         @{ Name = 'gh';         Demo = '01, 04, 05' }
-        @{ Name = 'az';         Demo = '02, 03' }
+        @{ Name = 'az';         Demo = '02, 03, 05' }
         @{ Name = 'terraform';  Demo = '02' }
         @{ Name = 'dotnet';     Demo = '03' }
         @{ Name = 'sqlpackage'; Demo = '03' }
@@ -96,7 +97,7 @@
 
     # PowerShell modules the demos import.
     RequiredModules = @(
-        @{ Name = 'dbatools'; Demo = '03 (Invoke-DbaQuery)' }
+        @{ Name = 'dbatools'; Demo = '03, 05 (Invoke-DbaQuery)' }
     )
 
     # global.json pins the .NET SDK; demo 03 builds under it.
