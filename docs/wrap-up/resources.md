@@ -40,8 +40,7 @@ specifics:
 ## Find us
 
 Come and say hello at the break or after the session — questions, war stories, and disagreements
-all welcome. If a question is only useful to you, grab us in the room; if it is useful to everyone,
-ask it in the Q&A.
+all welcome.
 
 You can also reach us after the day:
 

@@ -15,6 +15,50 @@ Format:
 
 ---
 
+## 2026-09-12 — The presenter-script write-back needs its own "latest wins" concurrency
+**Context:** `azure-sql-apply.yml` now writes the provisioned Azure SQL server/database names back
+into `demo/03-database.ps1` after the demo apply completes, so the presenters do not have to
+hand-edit Region 06 after every destroy/recreate.
+**Learning:** Sharing a rebase-and-push step across multiple successful applies is not enough on
+its own. If two applies to `main` overlap, the one that finishes last can still push **older**
+server/database names after the newer environment is already live; and even with `cancel-in-progress`,
+`git pull --rebase` can replay a stale local edit onto a newer `origin/main` copy of
+`demo/03-database.ps1`. The safe, small fix is a separate concurrency group on the
+`update-presenter-script` job with `cancel-in-progress: true`, **plus** a freshness check against
+`origin/main` just before commit: if `main` has advanced at all since this job checked it out,
+skip the write-back and let the next apply run own the update. That is deliberately stricter than
+checking only `demo/03-database.ps1`, because committing onto an older tip and then replaying it
+forward reintroduces the stale-write race. Terraform apply itself keeps its existing
+non-cancelling state lock concurrency.
+**Action:** Added the dedicated concurrency group and the strict pre-commit `origin/main` tip
+check to
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml).
+
+## 2026-09-12 — Wrap-up demo now carries a database change, and it trips the guard rail on purpose
+**Context:** Revamping demo 05 (the end-to-end wrap-up) so its single pull request carries both
+an infra change (the auto-pause number) and a database change — and so the database change is
+broken on purpose, to show CI catching it before it reaches `main`.
+**Learning:** Two separate facts, both verified by building the SQL project locally:
+`SELECT *` in a view **fails** the build under `-warnaserror` — it trips T-SQL static code
+analysis rule **SR0001** ("the shape of the result set … will change if the underlying table
+or view structure changes"). An **emoji in a delimited object name** (e.g. `[football].[vw_⚽Standings]`)
+does **not** fail the build — it is a valid identifier and no analysis rule flags it. So the
+demo splits the two cleanly: the machine catches `SELECT *`; a human reviewer catches the silly
+name. Do not claim CI fails on the emoji. Two mechanics that matter: the broken view lives in
+`database/demo/wrap-up/` (a sibling of `database/sql-projects/`), so it is never compiled by the
+`.sqlproj` and never breaks unrelated PRs — it is only copied into `Views/` transiently during
+the demo; and because the fixed view gets merged to `main`, the RESET region must `git rm` it as
+well as reverting the number, or the next run finds the SQL build already green with nothing to
+catch. The copied-in `Views/vw_Standings.sql` is registered in `EXPECTED_ABSENT` in
+`check-demo-paths.py`.
+**Action:** Rewrote [`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1) and
+[`docs/wrap-up/demo.md`](../docs/wrap-up/demo.md) (kept in sync), added the bad/fixed view
+sources under [`database/demo/wrap-up/`](../database/demo/wrap-up/), and added the
+`EXPECTED_ABSENT` entry in [`check-demo-paths.py`](../.github/scripts/check-demo-paths.py). The
+wrap-up now also reflects apply-on-merge (no manual `gh workflow run`). No CMD slide mirrors this
+demo in [`slides/content.py`](../slides/content.py); if one is added later it must mirror both
+halves per CLAUDE.md §7a.
+
 ## 2026-09-12 — A page with two session clocks needs the running one to be opaque
 **Context:** The database demo page carries two session clocks — Morning 3 (Part 1) and
 Afternoon 1 (Part 2) — because the demo spans lunch. In the afternoon slot the red "urgent"

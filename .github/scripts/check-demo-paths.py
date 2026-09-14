@@ -57,6 +57,7 @@ EXPECTED_ABSENT = {
     "notes/team-notes.md": "created by demo 01b on both branches, which is the whole point",
     "database/sql-projects/Views/vw_SquadAges.sql": "created by demo 03, increment 1",
     "database/sql-projects/Views/vw_TeamRosterSizes.sql": "created by demo 03, increment 2",
+    "database/sql-projects/Views/vw_Standings.sql": "copied in by demo 05, the wrap-up database change; removed on reset",
     "database/sql-projects/Scripts/PreDeployment": "created by demo 03, increment 3A",
     "database/sql-projects/Scripts/PreDeployment/Migrate-ShirtNumber.sql": "created by demo 03, increment 3A",
     "database/sql-projects/FabConFootball.refactorlog": "created by demo 03, increment 3B",

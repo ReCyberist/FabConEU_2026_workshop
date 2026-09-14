@@ -2,9 +2,10 @@
 
 --8<-- "includes/clock-afternoon-2.md"
 
-This is the final end-to-end run of the day: change Azure SQL infrastructure as code, raise a pull
-request, read the plan, merge, apply from `main`, then tear it down. Everything from this morning,
-in one loop.
+This is the final end-to-end run of the day. One pull request carries two changes: an Azure SQL
+infrastructure change and a database change. You raise the pull request, watch both guard rails
+check it — the Terraform plan and the SQL build — fix what the build refuses, merge, apply from
+`main`, then tear it down. Everything from this morning, in one loop.
 
 !!! note "Follow along — or just watch"
     You need a fork of the repository, GitHub CLI signed in, and Azure access configured for the
@@ -24,14 +25,12 @@ in one loop.
 
 ## Run it
 
-This demo changes one Azure SQL database setting by code, then shows the full CI/CD loop.
-
 1. Create a branch for the wrap-up demo.
 
      ```powershell
      git checkout main
      git pull
-     git checkout -b demo/wrapup-azure-sql-change
+     git checkout -b demo/wrapup-change
      ```
 
 2. Change the Azure SQL serverless auto-pause value in Terraform.
@@ -48,38 +47,89 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
 
      Save the file. The repository baseline is `60`. If the file already says something else, a
      previous run of this demo was committed and not reset; put it back to `60` before you start,
-     or the plan in step 4 reports `0 to change`.
+     or the plan in step 6 reports `0 to change`.
 
-3. Commit the change.
+3. Add the database change: copy in a new view.
 
      ```powershell
-     git add ./infra/azure-sql/terraform/demo/variables.tf
-     git commit -m "demo: change Azure SQL auto-pause delay to 75 minutes"
+     Copy-Item ./database/demo/wrap-up/vw_Standings.bad.sql `
+               ./database/sql-projects/Views/vw_Standings.sql
+     code ./database/sql-projects/Views/vw_Standings.sql
      ```
 
-4. Push and open a pull request.
+     The view has two problems, on purpose. It uses `SELECT *`, and its object name contains an
+     emoji. You fix both in step 7.
+
+4. Commit both changes together.
 
      ```powershell
-     git push -u origin demo/wrapup-azure-sql-change
+     git add ./infra/azure-sql/terraform/demo/variables.tf `
+             ./database/sql-projects/Views/vw_Standings.sql
+     git commit -m "demo: bump auto-pause to 75 and add standings view"
+     ```
+
+5. Push and open a pull request.
+
+     ```powershell
+     git push -u origin demo/wrapup-change
      gh pr create --fill --base main
-     gh pr view --web
      ```
 
-     In the PR checks, open **Azure SQL - Terraform plan (PR)** and show the plan summary line.
-     Expected shape: `Plan: 0 to add, 1 to change, 0 to destroy`.
+6. Read the checks on the pull request.
 
-5. Merge the pull request.
+     ```powershell
+     gh pr view --web
+     gh pr checks
+     ```
+
+     Two results matter:
+
+     - **Azure SQL - Terraform plan (PR)** passes and posts the plan.
+       Expected shape: `Plan: 0 to add, 1 to change, 0 to destroy`.
+     - **Build SQL project + code analysis** fails. Open it. The error is
+       `SR0001`: the shape of the result set produced by a `SELECT *` statement will change if the
+       underlying table or view structure changes. The build runs with `-warnaserror`, so this one
+       finding fails the check.
+
+     The emoji in the object name does not fail the build. The analyzer does not check for it. A
+     person catches that in review.
+
+7. Fix the view and push the fix.
+
+     ```powershell
+     Copy-Item ./database/demo/wrap-up/vw_Standings.fixed.sql `
+               ./database/sql-projects/Views/vw_Standings.sql
+     git --no-pager diff -- ./database/sql-projects/Views/vw_Standings.sql
+     git add ./database/sql-projects/Views/vw_Standings.sql
+     git commit -m "demo: list columns and drop the emoji from the standings view"
+     git push
+     ```
+
+     The fixed view lists its columns and uses a plain object name, `football.vw_Standings`.
+
+8. Watch the checks go green.
+
+     ```powershell
+     gh pr checks --watch
+     ```
+
+     The SQL build re-runs on the new commit and passes. The pull request is now mergeable.
+
+9. Merge the pull request.
 
      ```powershell
      gh pr merge --squash --delete-branch
      ```
 
-     The change is now on `main`, ready for deliberate apply.
+     The change is now on `main`.
 
-6. Dispatch the Azure SQL apply workflow from `main`.
+10. Watch the apply, which starts on merge.
+
+     The merge pushes to `main`, which triggers the Azure SQL apply workflow. No dispatch is
+     needed. The workflow applies the Terraform change, then publishes the database, so the new
+     view lands in the database as well.
 
      ```powershell
-     gh workflow run azure-sql-apply.yml --ref main -f target=demo
      gh run list --workflow azure-sql-apply.yml --limit 1
      gh run watch
      gh run view --web
@@ -88,22 +138,16 @@ This demo changes one Azure SQL database setting by code, then shows the full CI
      Show the apply summary and the Terraform result line.
      Expected shape: `Apply complete! Resources: 0 added, 1 changed, 0 destroyed`.
 
-7. Show the change in code and runtime.
+11. Show the change in code and runtime.
 
      ```powershell
      git switch main
      git pull
      git --no-pager show -- ./infra/azure-sql/terraform/demo/variables.tf
+     Get-Content ./database/sql-projects/Views/vw_Standings.sql
      ```
 
-     In the workflow run log, point to the same change being applied to the database.
-
-8. Reset the demo default back to 60 for the next run.
-
-     Repeat steps 1-7, but use a new branch name (for example, `demo/wrapup-azure-sql-reset`), with:
-     - `default     = 75` changed back to `default     = 60`.
-
-     This keeps the repository baseline consistent for future sessions.
+     In the workflow run log, point to the publish job applying the same view to the database.
 
 ## Teardown
 
@@ -117,12 +161,39 @@ gh run watch
 
 Nightly destroy still runs as the backstop, but do not rely on it during workshops.
 
+## Reset for the next run
+
+Return the repository to its baseline: auto-pause `60`, and no standings view.
+
+1. Switch to `main` and pull the merged change.
+
+     ```powershell
+     git switch main
+     git pull
+     ```
+
+2. Open the variables file and change `default     = 75` back to `default     = 60`. Save it.
+
+     ```powershell
+     code ./infra/azure-sql/terraform/demo/variables.tf
+     ```
+
+3. Remove the view, commit both, and push.
+
+     ```powershell
+     git rm ./database/sql-projects/Views/vw_Standings.sql
+     git add ./infra/azure-sql/terraform/demo/variables.tf
+     git commit -m "demo: reset wrap-up -- auto-pause 60, remove standings view"
+     git push
+     ```
+
 ## Checkpoint
 
-You have taken one change from a branch to a running database and back out again: a pull request
-carrying a `terraform plan`, a merge, a deliberate apply from `main`, the same value confirmed in
-both git and the database, and a teardown that leaves nothing billing. That is the whole day in
-one loop.
+You have taken two changes from a branch to a running database and back out again in one pull
+request: a Terraform change carrying a `terraform plan`, a database change that the SQL build
+refused until you fixed it, a merge, an apply from `main` that landed both the infra change and
+the view, the same results confirmed in git and the database, and a teardown that leaves nothing
+billing. That is the whole day in one loop.
 
 ## What's next
 
