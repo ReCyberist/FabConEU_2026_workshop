@@ -32,6 +32,7 @@
       - Clean tree, on main, up to date.
       - `gh auth status` signed in.
       - The Azure OIDC repo variables set, or the apply cannot log in.
+      - `az login` and dbatools installed -- region 12 queries the live view with Invoke-DbaQuery.
 
     See demo/README.md for how to run one of these (short version: F8, never F5).
 #>
@@ -142,17 +143,39 @@ gh run view --web
 #endregion
 
 
-#region 12 · Close the loop -- code AND runtime                                     [~90s]
+#region 12 · Close the loop -- code AND runtime                                     [~2m]
 # The number, on main. And the view file, on main. Both arrived by pull request.
 git switch main
 git pull
 git --no-pager show -- ./infra/azure-sql/terraform/demo/variables.tf
 Get-Content ./database/sql-projects/Views/vw_Standings.sql
-# In the workflow run log, point to the publish job applying the same view to the database.
+
+# ...and the RUNTIME half. Region 11's publish job landed this same view in the live database,
+# so ask it for rows -- the file we just read, now answering from the running database.
+# Same server and database as demo 03 region 06 (the live demo environment; keep them in step).
+# The wrap-up runs on gh, not az, so sign in if the token has expired: az login.
+$ConnectionParams = @{
+    SqlInstance = "sql-fabcon26-dev-uks-przynr.database.windows.net"
+    Database    = "sqldb-football-dev"
+    AccessToken = (az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
+}
+$serverSMO = Connect-DbaInstance @ConnectionParams
+$standingsQuery = @{
+    SqlInstance = $serverSMO
+    Database    = $ConnectionParams.Database
+    Query       = "SELECT Competition, Position, Team, Played, Points FROM football.vw_Standings WHERE Position <= 5 ORDER BY Competition, Position"
+}
+Invoke-DbaQuery @standingsQuery
+# EXPECT: the top five of EACH competition -- Premier League and WSL as separate tables, ranked
+# by Position, not mixed. SAY: on main as code, and running in the database -- both out of one
+# pull request. That is the whole day, closed.
+# In the workflow run log, point to the publish job that applied this same view to the database.
 #endregion
 
 
 #region 13 · Teardown -- do it, do not just recommend it                            [~4m]
+# Only when we're sure we're done with the demo. The apply is a real apply, and the destroy is a real destroy.
+# Maybe let folks ask questions before you blow it all up.
 gh workflow run azure-sql-destroy.yml --ref main -f target=both
 gh run list --workflow azure-sql-destroy.yml --limit 1
 gh run watch

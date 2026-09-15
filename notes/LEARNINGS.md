@@ -15,6 +15,49 @@ Format:
 
 ---
 
+## 2026-09-14 — Wrap-up now closes the loop in runtime, not just in code
+**Context:** Region 12 of the wrap-up ("Close the loop — code AND runtime") only proved the code
+landed on `main` and pointed at the apply log for the runtime half.
+**Learning:** A single `Invoke-DbaQuery` against `football.vw_Standings` makes the runtime half
+real — the view we just read as a file now answering from the live database, before teardown in
+region 13 removes it. It reuses demo 03's `Connect-DbaInstance` idiom and the same demo
+environment (`sql-fabcon26-dev-uks-przynr` / `sqldb-football-dev`). **Watch-out:** that server
+name is a Terraform-generated literal. Demo 03's copy is kept current by the apply write-back;
+the wrap-up's is hand-typed, so after a destroy/recreate it can go stale. Keep it in step with
+demo 03 region 06 (or make it dynamic later). Also adds `az` + `dbatools` to demo 05's needs.
+A standings view has to be ranked **per competition**: `vw_LeagueTable` aggregates per
+season/competition/team, so ordering by points alone interleaves the Premier League and the WSL.
+`vw_Standings.fixed.sql` now carries a `Position` column from
+`ROW_NUMBER() OVER (PARTITION BY SeasonId, CompetitionId ORDER BY Points DESC, GoalDifference DESC,
+GoalsFor DESC)`, and the demo query filters `Position <= 5` and orders by `Competition, Position`.
+A view cannot hold a top-level `ORDER BY`, but a window-function column is fine and passes SQL code
+analysis clean (`-warnaserror`, zero findings).
+**Action:** Added the query to both halves — [`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1)
+region 12 and step 12 of [`docs/wrap-up/demo.md`](../docs/wrap-up/demo.md), with Presenter/Attendee
+tabs — added the per-competition `Position` to
+[`database/demo/wrap-up/vw_Standings.fixed.sql`](../database/demo/wrap-up/vw_Standings.fixed.sql),
+and updated the `az`/`dbatools` demo lists in
+[`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1).
+
+## 2026-09-14 — Reset was cleaning a wrap-up branch the demo no longer creates
+**Context:** Following up on a report that `Reset-DemoEnvironment.ps1` never deletes the branch
+demo 05 leaves behind.
+**Learning:** The demo's branch was renamed to `demo/wrapup-change` in both halves of the pair
+(`demo/05-wrap-up.ps1` and `docs/wrap-up/demo.md`), but the inventory in
+[`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1) still listed the old
+`demo/wrapup-azure-sql-change` under both `DemoRunBranches` and `RemoteDemoRunBranches`. So the
+reset looked for a branch nothing creates and left the real leftover in place. The read-only test
+did not catch it because the test is generated *from* the same inventory — it was asserting on the
+wrong branch name too (a false green). Separately, `CreatedFiles` never listed
+`database/sql-projects/Views/vw_Standings.sql`, the view demo 05 copies in, so an abandoned run's
+leftover view was neither removed nor (if it merged and reset was skipped) flagged as a leaked
+tracked file. CI's `check-demo-paths.py` already knew about the view via `EXPECTED_ABSENT`; the
+inventory was the odd one out.
+**Action:** Corrected both branch entries to `demo/wrapup-change` and added `vw_Standings.sql` to
+`CreatedFiles` in [`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1). The reset and the
+Pester test now act on the real residue. Reminder: when a demo renames a branch or adds a file,
+the psd1 inventory is the single source of truth — update it there, not in the reset or the tests.
+
 ## 2026-09-12 — The presenter-script write-back needs its own "latest wins" concurrency
 **Context:** `azure-sql-apply.yml` now writes the provisioned Azure SQL server/database names back
 into `demo/03-database.ps1` after the demo apply completes, so the presenters do not have to
