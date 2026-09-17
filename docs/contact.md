@@ -4,7 +4,7 @@ Questions before the day, a spot of feedback, or just fancy saying hello? You ca
 us through our blogs — that is the surest way to find us between now and Barcelona.
 
 - **Jess Pomfret** — [jesspomfret.com](https://jesspomfret.com)
-- **Rob Sewell** — [blog.robsewell.com](http://blog.robsewell.com/)
+- **Rob Sewell** — [blog.robsewell.com](http://robsewell.com/)
 
 We would love to hear from you, and we will do our best to reply before the workshop.
 
