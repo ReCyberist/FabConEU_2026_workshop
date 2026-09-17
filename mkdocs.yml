@@ -93,6 +93,7 @@ nav:
   - Home: index.md
   - Getting started:
       - Prerequisites: setup/prerequisites.md
+  - Contact: contact.md
   # --- Held until reveal: delete remaining exclude_docs entries AND uncomment below ---
   # On reveal, `Welcome & how the day works` moves ABOVE `Prerequisites` in the
   # `Getting started` section above — Welcome sets up the day and ends by sending
