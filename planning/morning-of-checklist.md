@@ -97,6 +97,9 @@ authenticate from `main` — OIDC federated credentials don't trust branches.)*
 - [ ] Template repo forkable/clonable; prerequisites page live; commands cheat-sheet to hand.
 - [ ] Shared **unsupported** SQL endpoint (task #19) up **if built** — otherwise be explicit up
       front that the DB-deploy follow-along needs the attendee's own target SQL.
+- [ ] **Confirm Cláudio (moderator) can connect to the shared endpoint** — his laptop's egress IP
+      is allowed and a test connection returns rows, so he can follow the DB-deploy demo from the
+      front row rather than discovering he's firewalled off mid-session.
 
 ## 5 · Fallbacks ready
 - [ ] "Just watch" path rehearsed for anyone who can't provision — bring-your-own (D6) means some
