@@ -12,9 +12,10 @@
     TIMING - READ THIS
     The agenda flags this as the section most likely to overrun (#13). The apply is ~4.5
     minutes of nothing happening on screen. Kick it off EARLY and narrate the module while
-    it runs -- do not start the apply and then go quiet. If you are behind by the Fabric
-    section, show the plan and skip the apply; the contrast is the teaching point, not the
-    second set of resources.
+    it runs -- do not start the apply and then go quiet. That narration is the module wander
+    (region 01b for Azure SQL, 12b for Fabric): open the four files there, keep it brief, then
+    walk main.tf during the apply wait. If you are behind by the Fabric section, show the plan
+    and skip the apply; the file wander already makes the contrast, so the resources need not exist.
 
     BEFORE YOU START
       - `az login` done, and the right subscription selected.
@@ -47,6 +48,19 @@ break
 #region 01 · Into the module                                                        [~15s]
 cd infra/azure-sql/terraform/demo
 Get-Location
+#endregion
+
+
+#region 01b · Wander through the module -- what it is made of                        [~45s]
+# The demo has opened tfvars and the backend before; it has never opened the module itself.
+# Open the four files so the anatomy is on screen. Keep this quick -- one line each -- then
+# do the real walk of main.tf during the apply wait (region 09), when the screen is idle.
+#   providers.tf  -- which APIs we talk to, and their versions (here: azurerm alone)
+#   variables.tf  -- the knobs a caller can set: environment, location, names
+#   main.tf       -- the resources themselves: resource group -> server -> database -> firewall
+#   outputs.tf    -- what apply hands back (sql_server_fqdn is what demo 03 region 06 targets)
+# SAY: no portal, no clicking -- the whole environment is these four files under version control.
+code providers.tf variables.tf main.tf outputs.tf
 #endregion
 
 
@@ -106,6 +120,8 @@ terraform plan
 #region 09 · apply -- START THIS, THEN TALK                                       [~4m31s]
 # It stops on "Only 'yes' will be accepted to approve." -- read that line out, type yes,
 # THEN start narrating the module. Do not type yes and go quiet for four and a half minutes.
+# This is the wander: the four files from region 01b are already open -- walk main.tf top to
+# bottom (resource group -> server -> database -> firewall) while the apply runs.
 terraform apply
 #endregion
 
@@ -135,6 +151,18 @@ Start-Process "https://portal.azure.com"
 #region 12 · Across to the Fabric module                                            [~20s]
 cd ../../../fabric-sql/terraform
 Get-Location
+#endregion
+
+
+#region 12b · Wander through the Fabric module -- spot the difference                [~60s]
+# Same four files, same layout as Azure SQL -- so point at what CHANGED, not what is the same.
+# This is where the contrast lands, and it lands from the code even if you skip the apply.
+#   providers.tf  -- TWO providers now: azurerm builds the capacity, microsoft/fabric the rest
+#   variables.tf  -- adds fabric_subscription_id, the one variable with no default (region 13)
+#   main.tf       -- capacity -> workspace -> database, not the server -> database of Azure SQL
+#   outputs.tf    -- the Fabric SQL database's connection details
+# SAY: same discipline, same file layout. What differs is the shape of what you declare.
+code providers.tf variables.tf main.tf outputs.tf
 #endregion
 
 
