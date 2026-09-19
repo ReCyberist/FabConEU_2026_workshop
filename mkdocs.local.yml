@@ -49,4 +49,5 @@ nav:
       - Resources & next steps: wrap-up/resources.md
   - Reference:
       - Other tooling: reference/other-tooling.md
+      - Run this site on your own laptop: reference/run-the-site-locally.md
   - Contact: contact.md
