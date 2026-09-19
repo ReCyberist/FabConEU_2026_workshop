@@ -15,6 +15,38 @@ Format:
 
 ---
 
+## 2026-09-19 — Morning readiness is scripted, and resource-liveness is a test, not a checklist chore
+**Context:** Tightening [`planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) so the
+pre-doors routine is commands, not prose — and deciding where the "are the deployed resources up?"
+checks should live.
+**Learning:** Three things worth keeping:
+1. **`fabric-sql-apply` resumes the paused capacity itself** (its "Resume capacity" step waits for
+   `Active`), so the old manual "resume the Fabric capacity" checklist step was redundant — dispatch
+   the workflow and it wakes the capacity. The every-2h auto-pause is a separate **Azure Automation
+   schedule** (`pause-every-2h` on `aa-fabcon26-dev-uks`, `rg-fabcon26-automation-uks`, Tenant B); to
+   stop it pausing mid-workshop, disable the schedule for the day:
+   `az automation schedule update --is-enabled false` (re-enable after). `az automation schedule` is a
+   real command in the (preview) automation extension.
+2. **Resource-liveness belongs with the other readiness assertions, not in the manual checklist.** The
+   reset demo already pairs a "make ready" script with an "assert ready" Pester suite reading one
+   inventory ([`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1)); "the demo DB, the ten
+   attendee DBs and the Fabric capacity are up" is the same kind of check. Added a **`Cloud`** tag for
+   it — online + cross-tenant, so it is skipped when `az` is not signed in and excluded offline with
+   `-ExcludeTag Auth,Cloud`. Each check reads its subscription from an **env-var name** declared in the
+   inventory (`AZURE_SUBSCRIPTION_ID` / `FABRIC_SUBSCRIPTION_ID`), never a hardcoded id (CLAUDE.md §4).
+3. **The "toolchain sanity" checklist bullet was already the Pester suite's job** — it asserts every
+   CLI/module + `.NET` version + sign-in. Don't restate readiness checks in the checklist; point at the
+   reset run.
+**Watch-out:** the Fabric capacity check uses `az resource show --resource-type
+Microsoft.Fabric/capacities` with no `--api-version`; if a live run needs one, add
+`--api-version 2023-11-01` (in the test **and** the checklist's disable step). Not yet verified against
+a live capacity.
+**Action:** Rewrote checklist §1–§3, added the `Cloud` tag + `CloudResources` inventory
+([`tests/DemoEnvironment.Tests.ps1`](../tests/DemoEnvironment.Tests.ps1),
+[`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1)) — PR #97. **Open decision:** whether
+`Reset-DemoEnvironment.ps1` should run the Pester suite at the end (opt-in `-Verify` switch vs. leave
+the two separate) — parked pending Jess/Rob's call.
+
 ## 2026-09-14 — Wrap-up now closes the loop in runtime, not just in code
 **Context:** Region 12 of the wrap-up ("Close the loop — code AND runtime") only proved the code
 landed on `main` and pointed at the apply log for the runtime half.
