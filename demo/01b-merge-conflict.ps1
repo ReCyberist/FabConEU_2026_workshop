@@ -39,10 +39,10 @@
     the only thing that matters is that ROB pushes first and JESS hits the conflict.
 
     BEFORE YOU START
-      - Both laptops on a clean tree, both signed in, both able to push to origin.
-      - Both terminals zoomed up. This demo is entirely small text.
-      - Agree who is ROB and who is JESS before you walk on.
-      - Demo 01's RESET has run (it does not have to, but a tidy `git status` helps).
+        - Both laptops on a clean tree, both signed in, both able to push to origin.
+        - Both terminals zoomed up. This demo is entirely small text.
+        - Agree who is ROB and who is JESS before you walk on.
+        - Demo 01's RESET has run (it does not have to, but a tidy `git status` helps).
 
     See demo/README.md for how to run one of these (short version: F8, never F5).
 #>

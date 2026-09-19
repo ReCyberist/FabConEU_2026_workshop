@@ -99,10 +99,6 @@ gh pr view --web
 
 
 #region 99 · RESET -- run this before you walk away                                 [~20s]
-gh pr close --delete-branch 2>$null
-git switch main
-git branch -D demo/source-control 2>$null
-git push origin --delete demo/source-control 2>$null
-Remove-Item notes/fabcon.md -ErrorAction SilentlyContinue
+gh pr close --delete-branch demo/source-control
 git status
 #endregion
