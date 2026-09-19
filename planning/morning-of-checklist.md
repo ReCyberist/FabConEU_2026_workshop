@@ -14,13 +14,11 @@ first and let them run while you set up the room.
 
 ## 1 · Bring the demo environment back up
 *(The nightly destroy runs at 21:00 UTC, so infra is gone each morning. Deploy workflows only
-authenticate from `main` — OIDC federated credentials don't trust branches.)*
+authenticate from `main` — OIDC federated credentials don't trust branches. `fabric-sql-apply`
+resumes the paused Fabric capacity itself, so there is nothing to resume by hand.)*
 
 - [ ] `az login` to **both tenants** — Tenant A (Terraform state + Azure SQL) **and** Tenant B
       (Fabric). The Fabric path is cross-tenant; forgetting Tenant B is the classic morning trap.
-- [ ] **Resume the Fabric capacity** (`cappymccapface`, `fabcon-demo-rg`, Tenant B) and wait for
-      state `Active`. It auto-pauses every 2h, and both `data.fabric_capacity` **and** the SQL DB
-      are unreachable while it's suspended.
 - [ ] **Refresh the presenter IP secrets _before_ you dispatch apply.** The firewall rules that let
       Jess & Rob's laptops reach the Azure SQL server are built as code by Terraform from the
       `ROB_CLIENT_IP` / `JESS_CLIENT_IP` GitHub **secrets** (fed into `presenter_client_ips` by
@@ -40,57 +38,67 @@ authenticate from `main` — OIDC federated credentials don't trust branches.)*
       # confirm both exist (shows names + last-updated, not values)
       gh secret list
       ```
-- [ ] Dispatch **`azure-sql-apply`** from `main` → confirm `apply` + DACPAC `publish` + smoke test
-      all green.
-- [ ] Dispatch **`fabric-sql-apply`** from `main` → confirm workspace + SQL DB recreated, publish +
-      smoke green, and the **workspace-admin grant re-applied** (the workspace is recreated on every
-      apply, so Jess/Rob's visibility depends on the as-code `fabric_workspace_role_assignment`).
+- [ ] Dispatch **`azure-sql-apply`** from `main` and watch it green — `apply` + DACPAC `publish` +
+      smoke test:
+
+      ```powershell
+      gh workflow run azure-sql-apply.yml --ref main -f target=demo
+      Start-Sleep -Seconds 6   # let the run register before we grab its id
+      gh run watch (gh run list --workflow azure-sql-apply.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+      ```
+- [ ] Dispatch **`fabric-sql-apply`** from `main` and watch it green — it resumes the capacity,
+      recreates the workspace + SQL DB, publishes, smoke-tests, and re-applies the
+      **workspace-admin grant** (the workspace is recreated on every apply, so Jess/Rob's visibility
+      depends on the as-code `fabric_workspace_role_assignment`):
+
+      ```powershell
+      gh workflow run fabric-sql-apply.yml --ref main
+      Start-Sleep -Seconds 6
+      gh run watch (gh run list --workflow fabric-sql-apply.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+      ```
 - [ ] Sanity-check both smoke tests actually returned rows (not just "workflow succeeded").
 
 ## 2 · Pipelines & attendee site
 - [ ] CI green on `main`; GitHub Pages site deployed and reachable.
-- [ ] **Reveal the full site if going public today** — one PR: drop the `exclude_docs` block and
-      un-comment the `nav` in [`../mkdocs.yml`](../mkdocs.yml). Do this **early**, not live — never
-      the first time in front of the room.
+- [ ] **Reveal the full site (if going public today) — pre-stage the PR, merge it on the morning.**
+      The reveal is one change to [`../mkdocs.yml`](../mkdocs.yml): drop the `exclude_docs` block and
+      un-comment the full `nav` (it mirrors [`../mkdocs.local.yml`](../mkdocs.local.yml)). Prepare it
+      on a branch **days before** — never edit `mkdocs.yml` live in front of the room — and open the
+      PR ahead of time so CI has already proven it green:
+
+      ```powershell
+      # days before: on a reveal branch with the mkdocs.yml edit committed and pushed
+      gh pr create --base main --head reveal-site `
+        --title "Reveal the full workshop site" `
+        --body "Drop exclude_docs and un-comment the full nav in mkdocs.yml."
+      ```
+
+      On the morning, once you have decided to go public, merge it:
+
+      ```powershell
+      gh pr merge reveal-site --squash --delete-branch
+      ```
+
+      The push to `main` triggers [`pages.yml`](../.github/workflows/pages.yml); confirm that deploy
+      is green and the live site shows every page.
 - [ ] Publish / verify **checkpoint states** so anyone following along on their own kit (or just
       watching) can catch up at each "we move on" line.
 
 ## 3 · Presenter machines
-- [ ] Toolchain sanity on **both** laptops: `terraform`, `sqlpackage` / `dotnet` (the repo pins
-      .NET 8 via [`../global.json`](../global.json)), `mkdocs`, `gh auth status`, `az`.
 - [ ] **Reset the demo repo and confirm it's ready on _both_ laptops** — a previous run's throwaway
       branch or scratch file (including gitignored `tfvars`/`*_override.tf` a clean `git status` hides)
       will break a re-run. On a clean `main`:
 
       ```powershell
       ./demo/Reset-DemoEnvironment.ps1                 # add -SkipRemote if offline
-      Invoke-Pester ./tests/DemoEnvironment.Tests.ps1  # 35 checks: git state, tooling, sign-in
+      Invoke-Pester ./tests/DemoEnvironment.Tests.ps1  # git state, tooling, sign-in
       ```
 
-      All green means the environment is demo-ready. See [`../demo/README.md`](../demo/README.md) § Reset.
-- [ ] Rebuild the slide deck — it's gitignored, so regenerate it, don't assume it's there:
-
-      ```powershell
-      python slides/build.py
-      ```
-
-      Then eyeball it against the FabCon speaker template.
-- [ ] For any demo that hits a DB **from a laptop** (not a GitHub-hosted runner), make sure the
-      laptop's egress IP is allowed. If you refreshed `ROB_CLIENT_IP` / `JESS_CLIENT_IP` in §1
-      before applying, your laptops are already allowed **as code** — nothing to do here. Only if
-      you skipped that, or need a one-off IP (a third machine, a changed venue address), add a
-      temporary rule by hand — external clients are blocked even with a valid Entra token, because
-      only the "allow Azure services" rule is open:
-
-      ```powershell
-      az sql server firewall-rule create `
-        --resource-group rg-fabcon26-dev-uks `
-        --server <server-name> `
-        --name room-temp `
-        --start-ip-address <room-ip> --end-ip-address <room-ip>
-      ```
-
-      Remove it after the session.
+      The Pester run is the toolchain sanity check: it asserts `git`, `gh`, `az`, `terraform`,
+      `dotnet`, `sqlpackage`, `code`, `pwsh` and the `dbatools` module are present, the `.NET` SDK
+      matches [`../global.json`](../global.json), and `gh`/`az` are signed in. All green means the
+      environment is demo-ready. See [`../demo/README.md`](../demo/README.md) § Reset.
+- [ ] **Open the slide deck** on the presenting laptop, ready to go.
 
 ## 4 · Room & attendees
 - [ ] WiFi bandwidth confirmed (cloud provisioning is bandwidth-hungry), A/V, and power all working.
