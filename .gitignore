@@ -40,6 +40,9 @@ dist/
 # Local Claude Code settings (personal, not shared)
 .claude/settings.local.json
 
+# Claude Code git worktrees live here — local checkouts, never committed
+.claude/worktrees/
+
 # OS / editor
 .DS_Store
 Thumbs.db
