@@ -115,9 +115,28 @@ Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
     # Every check is skipped when `az` is not signed in, so it never fails a plain offline run.
 
     BeforeAll {
-        $script:cloud = $inventory.CloudResources
-        az account show *> $null
-        $script:signedIn = ($LASTEXITCODE -eq 0)
+        # Re-load the inventory here: the top-level $inventory is a DISCOVERY-phase variable
+        # (fine for the -ForEach and It titles above) but is not populated in this run-phase
+        # block, so read the psd1 again rather than relying on it.
+        $script:repoRoot = (git rev-parse --show-toplevel).Trim()
+        $script:cloud    = (Import-PowerShellDataFile -Path (Join-Path $script:repoRoot 'demo/DemoEnvironment.psd1')).CloudResources
+
+        # Run az so a non-zero exit NEVER throws, whatever the caller's error settings are:
+        # PowerShell 7.4+ turns a native non-zero exit into a TERMINATING error under
+        # $ErrorActionPreference='Stop', which would abort the test instead of failing it. A
+        # local 'Continue' inside the call suppresses that. Returns trimmed stdout, $null on
+        # any failure (missing resource, wrong subscription, az error).
+        function script:Get-AzText {
+            param([Parameter(Mandatory)] [string[]] $AzArgs)
+            $eap = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                $out = az @AzArgs 2>$null
+                if ($LASTEXITCODE -ne 0) { return $null }
+                return (($out -join "`n").Trim())
+            }
+            finally { $ErrorActionPreference = $eap }
+        }
 
         # Optional `--subscription` args from the env var named in the inventory; empty (current
         # context) when the var is unset. Keeps subscription ids out of the repo.
@@ -126,15 +145,17 @@ Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
             $val = [Environment]::GetEnvironmentVariable($EnvName)
             if ($val) { @('--subscription', $val) } else { @() }
         }
+
+        $script:signedIn = [bool] (script:Get-AzText @('account', 'show', '--query', 'id', '-o', 'tsv'))
     }
 
-    It "the demo Azure SQL database '$($inventory.CloudResources.DemoDatabaseName)' exists and is not deleting" {
+    It "the demo Azure SQL database '$($inventory.CloudResources.DemoDatabaseName)' exists and is reachable" {
         if (-not $script:signedIn) { Set-ItResult -Skipped -Because 'az is not signed in (run the Auth checks first)'; return }
         $c       = $script:cloud
         $subArgs = script:Get-SubArgs $c.AzureSqlSubscriptionEnv
-        $server  = (az sql server list -g $c.DemoResourceGroup @subArgs --query "[0].name" -o tsv 2>$null)
+        $server  = script:Get-AzText (@('sql', 'server', 'list', '-g', $c.DemoResourceGroup) + $subArgs + @('--query', '[0].name', '-o', 'tsv'))
         $server  | Should -Not -BeNullOrEmpty -Because "azure-sql-apply (demo) creates a server in $($c.DemoResourceGroup)"
-        $status  = (az sql db show -g $c.DemoResourceGroup --server $server --name $c.DemoDatabaseName @subArgs --query 'status' -o tsv 2>$null)
+        $status  = script:Get-AzText (@('sql', 'db', 'show', '-g', $c.DemoResourceGroup, '--server', $server, '--name', $c.DemoDatabaseName) + $subArgs + @('--query', 'status', '-o', 'tsv'))
         # Online, or Paused if the serverless database has auto-paused since the apply -- both mean
         # it exists and is reachable (the first query wakes a paused one). Anything else is a problem.
         $status  | Should -BeIn @('Online', 'Paused') -Because 'the DACPAC published into it during the apply'
@@ -144,9 +165,11 @@ Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
         if (-not $script:signedIn) { Set-ItResult -Skipped -Because 'az is not signed in (run the Auth checks first)'; return }
         $c       = $script:cloud
         $subArgs = script:Get-SubArgs $c.AzureSqlSubscriptionEnv
-        $server  = (az sql server list -g $c.AttendeeResourceGroup @subArgs --query "[0].name" -o tsv 2>$null)
+        $server  = script:Get-AzText (@('sql', 'server', 'list', '-g', $c.AttendeeResourceGroup) + $subArgs + @('--query', '[0].name', '-o', 'tsv'))
         $server  | Should -Not -BeNullOrEmpty -Because "azure-sql-apply (attendee) creates a server in $($c.AttendeeResourceGroup)"
-        $dbs     = @(az sql db list -g $c.AttendeeResourceGroup --server $server @subArgs --query "[?starts_with(name,'$($c.AttendeeDatabasePrefix)')].name" -o tsv 2>$null) -split "`n" | Where-Object { $_ }
+        $query   = "[?starts_with(name,'$($c.AttendeeDatabasePrefix)')].name"
+        $out     = script:Get-AzText (@('sql', 'db', 'list', '-g', $c.AttendeeResourceGroup, '--server', $server) + $subArgs + @('--query', $query, '-o', 'tsv'))
+        $dbs     = @($out -split "`n" | Where-Object { $_ })
         $dbs.Count | Should -BeGreaterOrEqual $c.AttendeeCount -Because 'one database per attendee is deployed for the shared endpoint'
     }
 
@@ -154,7 +177,7 @@ Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
         if (-not $script:signedIn) { Set-ItResult -Skipped -Because 'az is not signed in (run the Auth checks first)'; return }
         $c       = $script:cloud
         $subArgs = script:Get-SubArgs $c.FabricSubscriptionEnv
-        $state   = (az resource show -g $c.FabricResourceGroup -n $c.FabricCapacityName --resource-type 'Microsoft.Fabric/capacities' @subArgs --query 'properties.state' -o tsv 2>$null)
+        $state   = script:Get-AzText (@('resource', 'show', '-g', $c.FabricResourceGroup, '-n', $c.FabricCapacityName, '--resource-type', 'Microsoft.Fabric/capacities') + $subArgs + @('--query', 'properties.state', '-o', 'tsv'))
         $state   | Should -Be 'Active' -Because 'the Fabric demos need the capacity resumed and the auto-pause disabled for the day'
     }
 }
