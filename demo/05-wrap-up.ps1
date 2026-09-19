@@ -145,7 +145,6 @@ gh run view --web
 
 #region 12 · Close the loop -- code AND runtime                                     [~2m]
 # The number, on main. And the view file, on main. Both arrived by pull request.
-git switch main
 git pull
 git --no-pager show -- ./infra/azure-sql/terraform/demo/variables.tf
 Get-Content ./database/sql-projects/Views/vw_Standings.sql
