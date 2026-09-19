@@ -52,6 +52,7 @@ Get-Location
 
 #region 02 · Sign in, and be very sure which subscription                           [~40s]
 az login
+az account show | ConvertFrom-Json | Select-Object -ExpandProperty id      
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 # $env:ARM_SUBSCRIPTION_ID = (Get-Secret -Name "beard-mvp-subscription" -AsPlainText) # if Rob doing demo
 az account show --query "{subscription:name, subscriptionId:id}" --output table
@@ -84,6 +85,7 @@ code terraform.tfvars
 
 #region 06 · Local state for a laptop                                               [~15s]
 Copy-Item backend_local_override.tf.example backend_local_override.tf
+code backend_local_override.tf
 #endregion
 
 
@@ -138,6 +140,7 @@ Get-Location
 
 #region 13 · Two subscriptions' worth of environment                                [~45s]
 az login
+az account show | ConvertFrom-Json | Select-Object -ExpandProperty id      
 $env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
 # $env:ARM_SUBSCRIPTION_ID = (Get-Secret -Name sewells-subscription-id -AsPlainText) # if Rob doing demo
 $env:TF_VAR_fabric_subscription_id = $env:ARM_SUBSCRIPTION_ID
@@ -186,15 +189,18 @@ Start-Process "https://app.fabric.microsoft.com"
 
 
 #region 98 · TEAR IT DOWN -- do this before lunch                             [~2m12s+2m]
-cd ../../azure-sql/terraform/demo
-terraform destroy
 cd ../../../fabric-sql/terraform
+terraform destroy
+az login # azure resource tenant
+az account show | ConvertFrom-Json | Select-Object -ExpandProperty id # get the id
+$env:ARM_SUBSCRIPTION_ID = "<your-subscription-id>"
+cd ../../azure-sql/terraform/demo
 terraform destroy
 #endregion
 
 
 #region 99 · RESET -- leave the repository as you found it                          [~15s]
-cd $PSScriptRoot/..
+cd ../../../../
 Remove-Item infra/azure-sql/terraform/demo/terraform.tfvars              -ErrorAction SilentlyContinue
 Remove-Item infra/azure-sql/terraform/demo/backend_local_override.tf    -ErrorAction SilentlyContinue
 Remove-Item infra/fabric-sql/terraform/terraform.tfvars                 -ErrorAction SilentlyContinue
