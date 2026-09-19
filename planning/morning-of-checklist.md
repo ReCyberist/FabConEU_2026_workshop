@@ -65,28 +65,9 @@ resumes the paused Fabric capacity itself, so there is nothing to resume by hand
       ```powershell
       gh run list  --limit 2
       ```
-- [ ] **Confirm the databases exist and are reachable** — the demo Azure SQL DB, all ten attendee
-      DBs, and the Fabric capacity:
 
-      ```powershell
-      # demo Azure SQL database (Tenant A)
-      $demoServer = az sql server list -g rg-fabcon26-dev-uks --query "[0].name" -o tsv
-      az sql db list -g rg-fabcon26-dev-uks --server $demoServer `
-        --query "[?name!='master'].{db:name, status:status}" -o table
-
-      # attendee databases — expect sqldb-attendee01 .. attendee10 (Tenant A)
-      $attServer = az sql server list -g rg-fabcon26-shared-uks --query "[0].name" -o tsv
-      az sql db list -g rg-fabcon26-shared-uks --server $attServer `
-        --query "[?starts_with(name,'sqldb-attendee')].{db:name, status:status}" -o table
-
-      # Fabric capacity is alive (Tenant B — select that subscription first)
-      az resource show -g fabcon-demo-rg -n cappymccapface `
-        --resource-type Microsoft.Fabric/capacities --query "properties.state" -o tsv
-      ```
-
-      You see the demo database, ten `sqldb-attendee*` rows, and Fabric state `Active`. Azure SQL
-      rows read `Online`; a serverless database may read `Paused` until the first query wakes it,
-      which is fine.
+> That the demo and attendee Azure SQL databases and the Fabric capacity are actually **up** is
+> confirmed by the `Cloud` checks in the reset suite (§3), not by hand here.
 
 ## 2 · Pipelines & attendee site
 - [ ] CI green on `main`; GitHub Pages site deployed and reachable.
@@ -121,13 +102,17 @@ resumes the paused Fabric capacity itself, so there is nothing to resume by hand
 
       ```powershell
       ./demo/Reset-DemoEnvironment.ps1                 # add -SkipRemote if offline
-      Invoke-Pester ./tests/DemoEnvironment.Tests.ps1  # git state, tooling, sign-in
+      Invoke-Pester ./tests/DemoEnvironment.Tests.ps1  # git state, tooling, sign-in, cloud
       ```
 
-      The Pester run is the toolchain sanity check: it asserts `git`, `gh`, `az`, `terraform`,
-      `dotnet`, `sqlpackage`, `code`, `pwsh` and the `dbatools` module are present, the `.NET` SDK
-      matches [`../global.json`](../global.json), and `gh`/`az` are signed in. All green means the
-      environment is demo-ready. See [`../demo/README.md`](../demo/README.md) § Reset.
+      The Pester run is the toolchain **and** deployment sanity check: it asserts `git`, `gh`, `az`,
+      `terraform`, `dotnet`, `sqlpackage`, `code`, `pwsh` and the `dbatools` module are present, the
+      `.NET` SDK matches [`../global.json`](../global.json), `gh`/`az` are signed in, and — the
+      `Cloud` checks — that the demo Azure SQL database, the ten attendee databases, and the Fabric
+      capacity that §1 brought up are actually there and the capacity is `Active`. The `Cloud` checks
+      are online and cross-tenant, so run this **after** §1 while signed in to both tenants; offline
+      rehearsals use `-ExcludeTag Auth,Cloud`. All green means the environment is demo-ready. See
+      [`../demo/README.md`](../demo/README.md) § Reset.
 - [ ] **Open the slide deck** on the presenting laptop, ready to go.
 
 ## 4 · Room & attendees

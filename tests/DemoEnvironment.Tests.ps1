@@ -7,12 +7,17 @@
 
     Run the whole thing:            Invoke-Pester ./tests/DemoEnvironment.Tests.ps1
     Just the fast repo-state part:  Invoke-Pester ./tests/DemoEnvironment.Tests.ps1 -Tag Repo
-    Everything but sign-in state:   Invoke-Pester ./tests/DemoEnvironment.Tests.ps1 -ExcludeTag Auth
+    Offline (no cloud/sign-in):     Invoke-Pester ./tests/DemoEnvironment.Tests.ps1 -ExcludeTag Auth,Cloud
 
     Tags:
       Repo     git state + files -- fast, offline, run this before every rehearsal.
       Tooling  the CLIs and modules the demos call -- run once on a new machine.
       Auth     `gh`/`az` sign-in state -- stateful and slower; skip when offline.
+      Cloud    the deployed resources are up -- ONLINE and CROSS-TENANT: the demo + attendee
+               Azure SQL databases and the Fabric capacity the morning apply brings up. Run
+               after morning-of-checklist.md §1; needs `az login` to BOTH tenants. Each check
+               targets its subscription from the env var named in demo/DemoEnvironment.psd1
+               (CloudResources) when set, else the current `az` context.
 #>
 
 # -- Discovery: load the inventory so the -ForEach blocks below can see it -----------------
@@ -101,5 +106,55 @@ Describe 'Demo environment · sign-in state' -Tag 'Auth' {
     It 'has an active Azure CLI login (az account show)' {
         az account show *> $null
         $LASTEXITCODE | Should -Be 0 -Because 'demos 02 and 03 reach Azure'
+    }
+}
+
+Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
+    # Online, CROSS-TENANT readiness for what the morning apply (checklist §1) brings up. Azure
+    # SQL (demo + attendee) is checked in the sandbox subscription (Tenant A); Fabric in Tenant B.
+    # Every check is skipped when `az` is not signed in, so it never fails a plain offline run.
+
+    BeforeAll {
+        $script:cloud = $inventory.CloudResources
+        az account show *> $null
+        $script:signedIn = ($LASTEXITCODE -eq 0)
+
+        # Optional `--subscription` args from the env var named in the inventory; empty (current
+        # context) when the var is unset. Keeps subscription ids out of the repo.
+        function script:Get-SubArgs {
+            param([string] $EnvName)
+            $val = [Environment]::GetEnvironmentVariable($EnvName)
+            if ($val) { @('--subscription', $val) } else { @() }
+        }
+    }
+
+    It "the demo Azure SQL database '$($inventory.CloudResources.DemoDatabaseName)' exists and is not deleting" {
+        if (-not $script:signedIn) { Set-ItResult -Skipped -Because 'az is not signed in (run the Auth checks first)'; return }
+        $c       = $script:cloud
+        $subArgs = script:Get-SubArgs $c.AzureSqlSubscriptionEnv
+        $server  = (az sql server list -g $c.DemoResourceGroup @subArgs --query "[0].name" -o tsv 2>$null)
+        $server  | Should -Not -BeNullOrEmpty -Because "azure-sql-apply (demo) creates a server in $($c.DemoResourceGroup)"
+        $status  = (az sql db show -g $c.DemoResourceGroup --server $server --name $c.DemoDatabaseName @subArgs --query 'status' -o tsv 2>$null)
+        # Online, or Paused if the serverless database has auto-paused since the apply -- both mean
+        # it exists and is reachable (the first query wakes a paused one). Anything else is a problem.
+        $status  | Should -BeIn @('Online', 'Paused') -Because 'the DACPAC published into it during the apply'
+    }
+
+    It "all $($inventory.CloudResources.AttendeeCount) attendee databases exist" {
+        if (-not $script:signedIn) { Set-ItResult -Skipped -Because 'az is not signed in (run the Auth checks first)'; return }
+        $c       = $script:cloud
+        $subArgs = script:Get-SubArgs $c.AzureSqlSubscriptionEnv
+        $server  = (az sql server list -g $c.AttendeeResourceGroup @subArgs --query "[0].name" -o tsv 2>$null)
+        $server  | Should -Not -BeNullOrEmpty -Because "azure-sql-apply (attendee) creates a server in $($c.AttendeeResourceGroup)"
+        $dbs     = @(az sql db list -g $c.AttendeeResourceGroup --server $server @subArgs --query "[?starts_with(name,'$($c.AttendeeDatabasePrefix)')].name" -o tsv 2>$null) -split "`n" | Where-Object { $_ }
+        $dbs.Count | Should -BeGreaterOrEqual $c.AttendeeCount -Because 'one database per attendee is deployed for the shared endpoint'
+    }
+
+    It "the Fabric capacity '$($inventory.CloudResources.FabricCapacityName)' is Active" {
+        if (-not $script:signedIn) { Set-ItResult -Skipped -Because 'az is not signed in (run the Auth checks first)'; return }
+        $c       = $script:cloud
+        $subArgs = script:Get-SubArgs $c.FabricSubscriptionEnv
+        $state   = (az resource show -g $c.FabricResourceGroup -n $c.FabricCapacityName --resource-type 'Microsoft.Fabric/capacities' @subArgs --query 'properties.state' -o tsv 2>$null)
+        $state   | Should -Be 'Active' -Because 'the Fabric demos need the capacity resumed and the auto-pause disabled for the day'
     }
 }
