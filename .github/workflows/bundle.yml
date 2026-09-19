@@ -2,8 +2,9 @@
 # Code-bundle packaging (planning/tasks.md #12).
 #
 # "Prose = pages, code = downloads." Attendees read the steps on the site and download the
-# code to run it. This job produces one zip per module from infra/ and database/ on every
-# push to main, and stores them two ways:
+# code to run it. This job produces one zip per module from infra/, database/ and docs/ on
+# every push to main (any change rebundles, so the download always matches main), and stores
+# them two ways:
 #   1. as a workflow ARTIFACT on the run (90-day retention, immediate);
 #   2. as assets on a rolling pre-release, tag `bundles-latest`, so each bundle has a stable
 #      public URL the docs can link to:
@@ -15,12 +16,10 @@
 name: Bundle code for download
 
 on:
+  # Any push to main rebundles, so a download never lags the repo. (Write-back commits
+  # tagged [skip ci] don't trigger it, so the presenter-script re-pin never churns bundles.)
   push:
     branches: [main]
-    paths:
-      - 'infra/**'
-      - 'database/**'
-      - '.github/workflows/bundle.yml'
   workflow_dispatch:
 
 concurrency:
@@ -60,6 +59,7 @@ jobs:
             "database-flyway|database/flyway"
             "database-dbatools-dbops|database/dbatools-dbops"
             "database-ship-changes|database/demo/ship-changes"
+            "docs|docs"
           )
 
           # Never ship build output, local state, or anyone's secrets/tfvars.
