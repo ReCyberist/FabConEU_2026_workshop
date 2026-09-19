@@ -1,6 +1,6 @@
 # Morning-of readiness checklist — workshop day, Barcelona
 
-What Jess & Rob run through **before doos open** to be demo-ready. Grounded in the
+What Jess & Rob run through **before doors open** to be demo-ready. Grounded in the
 operational realities logged in [`../notes/LEARNINGS.md`](../notes/LEARNINGS.md) — the demo
 infra is torn down nightly and the Fabric capacity auto-pauses, so the environment is **not**
 standing when you walk in. Work top to bottom; the cloud steps have wait times, so start them
