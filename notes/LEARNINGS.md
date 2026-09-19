@@ -43,9 +43,10 @@ Microsoft.Fabric/capacities` with no `--api-version`; if a live run needs one, a
 a live capacity.
 **Action:** Rewrote checklist §1–§3, added the `Cloud` tag + `CloudResources` inventory
 ([`tests/DemoEnvironment.Tests.ps1`](../tests/DemoEnvironment.Tests.ps1),
-[`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1)) — PR #97. **Open decision:** whether
-`Reset-DemoEnvironment.ps1` should run the Pester suite at the end (opt-in `-Verify` switch vs. leave
-the two separate) — parked pending Jess/Rob's call.
+[`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1)) — PR #97. **Decided:**
+`Reset-DemoEnvironment.ps1` stays a pure reset — it does **not** run the Pester suite (keeping it
+offline-safe and `-WhatIf`-clean); the two remain a deliberate "reset makes ready / tests assert
+ready" pair, run as separate commands.
 
 ## 2026-09-14 — Wrap-up now closes the loop in runtime, not just in code
 **Context:** Region 12 of the wrap-up ("Close the loop — code AND runtime") only proved the code
