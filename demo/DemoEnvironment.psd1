@@ -102,4 +102,23 @@
 
     # global.json pins the .NET SDK; demo 03 builds under it.
     DotnetMajorVersion = 8
+
+    # Cloud resources the morning apply (morning-of-checklist.md §1) brings up, asserted by the
+    # `Cloud`-tagged tests. These are ONLINE and CROSS-TENANT: the demo + attendee Azure SQL
+    # databases live in the sandbox subscription (Tenant A); the Fabric capacity lives in
+    # Tenant B. Each check targets its subscription from the named env var when it is set, else
+    # the current `az` context -- subscription IDs are never hardcoded here (CLAUDE.md §4).
+    # Names/counts match the Terraform defaults in infra/azure-sql/terraform/{demo,shared-endpoint}
+    # and the persistent Fabric capacity.
+    CloudResources = @{
+        AzureSqlSubscriptionEnv = 'AZURE_SUBSCRIPTION_ID'   # Tenant A / sandbox
+        FabricSubscriptionEnv   = 'FABRIC_SUBSCRIPTION_ID'  # Tenant B
+        DemoResourceGroup       = 'rg-fabcon26-dev-uks'
+        DemoDatabaseName        = 'sqldb-football-dev'
+        AttendeeResourceGroup   = 'rg-fabcon26-shared-uks'
+        AttendeeDatabasePrefix  = 'sqldb-attendee'
+        AttendeeCount           = 10
+        FabricResourceGroup     = 'fabcon-demo-rg'
+        FabricCapacityName      = 'cappymccapface'
+    }
 }
