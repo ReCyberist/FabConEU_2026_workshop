@@ -166,7 +166,7 @@ $standingsQuery = @{
     Database    = $ConnectionParams.Database
     Query       = "SELECT Competition, Position, Team, Played, Points FROM football.vw_Standings WHERE Position <= 5 ORDER BY Competition, Position"
 }
-Invoke-DbaQuery @standingsQuery
+Invoke-DbaQuery @standingsQuery | Format-Table
 # EXPECT: the top five of EACH competition -- Premier League and WSL as separate tables, ranked
 # by Position, not mixed. SAY: on main as code, and running in the database -- both out of one
 # pull request. That is the whole day, closed.
@@ -187,7 +187,6 @@ gh run watch
 # Assumes the demo reached the merge. If you aborted before merging, the view is not on
 # main -- use `Remove-Item ./database/sql-projects/Views/vw_Standings.sql` and
 # `git restore ./infra/azure-sql/terraform/demo/variables.tf` instead of the below.
-git switch main
 git pull
 code ./infra/azure-sql/terraform/demo/variables.tf   # change 75 back to 60, and save
 git rm ./database/sql-projects/Views/vw_Standings.sql
