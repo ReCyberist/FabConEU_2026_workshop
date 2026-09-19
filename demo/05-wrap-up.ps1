@@ -152,10 +152,12 @@ Get-Content ./database/sql-projects/Views/vw_Standings.sql
 
 # ...and the RUNTIME half. Region 11's publish job landed this same view in the live database,
 # so ask it for rows -- the file we just read, now answering from the running database.
-# Same server and database as demo 03 region 06 (the live demo environment; keep them in step).
+# Same server and database as demo 03 region 06 (the live demo environment). The
+# azure-sql-apply.yml demo flow re-pins BOTH scripts to the provisioned names after every
+# apply (update-presenter-script job), so they stay in step -- do not hand-edit one alone.
 # The wrap-up runs on gh, not az, so sign in if the token has expired: az login.
 $ConnectionParams = @{
-    SqlInstance = "sql-fabcon26-dev-uks-przynr.database.windows.net"
+    SqlInstance = "sql-fabcon26-dev-uks-ol1n2s.database.windows.net"
     Database    = "sqldb-football-dev"
     AccessToken = (az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
 }

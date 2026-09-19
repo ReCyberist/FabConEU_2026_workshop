@@ -15,6 +15,23 @@ Format:
 
 ---
 
+## 2026-09-19 — The provisioned-server write-back has to cover BOTH presenter scripts
+**Context:** `05-wrap-up.ps1` region 12 (line 157) hard-codes the live SQL server FQDN in its
+`$ConnectionParams` hashtable, the same server as `03-database.ps1` region 06. The server name
+carries a random suffix that changes on every destroy/recreate, so it drifts — and it had
+(`przynr` in the wrap-up vs `ol1n2s` in demo 03).
+**Learning:** The `update-presenter-script` job in
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) only rewrote `03-database.ps1`.
+Any other script that names the ephemeral server needs the same write-back, or it silently goes
+stale — a comment saying "keep them in step" does not keep them in step. The wrap-up's server/db
+sit in a hashtable (`SqlInstance = "…"` / `Database = "…"`), so they need a capture-group regex
+(`^(\s*SqlInstance\s*=\s*)".*"$`) that preserves indentation, not the bare `^\$server=` anchor —
+and the quotes are what distinguish them from the variable-valued `SqlInstance = $serverSMO`
+entry, which must be left alone.
+**Action:** Extended the `update-presenter-script` job to re-pin BOTH `03-database.ps1` and
+`05-wrap-up.ps1` after every demo apply, and synced line 157/158 to the current value. Comment on
+the wrap-up now points at the job rather than asking a human to remember.
+
 ## 2026-09-19 — Morning readiness is scripted, and resource-liveness is a test, not a checklist chore
 **Context:** Tightening [`planning/morning-of-checklist.md`](../planning/morning-of-checklist.md) so the
 pre-doors routine is commands, not prose — and deciding where the "are the deployed resources up?"

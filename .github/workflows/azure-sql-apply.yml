@@ -140,17 +140,20 @@ jobs:
           echo "database_name=$(terraform output -raw sql_database_name)" >> "$GITHUB_OUTPUT"
 
   # -------------------------------------------------------------------------------------
-  # Fill the provisioned server/database into the presenter script so Jess & Rob don't
-  # hand-edit region 06 of demo/03-database.ps1 after every apply. The logical SQL server
-  # name carries a random suffix (see infra/azure-sql/terraform/demo/main.tf), so the name
-  # changes on every destroy/recreate — this job re-pins it each time the demo flow applies.
+  # Fill the provisioned server/database into the presenter scripts so Jess & Rob don't
+  # hand-edit them after every apply. The logical SQL server name carries a random suffix
+  # (see infra/azure-sql/terraform/demo/main.tf), so the name changes on every
+  # destroy/recreate — this job re-pins it each time the demo flow applies. Two scripts
+  # name the live environment and must stay in step:
+  #   - demo/03-database.ps1  region 06: the `$server` / `$db` assignments
+  #   - demo/05-wrap-up.ps1   region 12: the `$ConnectionParams` SqlInstance/Database entries
   #
-  # It rewrites only the `$server` / `$db` assignment lines (region 06); every other use of
-  # those variables, and the attendee page's placeholders, are left alone. The attendee page
-  # (docs/database/demo.md) deliberately keeps `<your-server-name>` / `<your-database-name>`
-  # as placeholders — each attendee fills in their own target, so it must NOT carry the
-  # presenters' ephemeral server. This is the one config value where the two halves of the
-  # demo legitimately differ (CLAUDE.md 7a is about step drift, not per-environment targets).
+  # It rewrites only those assignment lines; every other use of those variables, and the
+  # attendee page's placeholders, are left alone. The attendee page (docs/database/demo.md)
+  # deliberately keeps `<your-server-name>` / `<your-database-name>` as placeholders — each
+  # attendee fills in their own target, so it must NOT carry the presenters' ephemeral
+  # server. This is the one config value where the two halves of the demo legitimately
+  # differ (CLAUDE.md 7a is about step drift, not per-environment targets).
   #
   # PREREQUISITE: main must allow the built-in GITHUB_TOKEN to push. If branch protection
   # requires a pull request or review for main, this push is rejected — swap the push for a
@@ -158,12 +161,12 @@ jobs:
   # commit never re-triggers the apply; `[skip ci]` also keeps it from rebuilding the site.
   # -------------------------------------------------------------------------------------
   update-presenter-script:
-    name: write provisioned names into presenter script
+    name: write provisioned names into presenter scripts
     needs: apply
     runs-on: ubuntu-latest
-    # Only the newest apply to main should be allowed to rewrite demo/03-database.ps1.
-    # Without this, two applies that finish out of order can leave the presenter script
-    # pointing at an older environment after the newer one has already succeeded.
+    # Only the newest apply to main should be allowed to rewrite the presenter scripts.
+    # Without this, two applies that finish out of order can leave the scripts pointing at
+    # an older environment after the newer one has already succeeded.
     concurrency:
       group: azure-sql-demo-presenter-script-main
       cancel-in-progress: true
@@ -181,20 +184,32 @@ jobs:
         shell: bash
         run: echo "main_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      # Rewrite region 06's two assignment lines in place. The `^\$server\s*=\s*".*"$`
-      # anchors match only the bare assignments, not `$serverSMO` or any `/TargetServerName`
-      # usage, and preserve the alignment. `$$` in the replacement is a literal `$`. The
-      # match is on the assignment shape, not the old value, so it is idempotent across runs.
-      - name: Fill $server / $db in demo/03-database.ps1
+      # Rewrite the assignment lines in place. The anchors match only the assignments, not
+      # `$serverSMO`, `/TargetServerName`, or the variable-valued entries, and preserve the
+      # alignment. The match is on the assignment shape, not the old value, so it is
+      # idempotent across runs.
+      - name: Fill server/database in demo/03-database.ps1 and demo/05-wrap-up.ps1
         shell: pwsh
         env:
           SERVER_FQDN: ${{ needs.apply.outputs.server_fqdn }}
           DATABASE_NAME: ${{ needs.apply.outputs.database_name }}
         run: |
+          # 03-database.ps1 region 06: bare `$server` / `$db` assignments.
+          # `$$` in the replacement is a literal `$`.
           $path = 'demo/03-database.ps1'
           $raw  = Get-Content -Raw -LiteralPath $path
           $raw  = $raw -replace '(?m)^\$server\s*=\s*".*"\s*$', ('$$server  = "' + $env:SERVER_FQDN + '"')
           $raw  = $raw -replace '(?m)^\$db\s*=\s*".*"\s*$',     ('$$db      = "' + $env:DATABASE_NAME + '"')
+          Set-Content -LiteralPath $path -Value $raw -NoNewline
+
+          # 05-wrap-up.ps1 region 12: the `$ConnectionParams` hashtable names the same live
+          # server/database as 03-database.ps1 region 06. Group 1 keeps the indent and
+          # alignment; only the string-literal entries match, so `SqlInstance = $serverSMO`
+          # and `Database = $ConnectionParams.Database` (no quotes) are left untouched.
+          $path = 'demo/05-wrap-up.ps1'
+          $raw  = Get-Content -Raw -LiteralPath $path
+          $raw  = $raw -replace '(?m)^(\s*SqlInstance\s*=\s*)".*"\s*$', ('${1}"' + $env:SERVER_FQDN + '"')
+          $raw  = $raw -replace '(?m)^(\s*Database\s*=\s*)".*"\s*$',    ('${1}"' + $env:DATABASE_NAME + '"')
           Set-Content -LiteralPath $path -Value $raw -NoNewline
 
       - name: Commit and push if changed
@@ -207,14 +222,14 @@ jobs:
             echo "main advanced after checkout; skipping stale write-back."
             exit 0
           fi
-          if git diff --quiet -- demo/03-database.ps1; then
-            echo "Presenter script already names the current server/database — nothing to commit."
+          if git diff --quiet -- demo/03-database.ps1 demo/05-wrap-up.ps1; then
+            echo "Presenter scripts already name the current server/database — nothing to commit."
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add demo/03-database.ps1
-          git commit -m "chore(demo): point 03-database.ps1 at the provisioned Azure SQL server/database [skip ci]"
+          git add demo/03-database.ps1 demo/05-wrap-up.ps1
+          git commit -m "chore(demo): point 03-database.ps1 and 05-wrap-up.ps1 at the provisioned Azure SQL server/database [skip ci]"
           git push origin HEAD:main
 
   # -------------------------------------------------------------------------------------
