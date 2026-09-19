@@ -1,6 +1,6 @@
 # Morning-of readiness checklist — workshop day, Barcelona
 
-What Jess & Rob run through **before doors open** to be demo-ready. Grounded in the
+What Jess & Rob run through **before doos open** to be demo-ready. Grounded in the
 operational realities logged in [`../notes/LEARNINGS.md`](../notes/LEARNINGS.md) — the demo
 infra is torn down nightly and the Fabric capacity auto-pauses, so the environment is **not**
 standing when you walk in. Work top to bottom; the cloud steps have wait times, so start them
@@ -26,7 +26,6 @@ resumes the paused Fabric capacity itself, so there is nothing to resume by hand
       home, so on the day in Barcelona they're stale — and secret **values can't be read back**, so
       don't try to "check" them, just re-set them to today's egress IP. Apply won't re-open the
       firewall if you fix them afterwards, so this comes first.
-
       ```powershell
       # your current public egress IP (run on each laptop, on the venue WiFi)
       Invoke-RestMethod https://api.ipify.org
@@ -38,14 +37,14 @@ resumes the paused Fabric capacity itself, so there is nothing to resume by hand
       # confirm both exist (shows names + last-updated, not values)
       gh secret list
       ```
+
 - [ ] Dispatch **`azure-sql-apply`** from `main` and watch it green — `apply` + DACPAC `publish` +
-      smoke test:
+      smoke test.
 
       ```powershell
-      gh workflow run azure-sql-apply.yml --ref main -f target=demo
-      Start-Sleep -Seconds 6   # let the run register before we grab its id
-      gh run watch (gh run list --workflow azure-sql-apply.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+      gh workflow run azure-sql-apply.yml --ref main -f target=both
       ```
+
 - [ ] Dispatch **`fabric-sql-apply`** from `main` and watch it green — it resumes the capacity,
       recreates the workspace + SQL DB, publishes, smoke-tests, and re-applies the
       **workspace-admin grant** (the workspace is recreated on every apply, so Jess/Rob's visibility
@@ -53,10 +52,41 @@ resumes the paused Fabric capacity itself, so there is nothing to resume by hand
 
       ```powershell
       gh workflow run fabric-sql-apply.yml --ref main
-      Start-Sleep -Seconds 6
-      gh run watch (gh run list --workflow fabric-sql-apply.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+      ```
+- [ ] **Disable the every-2h Fabric auto-pause** so the capacity stays `Active` all day instead of
+      pausing mid-demo (re-enable it after the event). Target the Fabric subscription (Tenant B):
+
+      ```powershell
+      az automation schedule update --resource-group rg-fabcon26-automation-uks `
+        --automation-account-name aa-fabcon26-dev-uks --name pause-every-2h --is-enabled false
       ```
 - [ ] Sanity-check both smoke tests actually returned rows (not just "workflow succeeded").
+
+      ```powershell
+      gh run list  --limit 2
+      ```
+- [ ] **Confirm the databases exist and are reachable** — the demo Azure SQL DB, all ten attendee
+      DBs, and the Fabric capacity:
+
+      ```powershell
+      # demo Azure SQL database (Tenant A)
+      $demoServer = az sql server list -g rg-fabcon26-dev-uks --query "[0].name" -o tsv
+      az sql db list -g rg-fabcon26-dev-uks --server $demoServer `
+        --query "[?name!='master'].{db:name, status:status}" -o table
+
+      # attendee databases — expect sqldb-attendee01 .. attendee10 (Tenant A)
+      $attServer = az sql server list -g rg-fabcon26-shared-uks --query "[0].name" -o tsv
+      az sql db list -g rg-fabcon26-shared-uks --server $attServer `
+        --query "[?starts_with(name,'sqldb-attendee')].{db:name, status:status}" -o table
+
+      # Fabric capacity is alive (Tenant B — select that subscription first)
+      az resource show -g fabcon-demo-rg -n cappymccapface `
+        --resource-type Microsoft.Fabric/capacities --query "properties.state" -o tsv
+      ```
+
+      You see the demo database, ten `sqldb-attendee*` rows, and Fabric state `Active`. Azure SQL
+      rows read `Online`; a serverless database may read `Paused` until the first query wakes it,
+      which is fine.
 
 ## 2 · Pipelines & attendee site
 - [ ] CI green on `main`; GitHub Pages site deployed and reachable.
