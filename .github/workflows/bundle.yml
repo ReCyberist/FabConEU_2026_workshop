@@ -1,0 +1,136 @@
+# -------------------------------------------------------------------------------------
+# Code-bundle packaging (planning/tasks.md #12).
+#
+# "Prose = pages, code = downloads." Attendees read the steps on the site and download the
+# code to run it. This job produces one zip per module from infra/ and database/ on every
+# push to main, and stores them two ways:
+#   1. as a workflow ARTIFACT on the run (90-day retention, immediate);
+#   2. as assets on a rolling pre-release, tag `bundles-latest`, so each bundle has a stable
+#      public URL the docs can link to:
+#        https://github.com/JessAndRob/FabConEU_2026_workshop/releases/download/bundles-latest/<name>.zip
+#
+# Do NOT hand-zip and commit binaries (CLAUDE.md §7) — this is the packaging pipeline that
+# rule points at. The zips are never committed; they only ever live as artifacts/assets.
+# -------------------------------------------------------------------------------------
+name: Bundle code for download
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - 'database/**'
+      - '.github/workflows/bundle.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: code-bundles
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # create/update the rolling pre-release and its assets
+
+jobs:
+  bundle:
+    name: Zip each module and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # One zip per module. Left of the pipe is the bundle name (the asset/file name), right
+      # is the path under the repo. A missing path is skipped with a warning rather than
+      # failing the run, so the list can be edited without breaking on a not-yet-built module.
+      - name: Build the bundles
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          modules=(
+            "azure-sql-terraform-demo|infra/azure-sql/terraform/demo"
+            "azure-sql-terraform-shared-endpoint|infra/azure-sql/terraform/shared-endpoint"
+            "azure-sql-bicep|infra/azure-sql/bicep"
+            "fabric-sql-terraform|infra/fabric-sql/terraform"
+            "fabric-sql-bicep|infra/fabric-sql/bicep"
+            "pipelines-github-actions|infra/pipelines/github-actions"
+            "pipelines-azure-devops|infra/pipelines/azure-devops"
+            "database-sql-projects|database/sql-projects"
+            "database-flyway|database/flyway"
+            "database-dbatools-dbops|database/dbatools-dbops"
+            "database-ship-changes|database/demo/ship-changes"
+          )
+
+          # Never ship build output, local state, or anyone's secrets/tfvars.
+          excludes=(
+            '*/.terraform/*'
+            '*/.terraform.tfstate.lock.info'
+            '*.tfstate'
+            '*.tfstate.*'
+            '*/terraform.tfvars'
+            '*/backend_local_override.tf'
+            '*/bin/*'
+            '*/obj/*'
+            '*/.vs/*'
+            '*/deploy-report*.xml'
+          )
+
+          {
+            echo "## Code bundles"
+            echo ""
+            echo "| Bundle | Source | Size |"
+            echo "|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          made=0
+          for entry in "${modules[@]}"; do
+            name="${entry%%|*}"
+            path="${entry##*|}"
+            if [ ! -d "$path" ]; then
+              echo "::warning::skipping missing module path: $path"
+              echo "| ~~$name~~ | \`$path\` (missing) | — |" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            zip -r -q "dist/$name.zip" "$path" -x "${excludes[@]}"
+            size="$(du -h "dist/$name.zip" | cut -f1)"
+            echo "| \`$name.zip\` | \`$path\` | $size |" >> "$GITHUB_STEP_SUMMARY"
+            made=$((made+1))
+          done
+
+          if [ "$made" -eq 0 ]; then
+            echo "::error::no bundles were produced"
+            exit 1
+          fi
+          echo "count=$made" >> "$GITHUB_OUTPUT"
+
+      - name: Upload bundles as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-bundles
+          path: dist/*.zip
+          retention-days: 90
+          if-no-files-found: error
+
+      # Refresh the rolling pre-release so the download URLs stay stable across runs.
+      - name: Publish to the rolling pre-release
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="Per-module code bundles, rebuilt automatically from \`main\`.
+          Latest build: commit ${GITHUB_SHA:0:7} on $(date -u '+%Y-%m-%d %H:%M UTC')."
+
+          if gh release view bundles-latest >/dev/null 2>&1; then
+            gh release edit bundles-latest --notes "$notes"
+          else
+            gh release create bundles-latest \
+              --prerelease \
+              --title "Code bundles (latest)" \
+              --notes "$notes"
+          fi
+
+          # --clobber replaces any asset of the same name from a previous run.
+          gh release upload bundles-latest dist/*.zip --clobber
