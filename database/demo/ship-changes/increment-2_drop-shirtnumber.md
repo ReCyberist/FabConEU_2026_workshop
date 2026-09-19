@@ -19,7 +19,9 @@ In [`database/sql-projects/Tables/Player.sql`](../../sql-projects/Tables/Player.
 
 `ShirtNumber` **is populated by the [seed](../../sql-projects/Scripts/PostDeployment/Seed.sql)**,
 so in Test it holds real data. Also remove it from the seed's `Player` INSERT column list and
-`VALUES`, or the build will fail on the now-missing column.
+`VALUES`: the seed is a post-deployment script, so it is **not** build-validated — a stale
+reference to the dropped column compiles fine and only fails later, when the seed runs against
+the deployed database.
 
 ## What each path shows
 
