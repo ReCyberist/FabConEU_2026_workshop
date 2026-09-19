@@ -13,9 +13,10 @@ Everything you saw today, and the day itself, in four links:
   — fork it, and each page links to the exact files it walks through.
 - **Site** — [jessandrob.github.io/FabConEU_2026_workshop](https://jessandrob.github.io/FabConEU_2026_workshop/)
   — these pages, to read again at your own pace.
-- **Code bundles** — downloadable per module. (Produced by a packaging pipeline —
-  [task #12](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/planning/tasks.md) —
-  and landing here closer to the event. Until then, take the whole repo above.)
+- **Code bundles** — [per-module zips](https://github.com/JessAndRob/FabConEU_2026_workshop/releases/tag/bundles-latest),
+  rebuilt automatically on every push to `main` by the
+  [packaging workflow](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/.github/workflows/bundle.yml).
+  Grab a single module, or fork the whole repo above.
 - **Learnings log** — [every gotcha we hit, with the fix](https://github.com/JessAndRob/FabConEU_2026_workshop/blob/main/notes/LEARNINGS.md).
   The honest running notes from building this workshop, edges and all.
 
