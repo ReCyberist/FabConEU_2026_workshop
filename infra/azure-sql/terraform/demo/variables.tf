@@ -148,7 +148,7 @@ variable "database_min_capacity" {
 variable "database_auto_pause_delay" {
   description = "Minutes of inactivity before a serverless database auto-pauses; -1 disables auto-pause (ignored for provisioned SKUs)."
   type        = number
-  default     = 75
+  default     = 74
 }
 
 variable "tags" {
