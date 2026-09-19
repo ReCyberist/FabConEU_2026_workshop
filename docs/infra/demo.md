@@ -53,7 +53,20 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	The path ends with `infra/azure-sql/terraform/demo`.
 
-2. Sign in to Azure and set the subscription the demo should deploy into.
+2. Look at what the module is made of before you change anything. Open the four Terraform files.
+
+	```powershell
+	code providers.tf variables.tf main.tf outputs.tf
+	```
+
+	Four files open, each with one job:
+
+	- `providers.tf` — the providers this module uses, and their versions. Azure SQL uses one, `azurerm`.
+	- `variables.tf` — the values you can set, such as `environment`, `location`, and the resource names.
+	- `main.tf` — the resources the module creates: a resource group, a logical SQL server, a serverless database, and firewall rules.
+	- `outputs.tf` — the values the module returns after apply, including `sql_server_fqdn`.
+
+3. Sign in to Azure and set the subscription the demo should deploy into.
 
 	```powershell
 	az login
@@ -63,7 +76,7 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	The table shows the subscription you want to use.
 
-3. Create a local `terraform.tfvars` file and review the Entra admin values before you plan.
+4. Create a local `terraform.tfvars` file and review the Entra admin values before you plan.
 
 	```powershell
 	Copy-Item terraform.tfvars.example terraform.tfvars
@@ -81,7 +94,7 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	The command prints the object ID you can paste into `entra_admin_object_id`.
 
-4. In `terraform.tfvars`, change the demo overrides to deploy the `test` environment in `uksouth`.
+5. In `terraform.tfvars`, change the demo overrides to deploy the `test` environment in `uksouth`.
 
 	```hcl
 	environment           = "test"
@@ -94,7 +107,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	If you prefer `futbol`, use that instead of `soccer`. Do not use `fútbol` with the accent here:
 	`database_name` must be lowercase alphanumeric.
 
-5. In the same folder, switch the demo to local state so it does not prompt for the remote backend.
+6. In the same folder, switch the demo to local state so it does not prompt for the remote backend.
 
 	```powershell
 	Copy-Item backend_local_override.tf.example backend_local_override.tf
@@ -102,7 +115,7 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	The folder now contains `backend_local_override.tf`.
 
-6. Initialise Terraform.
+7. Initialise Terraform.
 
 	```powershell
 	terraform init
@@ -110,7 +123,7 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	Terraform installs the required providers and reports that initialization completed successfully.
 
-7. Review the plan before you create anything.
+8. Review the plan before you create anything.
 
 	```powershell
 	terraform plan
@@ -127,7 +140,7 @@ Run one Terraform module from the repository and let it build the target platfor
 		job saves `tfplan` as an artefact, and the apply job downloads it, so the change that
 		ships is the change that was reviewed.
 
-8. Apply the plan.
+9. Apply the plan.
 
 	```powershell
 	terraform apply
@@ -164,7 +177,7 @@ Run one Terraform module from the repository and let it build the target platfor
 
 		Your names will differ if you changed `database_name`, and the server suffix is always unique.
 
-9. Open the [Azure portal](https://portal.azure.com) and confirm that the resources now exist.
+10. Open the [Azure portal](https://portal.azure.com) and confirm that the resources now exist.
 
 	In the portal, open the resource group and confirm that you can see the logical SQL server and
 	the serverless database.
@@ -189,7 +202,20 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	The path ends with `infra/fabric-sql/terraform`.
 
-2. Sign in to Azure and set the subscription that holds, or can create, the Fabric capacity.
+2. Look at what the module is made of before you change anything. Open the four Terraform files.
+
+	```powershell
+	code providers.tf variables.tf main.tf outputs.tf
+	```
+
+	Four files open. The layout matches the Azure SQL module; what differs is what they declare:
+
+	- `providers.tf` — two providers this time: `azurerm` builds the capacity, and `microsoft/fabric` builds the workspace and database.
+	- `variables.tf` — the values you can set, including `fabric_subscription_id`, the one variable with no default.
+	- `main.tf` — the resources the module creates: a capacity or capacity binding, a workspace, and a SQL database.
+	- `outputs.tf` — the values the module returns after apply, including the database connection details.
+
+3. Sign in to Azure and set the subscription that holds, or can create, the Fabric capacity.
 
 	```powershell
 	az login
@@ -204,7 +230,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	which pins the `azurerm` provider that builds the capacity. For this local demo it is the same
 	subscription, so reuse the value. Without it, `terraform plan` stops and prompts for the value.
 
-3. Create a local `terraform.tfvars` file and review the variables for your Fabric path.
+4. Create a local `terraform.tfvars` file and review the variables for your Fabric path.
 
 	```powershell
 	Copy-Item terraform.tfvars.example terraform.tfvars
@@ -218,7 +244,7 @@ Run one Terraform module from the repository and let it build the target platfor
 		If you plan to bind to an existing capacity, set the relevant capacity values before you
 		continue.
 
-4. In `terraform.tfvars`, change the demo overrides to deploy the `test` environment in `uksouth`.
+5. In `terraform.tfvars`, change the demo overrides to deploy the `test` environment in `uksouth`.
 
 	```hcl
 	environment           = "test"
@@ -231,7 +257,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	If you prefer `futbol`, use that instead of `soccer`. Do not use `fútbol` with the accent here:
 	`database_name` must be lowercase alphanumeric.
 
-5. In the same folder, switch the demo to local state so it does not prompt for the remote backend.
+6. In the same folder, switch the demo to local state so it does not prompt for the remote backend.
 
 	```powershell
 	Copy-Item backend_local_override.tf.example backend_local_override.tf
@@ -239,7 +265,7 @@ Run one Terraform module from the repository and let it build the target platfor
 
 	The folder now contains `backend_local_override.tf`.
 
-6. Initialise Terraform.
+7. Initialise Terraform.
 
 	```powershell
 	terraform init
@@ -248,7 +274,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	Terraform installs both the `azurerm` and `microsoft/fabric` providers and reports that
 	initialization completed successfully.
 
-7. Review the plan before you create anything.
+8. Review the plan before you create anything.
 
 	```powershell
 	terraform plan
@@ -257,7 +283,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	The plan shows the Fabric resources to add: the capacity or capacity binding, the workspace, and
 	the SQL database.
 
-8. Apply the plan.
+9. Apply the plan.
 
 	```powershell
 	terraform apply
@@ -276,7 +302,7 @@ Run one Terraform module from the repository and let it build the target platfor
 	Type `yes` and press Enter. Nothing else is accepted: `y`, `Y` and `YES` all cancel the
 	apply. Terraform then creates the resources and finishes with `Apply complete!`.
 
-9. Open the Azure and Fabric portals and confirm that the resources now exist.
+10. Open the Azure and Fabric portals and confirm that the resources now exist.
 
 	```powershell
 	Start-Process "https://portal.azure.com"
