@@ -471,68 +471,6 @@ it — reopen the terminal and try again.
     already have the tools. To follow that path you need your GitHub fork and your cloud, and
     nothing else.
 
-## Read this site on your own laptop (optional)
-
-The repository you cloned **is** this website — the pages you are reading are Markdown files in its
-`docs/` folder, built by [MkDocs Material](https://squidfunk.github.io/mkdocs-material/). If you
-want your own copy to read offline, or after the hosted site comes down, you can serve it locally.
-This needs **Python 3.9 or later** and nothing to do with Azure — it is purely for reading the
-site.
-
-1. Install **[Python](https://www.python.org/downloads/)** if you do not have it:
-
-    === "Windows"
-
-        ```powershell
-        winget install --exact --id Python.Python.3.12
-        ```
-
-    === "macOS"
-
-        ```bash
-        brew install python
-        ```
-
-    === "Debian & Ubuntu"
-
-        ```bash
-        sudo apt install python3 python3-pip python3-venv
-        ```
-
-    Close and reopen your terminal, then confirm it is installed:
-
-    ```powershell
-    python --version
-    ```
-
-    The output starts with `Python 3.`, for example `Python 3.12.0`.
-
-2. In the `FabConEU_2026_workshop` folder you cloned, install the site's tools:
-
-    ```powershell
-    pip install -r requirements.txt
-    ```
-
-    pip installs MkDocs Material and its dependencies. The last line reads `Successfully installed`.
-
-3. Start the site:
-
-    ```powershell
-    mkdocs serve
-    ```
-
-    The output ends with `Serving on http://127.0.0.1:8000/`. Open that address in your browser and
-    you have this site running on your own machine. Leave the command running; stop it with
-    `Ctrl+C` when you are done.
-
-!!! tip "Seeing only the home page and this page?"
-    Before the day, the published site is deliberately trimmed to a teaser. To preview **every**
-    page from your clone, point MkDocs at the local overlay instead:
-
-    ```powershell
-    mkdocs serve -f mkdocs.local.yml
-    ```
-
 ## What's next
 
 Next: [Source control for databases](../foundations/source-control.md).
