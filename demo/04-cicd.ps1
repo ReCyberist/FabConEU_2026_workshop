@@ -39,6 +39,8 @@
 break
 #endregion
 
+# back to the root, so the workflow paths are correct
+cd ../..
 
 #region 01 · Read: what runs on every change                                        [~2m]
 code ./.github/workflows/ci.yml
@@ -78,7 +80,6 @@ gh workflow run azure-sql-apply.yml --ref main -f target=demo
 
 #region 08 · Watch the deploy                                                       [~5-6m]
 gh run list --workflow azure-sql-apply.yml --limit 1
-gh run watch
 gh run view --web
 #endregion
 
