@@ -26,6 +26,7 @@ resumes the paused Fabric capacity itself, so there is nothing to resume by hand
       home, so on the day in Barcelona they're stale — and secret **values can't be read back**, so
       don't try to "check" them, just re-set them to today's egress IP. Apply won't re-open the
       firewall if you fix them afterwards, so this comes first.
+      
       ```powershell
       # your current public egress IP (run on each laptop, on the venue WiFi)
       Invoke-RestMethod https://api.ipify.org
