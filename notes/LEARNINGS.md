@@ -15,6 +15,21 @@ Format:
 
 ---
 
+## 2026-09-19 — The infra demo never opened the Terraform module itself
+**Context:** Demo 02 opens `terraform.tfvars` and `backend_local_override.tf`, but never the
+module files (`main.tf`, `variables.tf`, `providers.tf`, `outputs.tf`) — so the 4m31s apply
+wait, which the script tells the presenter to fill by "narrating the module", had nothing on
+screen to narrate. The database demo opens its schema files (`code ./Tables/Club.sql`); the
+Terraform demo had no equivalent.
+**Learning:** A "wander through the module" belongs at the top of each platform (right after
+`cd` into it) so the four files are on screen, with the deep walk of `main.tf` happening during
+the apply wait — no added wall-clock time. On Fabric it earns its keep even when the apply is
+skipped: the two-provider contrast (`azurerm` + `microsoft/fabric`, capacity→workspace→database)
+lands from the files alone. Both halves updated together (CLAUDE.md §7a): new regions 01b/12b in
+[`demo/02-infrastructure.ps1`](../demo/02-infrastructure.ps1) and a new step 2 on each platform in
+[`docs/infra/demo.md`](../docs/infra/demo.md). NB the deck ([`slides/content.py`](../slides/content.py))
+is a third copy checked by hand — if demo 02 has a CMD slide, it may want the module-wander added too.
+
 ## 2026-09-19 — The provisioned-server write-back has to cover BOTH presenter scripts
 **Context:** `05-wrap-up.ps1` region 12 (line 157) hard-codes the live SQL server FQDN in its
 `$ConnectionParams` hashtable, the same server as `03-database.ps1` region 06. The server name
