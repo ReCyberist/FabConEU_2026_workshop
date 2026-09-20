@@ -24,8 +24,13 @@ inputs:
     description: 'Result of the terraform plan step: success or failure.'
     required: true
   plan:
-    description: 'The terraform plan stdout to show (from the setup-terraform wrapper: steps.<id>.outputs.stdout).'
-    required: true
+    description: 'The terraform plan stdout to show (from the setup-terraform wrapper: steps.<id>.outputs.stdout). For a large plan, use plan-file instead — a big string passed here becomes an env var and can exceed the OS argument limit.'
+    required: false
+    default: ''
+  plan-file:
+    description: 'Path to a file holding the terraform plan stdout. Preferred over `plan` for large plans (e.g. the shared-endpoint bump at a real room size): the text is read from disk, so it never transits an env var and cannot hit the "Argument list too long" limit. Takes precedence over `plan` when set.'
+    required: false
+    default: ''
   mask:
     description: Newline-separated secret values to redact from the plan before commenting.
     required: false
@@ -42,13 +47,25 @@ runs:
         HEADER: ${{ inputs.header }}
         OUTCOME: ${{ inputs.outcome }}
         PLAN: ${{ inputs.plan }}
+        PLAN_FILE: ${{ inputs.plan-file }}
         MASK: ${{ inputs.mask }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
+          const fs = require('fs');
           const header = process.env.HEADER;
           const outcome = process.env.OUTCOME;
+          // Prefer the file: a large plan passed via the PLAN env var can exceed the OS
+          // per-env-string limit and fail the step with "Argument list too long" before the
+          // script even runs. Reading from disk sidesteps that entirely.
           let plan = process.env.PLAN || '';
+          if (process.env.PLAN_FILE) {
+            try {
+              plan = fs.readFileSync(process.env.PLAN_FILE, 'utf8');
+            } catch (e) {
+              plan = plan || `(could not read plan file ${process.env.PLAN_FILE}: ${e.message})`;
+            }
+          }
 
           // Terraform colours its output with ANSI escapes even in CI; they render as noise
           // like "[0m[1m[32m" in a comment. Strip every escape sequence so the comment is clean.
