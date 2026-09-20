@@ -107,12 +107,11 @@ gh pr checks --watch
 
 
 #region 06 · Make it real -- merge, then apply, then MOVE ON                        [~30s]
-# Merge puts the new count on main, where the apply reads it from. Then dispatch the apply
-# against the shared endpoint and WALK AWAY -- do not watch it. The run summary prints the
-# attendee handout (server, shared password, one connection string per attendee).
+# Merge puts the new count on main, where the apply reads it from. Then the workflow will make it so
+# The run summary prints the attendee handout
+# (server, shared password, one connection string per attendee).
 # The databases are not needed until ~14:10, so this has hours plus lunch to finish.
 gh pr merge --squash --delete-branch
-gh workflow run azure-sql-apply.yml --ref main -f target=attendee
 gh run list --workflow azure-sql-apply.yml --limit 1
 #
 # IF BEHIND: the speaker guide turns the SHOW above into a pre-made PR already open -- but you
@@ -125,12 +124,10 @@ gh run list --workflow azure-sql-apply.yml --limit 1
 # state you WANT all afternoon -- it is how the apply knew the count. Do NOT reset it during
 # the day. At the END of the day, put the default back to the baseline 10 so main does not
 # carry one room's number, and let the nightly destroy remove the databases themselves.
-git switch main
 git pull
 # Set `default = 10` back in variables.tf (edit + save), then:
 code ./infra/azure-sql/terraform/shared-endpoint/variables.tf
 git commit -am "reset: attendee_count back to baseline 10 after the workshop"
 git push
-git branch -D demo/more-attendees 2>$null
 git status
 #endregion
