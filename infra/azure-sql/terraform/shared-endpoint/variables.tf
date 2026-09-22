@@ -60,7 +60,7 @@ variable "location_abbreviation" {
 variable "attendee_count" {
   description = "How many per-attendee databases + logins to create (attendee01 .. attendeeNN). Size the pool to match."
   type        = number
-  default     = 52
+  default     = 10
 
   validation {
     condition     = var.attendee_count >= 1 && var.attendee_count <= 99
