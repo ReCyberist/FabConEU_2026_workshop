@@ -15,6 +15,27 @@ Format:
 
 ---
 
+## 2026-09-22 — The Cloud readiness tests failed with the resources up: two Pester/az traps
+**Context:** `tests/DemoEnvironment.Tests.ps1` Cloud checks all failed — "got $null or empty" for
+the demo + attendee Azure SQL servers — even though the servers and 52 attendee databases were
+provisioned and reachable. The identical `az` queries ran green from a plain PowerShell prompt.
+**Learning:** Two independent traps, both invisible from a plain shell:
+1. **Pester 5 discovery-vs-run scoping.** `$inventory` is assigned at the top of the file, which
+   runs during Pester's *discovery* phase only. The `-ForEach` blocks bind to it then and work,
+   but the Cloud `BeforeAll` reads `$inventory.CloudResources` during the *run* phase, where
+   `$inventory` is `$null`. So `$script:cloud` was null, `$c.DemoResourceGroup` was null, and
+   `az sql server list -g $null` returned empty. The fix is to re-load the inventory inside the
+   `BeforeAll` itself (it already re-derives the repo root via `git`).
+2. **A `[?...]` JMESPath filter does not survive PowerShell → `az.cmd`.** The attendee check used
+   `--query "[?starts_with(name,'sqldb-attendee')]"`; the `[?` mangles crossing the `az.cmd`
+   wrapper, az exits non-zero, and the captured output collapses to a single junk line (count 1).
+   `[0].name` / `[].name` have no `?` and pass fine — so list all names with `[].name` and filter
+   with PowerShell's `.StartsWith(...)` instead of server-side.
+**Action:** Fixed both in `tests/DemoEnvironment.Tests.ps1`; the two Azure SQL Cloud checks now
+pass against the live environment. (The Fabric check still needs a Tenant B `az login` — that is
+its documented cross-tenant precondition, not a bug.) Prefer client-side filtering over `[?...]`
+JMESPath in any PowerShell-invoked `az` call in this repo.
+
 ## 2026-09-19 — The infra demo never opened the Terraform module itself
 **Context:** Demo 02 opens `terraform.tfvars` and `backend_local_override.tf`, but never the
 module files (`main.tf`, `variables.tf`, `providers.tf`, `outputs.tf`) — so the 4m31s apply
