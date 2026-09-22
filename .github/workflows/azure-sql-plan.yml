@@ -121,6 +121,9 @@ jobs:
         uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: '~1.12.0'
+          # No stdout-capturing wrapper: at a real room size the plan is large, and we write
+          # it to a file for the comment step rather than a step output / env var.
+          terraform_wrapper: false
 
       - name: Terraform fmt check
         run: terraform fmt -check -recursive
@@ -146,9 +149,15 @@ jobs:
         id: plan
         continue-on-error: true
         run: |
-          terraform plan -lock=false -refresh=false \
+          # Write the plan to a file (pipefail keeps terraform's exit code, so the gate below
+          # still fires on a real plan error). The comment step reads the file, so a large plan
+          # never becomes an env var — this is what fixes "Argument list too long" at a real
+          # room size. -no-color keeps the file clean (the comment action strips ANSI anyway).
+          set -o pipefail
+          terraform plan -lock=false -refresh=false -no-color \
             -var="location=${{ vars.AZURE_LOCATION }}" \
-            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}"
+            -var="location_abbreviation=${{ vars.AZURE_LOCATION_ABBREVIATION }}" \
+            2>&1 | tee "$RUNNER_TEMP/plan-shared-endpoint.txt"
 
       # No secret -vars here, so nothing to mask. This is the "bump attendee_count" demo
       # comment: the +N databases / +N logins / +N users land right on the PR.
@@ -157,7 +166,7 @@ jobs:
         with:
           header: Azure SQL shared endpoint — Terraform plan
           outcome: ${{ steps.plan.outcome }}
-          plan: ${{ steps.plan.outputs.stdout }}
+          plan-file: ${{ runner.temp }}/plan-shared-endpoint.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail if plan failed

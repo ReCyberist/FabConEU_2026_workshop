@@ -70,17 +70,21 @@ that framing first. It hands straight off into the **source control** part of th
   Azure SQL; Fabric is faster here because the **capacity is pre-provisioned** —
   `use_existing_capacity`, so only workspace + DB apply). Have a completed run open as a
   fallback if a live apply stalls. **This is the section most at risk of overrun — flag for #13.**
-- **The "one number → a reviewed plan" beat (change = plan).** On a branch, bump
-  `attendee_count` in [`infra/azure-sql/terraform/shared-endpoint`](../infra/azure-sql/terraform/shared-endpoint)
-  from 10 to 15, commit, push — the PR's **`terraform plan (shared endpoint)`** job (a second
-  Terraform flow in [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)) prints
-  *"+5 databases, +5 logins, +5 users — 15 to add"*. The most visceral IaC moment of the day:
-  a one-line change produces a precise, reviewable plan of exactly what it will do. Ties back
-  to the plan-on-PR idea planted in Morning 1. The PR plan is read-only; **close the loop** by
-  running [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) with `target:
-  attendee` (the `attendee-endpoint` job — or a local apply against the same remote state) so
-  the extra databases actually appear — destroyed again nightly. Have the endpoint pre-deployed
-  (10) so the live bump shows a clean "+5", not a from-scratch build.
+- **The "one number → a reviewed plan" beat (change = plan)** — [`demo/02b-attendee-bump.ps1`](../demo/02b-attendee-bump.ps1),
+  presenter-only (the room watches). On a branch, bump `attendee_count` in
+  [`infra/azure-sql/terraform/shared-endpoint`](../infra/azure-sql/terraform/shared-endpoint)
+  from 10 to **the real room count**, commit, push — the PR's **`terraform plan (shared
+  endpoint)`** job (a second Terraform flow in
+  [`azure-sql-plan.yml`](../.github/workflows/azure-sql-plan.yml)) prints
+  *"+N databases, +N logins, +N users"*. The most visceral IaC moment of the day: a one-line
+  change produces a precise, reviewable plan of exactly what it will do, and the number is *this
+  room*. Ties back to the plan-on-PR idea planted in Morning 1. The PR plan is read-only; **close
+  the loop** by merging and running
+  [`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) with `target: attendee` (the
+  `attendee-endpoint` job) so the databases actually appear — then move on, they aren't needed
+  until the Afternoon 1 follow-along (~14:10), and they're destroyed nightly. The endpoint is
+  pre-deployed at 10 by the morning checks so the live bump shows a clean "+N", not a from-scratch
+  build.
 - **Backup/stretch:** the Bicep equivalents ([`azure-sql/bicep`](../infra/azure-sql/bicep)),
   and the teaching point that **Fabric can't be fully done in Bicep** (workspace + DB have no
   ARM type — capacity only); ADO pipeline equivalents.

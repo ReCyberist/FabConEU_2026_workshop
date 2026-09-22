@@ -444,6 +444,19 @@ DECK = [
     "We have not run this one live end to end. You will see what we see.",
 ], "demo/02-infrastructure.ps1 regions 12-19. If you are behind, show the plan and skip the apply — the contrast is the teaching point, not the second set of resources. Be honest about the rough edges; the room will respect it."),
 
+# ─────────────────────── 11:55 THE BUMP ───────────────────────
+(DEMO, "Demo — one number, more databases",
+    "We planned for ten. There are more of you than that.", [
+    "Change one number on a branch, open a PR — the plan says exactly what it will build",
+    "Nothing to type — this is our shared endpoint. Sit back and watch the plan.",
+], "demo/02b-attendee-bump.ps1 — presenter-only, ~12 min at 11:55. Bump attendee_count from the "
+   "baseline 10 to the REAL room count; the plan-on-PR job (plan-shared-endpoint in "
+   "azure-sql-plan.yml) comments the exact +N. Read it to the room — this is the plan-on-PR from "
+   "Morning 1 paying off. Then merge, dispatch azure-sql-apply with target: attendee, and MOVE ON — "
+   "the databases aren't needed until ~14:10, so don't watch the apply. If behind, this is the first "
+   "thing to fall back to a pre-made PR (speaker guide) — but still fire the apply so the afternoon "
+   "has databases. Timings: agenda/speaker-guide.md Morning 2, 11:55."),
+
 # ─────────────────────── 12:15 SQL PROJECTS ───────────────────────
 (SECTION, "Database as code — SQL projects",
     "12:15  ·  A schema that builds like any other project", None,

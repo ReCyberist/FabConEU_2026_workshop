@@ -131,7 +131,7 @@ narrates or drives.
 | 11:25 | What we just built: `terraform output` → the portal once → `plan` again = no changes | 5 min. This is where the drift beat goes **if #29 gets built**; if it doesn't, cut the promise from the slide. |
 | 11:30 | Fabric SQL side by side — walk the module, dispatch `fabric-sql-apply` | 15 min. Capacity is pre-provisioned (`use_existing_capacity`), so only workspace + DB apply. Contrast the shapes out loud: *server → DB* vs *capacity → workspace → DB*. |
 | 11:45 | What's genuinely different, and the bill | 10 min. Honest about rough edges. First thing to compress. |
-| 11:55 | **The bump**: `attendee_count` 10 → 15 on a branch → PR → plan comment says *+5 databases, +5 logins, +5 users* → apply with `target: attendee` | 15 min. The most visceral IaC moment of the day. Endpoint must be pre-deployed at 10 so the plan reads "+5", not a from-scratch build. |
+| 11:55 | **The bump** ([`demo/02b-attendee-bump.ps1`](../demo/02b-attendee-bump.ps1)): `attendee_count` 10 → **the real room count** on a branch → PR → plan comment says *+N databases, +N logins, +N users* → merge → apply with `target: attendee`, then **move on** | 15 min. The most visceral IaC moment of the day — bump to the actual headcount, not an abstract +5. Endpoint pre-deployed at 10 by the morning checks so the plan reads a clean "+N". The DBs aren't needed until 14:10, so fire the apply and don't watch it. |
 | 12:10 | Recap, hard stop | 5 min. |
 
 **If behind at 11:45:** drop the bill slide. **If behind at 11:55:** switch to the pre-made PR.
