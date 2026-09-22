@@ -81,6 +81,18 @@
             Expect      = 'default\s*=\s*60\b'
             Description = 'Azure SQL auto-pause default is 60 (not a leftover 75 from demo 05)'
         }
+        @{
+            # Same trap as auto-pause, on the shared endpoint: demo 02b bumps attendee_count to the
+            # real room number on a branch and merges it, and that number is the state we WANT all
+            # afternoon -- so it stays on main until the END-OF-DAY reset (02b region 99) puts it
+            # back to 10. If a previous run's reset was skipped, main carries a room's number
+            # (e.g. 52) and the next morning's bump demo plans "0 to add" instead of a clean "+N".
+            # git status cannot see it. Reset with 02b region 99, not during a workshop day.
+            Path        = 'infra/azure-sql/terraform/shared-endpoint/variables.tf'
+            Pattern     = 'attendee_count'
+            Expect      = 'default\s*=\s*10\b'
+            Description = 'Attendee count baseline is 10 on main (last run''s 02b bump was reset, not left behind)'
+        }
     )
 
     # Command-line tools every presenter machine needs before the demos run.

@@ -15,6 +15,25 @@ Format:
 
 ---
 
+## 2026-09-22 — main was left carrying a bumped attendee_count (52), and nothing caught it
+**Context:** After running the demo 02b attendee-count bump, the shared-endpoint
+`variables.tf` was still committed to main as `attendee_count default = 52` — the end-of-day
+reset (02b region 99) had been skipped. The Cloud readiness check passed anyway (it asserts
+`>= 10` deployed databases, which 52 satisfies), so the residue was invisible.
+**Learning:** This is the same class of trap as the auto-pause 60→75 one: a demo commits a
+run's number to main, `git status` looks clean, and the *next* morning's bump demo then plans
+"0 to add" instead of a clean "+N". The right guard is a repo-state `ContentAssertion` (offline,
+Repo-tagged), not a tighter Cloud count — because the deployed count is *meant* to be the bumped
+number all afternoon, so an `-eq 10` cloud check would false-fire after the 11:55 bump. And the
+committed value must NOT be reverted casually: a push under
+`infra/azure-sql/terraform/shared-endpoint/**` auto-triggers `azure-sql-apply.yml`, so reverting
+52→10 and merging runs an apply that *destroys* the extra databases — which is exactly why 02b's
+reset is end-of-day only.
+**Action:** Added a `ContentAssertion` to [`demo/DemoEnvironment.psd1`](../demo/DemoEnvironment.psd1)
+asserting `attendee_count default = 10` on main; it goes red until the 02b end-of-day reset is
+run, telling the presenter the bump lingered. The reset itself (and letting the nightly destroy
+clear the databases) stays a deliberate end-of-day action, per 02b region 99.
+
 ## 2026-09-22 — The Cloud readiness tests failed with the resources up: two Pester/az traps
 **Context:** `tests/DemoEnvironment.Tests.ps1` Cloud checks all failed — "got $null or empty" for
 the demo + attendee Azure SQL servers — even though the servers and 52 attendee databases were
