@@ -117,7 +117,7 @@ az login
 #          database sqldb-attendeeNN, and /TargetUser /TargetPassword in place of
 #          /AccessToken. The attendee page has both paths in tabs.
 $token   = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
-$server  = "sql-fabcon26-dev-uks-0kl7zg.database.windows.net"
+$server  = "sql-fabcon26-dev-uks-0rix69.database.windows.net"
 $db      = "sqldb-football-dev"
 $profile = "PublishProfiles/AzureSql.publish.xml"
 #endregion
