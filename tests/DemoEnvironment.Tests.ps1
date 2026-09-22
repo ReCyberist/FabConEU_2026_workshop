@@ -115,7 +115,12 @@ Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
     # Every check is skipped when `az` is not signed in, so it never fails a plain offline run.
 
     BeforeAll {
-        $script:cloud = $inventory.CloudResources
+        # Re-load the inventory HERE, in the run phase. The top-level $inventory is populated
+        # during Pester's discovery phase only; the -ForEach blocks above bind to it then, but a
+        # run-phase BeforeAll sees it as $null. Reading $inventory.CloudResources here would make
+        # $script:cloud null, so every `az ... -g $null` query returns empty and each Cloud check
+        # fails with "got $null or empty" even when the resources are up. Load it ourselves.
+        $script:cloud = (Import-PowerShellDataFile -Path (Join-Path (git rev-parse --show-toplevel).Trim() 'demo/DemoEnvironment.psd1')).CloudResources
         az account show *> $null
         $script:signedIn = ($LASTEXITCODE -eq 0)
 
@@ -146,7 +151,12 @@ Describe 'Demo environment · cloud resources' -Tag 'Cloud' {
         $subArgs = script:Get-SubArgs $c.AzureSqlSubscriptionEnv
         $server  = (az sql server list -g $c.AttendeeResourceGroup @subArgs --query "[0].name" -o tsv 2>$null)
         $server  | Should -Not -BeNullOrEmpty -Because "azure-sql-apply (attendee) creates a server in $($c.AttendeeResourceGroup)"
-        $dbs     = @(az sql db list -g $c.AttendeeResourceGroup --server $server @subArgs --query "[?starts_with(name,'$($c.AttendeeDatabasePrefix)')].name" -o tsv 2>$null) -split "`n" | Where-Object { $_ }
+        # List every db name and filter in PowerShell. A server-side --query filter
+        # ("[?starts_with(name,'...')]") does not survive PowerShell -> az.cmd argument passing --
+        # the `[?` mangles, az exits non-zero, and the count comes back as 1. `[].name` is the same
+        # safe shape as the demo check's `[0].name`, so the prefix match lives here instead.
+        $names   = @(az sql db list -g $c.AttendeeResourceGroup --server $server @subArgs --query "[].name" -o tsv 2>$null)
+        $dbs     = @($names | Where-Object { $_ -and $_.StartsWith($c.AttendeeDatabasePrefix) })
         $dbs.Count | Should -BeGreaterOrEqual $c.AttendeeCount -Because 'one database per attendee is deployed for the shared endpoint'
     }
 
