@@ -148,12 +148,13 @@ jobs:
   #   - demo/03-database.ps1  region 06: the `$server` / `$db` assignments
   #   - demo/05-wrap-up.ps1   region 12: the `$ConnectionParams` SqlInstance/Database entries
   #
-  # It rewrites only those assignment lines; every other use of those variables, and the
-  # attendee page's placeholders, are left alone. The attendee page (docs/database/demo.md)
-  # deliberately keeps `<your-server-name>` / `<your-database-name>` as placeholders — each
-  # attendee fills in their own target, so it must NOT carry the presenters' ephemeral
-  # server. This is the one config value where the two halves of the demo legitimately
-  # differ (CLAUDE.md 7a is about step drift, not per-environment targets).
+  # It rewrites only those assignment lines; every other use of those variables is left
+  # alone. On the attendee page (docs/database/demo.md) the attendee's OWN target stays a
+  # `<your-server-name>` / `<your-database-name>` placeholder — each attendee fills in their
+  # own, so it must NOT carry the presenters' demo server. The shared attendee ENDPOINT is a
+  # different case: every attendee connects to the same server, so its FQDN is pinned into the
+  # page by the `update-attendee-docs` job below. (CLAUDE.md 7a is about step drift, not
+  # per-environment targets.)
   #
   # PREREQUISITE: main must allow the built-in GITHUB_TOKEN to push. If branch protection
   # requires a pull request or review for main, this push is rejected — swap the push for a
@@ -383,6 +384,8 @@ jobs:
     concurrency:
       group: azure-sql-shared-endpoint-terraform
       cancel-in-progress: false
+    outputs:
+      server_fqdn: ${{ steps.tf.outputs.server_fqdn }}
     defaults:
       run:
         working-directory: infra/azure-sql/terraform/shared-endpoint
@@ -414,6 +417,13 @@ jobs:
       - name: Terraform apply
         run: terraform apply -auto-approve tfplan
 
+      # Surface the provisioned server FQDN so update-attendee-docs can pin it into the
+      # attendee page without hard-coding the random server suffix (which changes on every
+      # destroy/recreate — see the random_string in shared-endpoint/main.tf).
+      - name: Expose Terraform outputs
+        id: tf
+        run: echo "server_fqdn=$(terraform output -raw sql_server_fqdn)" >> "$GITHUB_OUTPUT"
+
       # Attendee handout in the run summary: server, shared password, and a ready-to-paste
       # connection string per attendee. Giveaways by design; the admin password is a separate
       # sensitive output and is deliberately NOT printed.
@@ -434,3 +444,81 @@ jobs:
               | jq -r 'to_entries[] | "\(.key): \(.value)"'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # -------------------------------------------------------------------------------------
+  # Pin the shared endpoint's FQDN into the attendee page (docs/database/demo.md) so the
+  # published follow-along shows the real server, not a placeholder. Like the demo server,
+  # the shared server name carries a random suffix (shared-endpoint/main.tf) and the endpoint
+  # is torn down and rebuilt (destroyed nightly by shared-endpoint-destroy.yml), so the FQDN
+  # changes on every recreate — this job re-pins it each time the attendee endpoint applies.
+  #
+  # It rewrites ONLY the shared-endpoint server: the `$server` line in the shared-endpoint
+  # code block and every captured `sql-fabcon26-shared-uks-<suffix>…` in the example outputs.
+  # The attendee's OWN server/database stay `<your-server-name>` / `<your-database-name>`
+  # placeholders — those are per-attendee — and the demo server (`sql-fabcon26-dev-uks-…`) is
+  # a different pattern, so neither is touched. Both replacements are idempotent: the first
+  # fills the `<shared-server-fqdn>` placeholder (first run only), the second re-pins any
+  # already-real occurrence to the current FQDN.
+  #
+  # docs/** is not in this workflow's trigger paths, so the commit never re-triggers the
+  # apply; `[skip ci]` also keeps it from rebuilding the site (the published page picks the
+  # value up on the site's next build). Same permissions, concurrency and main-advanced stale
+  # guard as the presenter-script job above.
+  # -------------------------------------------------------------------------------------
+  update-attendee-docs:
+    name: pin shared endpoint FQDN into the attendee page
+    needs: attendee-endpoint
+    runs-on: ubuntu-latest
+    # Only the newest attendee-endpoint apply to main should rewrite the page.
+    concurrency:
+      group: azure-sql-shared-endpoint-docs-main
+      cancel-in-progress: true
+    permissions:
+      contents: write   # this job alone commits the provisioned FQDN back to main
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Record checked-out main commit
+        id: base
+        shell: bash
+        run: echo "main_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Pin the shared endpoint FQDN in docs/database/demo.md
+        shell: pwsh
+        env:
+          SERVER_FQDN: ${{ needs.attendee-endpoint.outputs.server_fqdn }}
+        run: |
+          $path = 'docs/database/demo.md'
+          $raw  = Get-Content -Raw -LiteralPath $path
+          # 1) Fill the initial placeholder (first run only).
+          $raw  = $raw -replace '<shared-server-fqdn>', $env:SERVER_FQDN
+          # 2) Re-pin the shared `$server` line and every captured example output to the
+          #    current server. Only sql-fabcon26-shared-uks-* is matched (lowercase-alnum
+          #    suffix, upper=false in main.tf), so the attendee's own `<your-server-name>`
+          #    and the demo server (sql-fabcon26-dev-uks-*) are left alone.
+          $raw  = $raw -replace 'sql-fabcon26-shared-uks-[a-z0-9]+\.database\.windows\.net', $env:SERVER_FQDN
+          Set-Content -LiteralPath $path -Value $raw -NoNewline
+
+      - name: Commit and push if changed
+        shell: bash
+        env:
+          BASE_MAIN_SHA: ${{ steps.base.outputs.main_sha }}
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$BASE_MAIN_SHA" ]; then
+            echo "main advanced after checkout; skipping stale write-back."
+            exit 0
+          fi
+          if git diff --quiet -- docs/database/demo.md; then
+            echo "Attendee page already names the current shared endpoint — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/database/demo.md
+          git commit -m "chore(docs): point database/demo.md at the provisioned shared endpoint FQDN [skip ci]"
+          git push origin HEAD:main

@@ -15,6 +15,29 @@ Format:
 
 ---
 
+## 2026-09-23 — The attendee page's shared-endpoint FQDN now auto-fills from the apply
+**Context:** `docs/database/demo.md` carried `$server = "<shared-server-fqdn>"` as a placeholder,
+and — worse — five captured example outputs hard-coded a **dead** suffix
+(`sql-fabcon26-shared-uks-dqecvi…`) while the live endpoint had moved to `…-lstk4a…`. The shared
+endpoint's server name carries a Terraform `random_string` suffix (`upper=false, numeric=true`,
+so lowercase-alphanumeric) and the endpoint is destroyed nightly, so that suffix changes on every
+recreate — any hard-coded value goes stale within a day.
+**Learning:** This is the same ephemeral-FQDN problem the presenter scripts already solved via a
+write-back job (`update-presenter-script`), but that job pins the **demo (Entra) server** into
+`demo/03-database.ps1` / `05-wrap-up.ps1` and deliberately leaves the attendee page alone. The
+attendee page has two different server references that must be treated differently: the attendee's
+**own** target stays a `<your-server-name>` placeholder (per-attendee), but the **shared** endpoint
+is one server everyone connects to, so it *should* be pinned. A single global re-pin regex
+(`sql-fabcon26-shared-uks-[a-z0-9]+\.database\.windows\.net` → current) is idempotent and safely
+skips both the `<your-server-name>` placeholder and the demo server (`sql-fabcon26-dev-uks-*`).
+**Action:** Added an `update-attendee-docs` job to
+[`azure-sql-apply.yml`](../.github/workflows/azure-sql-apply.yml) that exposes the attendee-endpoint
+apply's `server_fqdn` and re-pins it into `docs/database/demo.md` (fill placeholder + global re-pin),
+committing to main with `[skip ci]` and the same main-advanced stale guard as the presenter-script
+job. Also filled in the current value and fixed the five stale `dqecvi` outputs by hand so main is
+correct now, not only after the next apply. `[skip ci]` means the published site refreshes on its
+next build, not on the apply commit — noted deliberately.
+
 ## 2026-09-23 — Timings had four copies; the speaker guide now holds none
 **Context:** Issue [#107](https://github.com/JessAndRob/FabConEU_2026_workshop/issues/107). After
 the 2026-09-19 run-through, `agenda/speaker-guide.md` still carried a minute-by-minute budget
