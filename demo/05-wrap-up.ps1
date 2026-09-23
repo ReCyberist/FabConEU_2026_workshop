@@ -156,7 +156,7 @@ Get-Content ./database/sql-projects/Views/vw_Standings.sql
 # apply (update-presenter-script job), so they stay in step -- do not hand-edit one alone.
 # The wrap-up runs on gh, not az, so sign in if the token has expired: az login.
 $ConnectionParams = @{
-    SqlInstance = "sql-fabcon26-dev-uks-icd8db.database.windows.net"
+    SqlInstance = "sql-fabcon26-dev-uks-ll9ybu.database.windows.net"
     Database    = "sqldb-football-dev"
     AccessToken = (az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
 }
