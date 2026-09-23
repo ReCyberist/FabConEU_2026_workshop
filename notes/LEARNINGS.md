@@ -15,6 +15,23 @@ Format:
 
 ---
 
+## 2026-09-23 — Timings had four copies; the speaker guide now holds none
+**Context:** Issue [#107](https://github.com/JessAndRob/FabConEU_2026_workshop/issues/107). After
+the 2026-09-19 run-through, `agenda/speaker-guide.md` still carried a minute-by-minute budget
+(marked *"DRAFT — budgets untested"*). That was a fourth copy of the clock: the run-of-day lives
+in [`agenda/agenda.md`](../agenda/agenda.md), the site shows it via `includes/clock-*.md`, and the
+deck echoes it. Same drift trap the demo-pairing rules exist to stop.
+**Learning:** The clock has one home — the agenda — and everything else points at it. The speaker
+guide's job is choreography (who leads/drives/narrates, the fallback ladder, cut levers, the trap
+ordering), not the clock. Cut levers anchored to wall-clock times ("if behind at 14:50") re-anchor
+cleanly to beats ("if behind by Increment 3") and stop drifting when the budget does.
+**Action:** Stripped the per-minute budgets and the `Time` columns from `speaker-guide.md` Part B
+(tables → ordered beat lists), dropped the DRAFT-budgets status, and redirected every "times come
+from the speaker guide" pointer to the agenda: `CLAUDE.md` §7a, `slides/README.md`,
+`slides/content.py` (the bump speaker note), and `notes/demo-run-through.md`. Kept the fixed venue
+anchors (A4) and the fallback ladder (A5) — those are presenter-only. `check-demo-paths.py` still
+clean.
+
 ## 2026-09-22 — main was left carrying a bumped attendee_count (52), and nothing caught it
 **Context:** After running the demo 02b attendee-count bump, the shared-endpoint
 `variables.tf` was still committed to main as `attendee_count default = 52` — the end-of-day

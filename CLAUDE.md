@@ -243,7 +243,8 @@ review by eye.
   mirrors the script and the page command for command, and its speaker note names the script and
   the regions it mirrors. CI cannot check this one — the deck is gitignored, generated output — so
   it is checked by hand every time a demo changes. Slide timings come from
-  [`agenda/speaker-guide.md`](agenda/speaker-guide.md), never invented on the slide.
+  [`agenda/agenda.md`](agenda/agenda.md) (the single source for the clock), never invented on
+  the slide.
 - **Every script ends with a `RESET` region.** Demos overwrite tracked files; a demo's working
   state committed to `main` breaks the demo for whoever runs it next. Reset regions name every
   file they touch and never `git clean` the whole repository.

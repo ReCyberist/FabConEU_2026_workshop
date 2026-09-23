@@ -92,9 +92,9 @@ points at the site root, and *The run of the day* points at the agenda page.
   commands, in the same order, as the matching [`demo/`](../demo/) script and its attendee page
   (`CLAUDE.md` §7a). Name the script and the regions in the speaker note so the next person can
   check. Three places now, not two — the script, the page, and the slide.
-- **Times come from [`agenda/speaker-guide.md`](../agenda/speaker-guide.md)**, which takes them
-  from [`agenda/agenda.md`](../agenda/agenda.md). Change them there first, then here. The venue
-  fixes the break and lunch anchors; only the teaching flexes.
+- **Times come from [`agenda/agenda.md`](../agenda/agenda.md)** — the single source for the
+  clock, mirrored by the site's session clocks (`includes/clock-*.md`). Change them there first,
+  then here. The venue fixes the break and lunch anchors; only the teaching flexes.
 - Signposts on the slide, detail on the docs site. Don't grow the bullets.
 - **After building, look at it.** The deck is generated and gitignored, so nothing else will
   ever show you that a slide overflowed or that a command went stale. Export the slides you
