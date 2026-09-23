@@ -3,15 +3,15 @@
 **Workshop:** Azure SQL or Fabric SQL: Deploying Infrastructure and Databases as Code
 **Presenters:** Jess Pomfret & Rob Sewell · **FabCon Europe 2026, Barcelona**
 
-The agenda ([`agenda.md`](agenda.md)) says *what* happens and when. The deck's speaker notes
-(`slides/content.py`) say what to say on a given slide. **This file is the layer in between:
-who leads, how long each beat gets, what to do when a demo dies, and how to present to this
-particular room.** Don't duplicate the slide notes here — if a line belongs to one slide, it
-belongs in `content.py`.
+The agenda ([`agenda.md`](agenda.md)) says *what* happens and when — it is the single source
+for the clock, and the site's session clocks (`includes/clock-*.md`) mirror it. The deck's
+speaker notes (`slides/content.py`) say what to say on a given slide. **This file is the layer
+in between: who leads, what to do when a demo dies, and how to present to this particular
+room.** It does not restate the timing — read the minutes off the agenda and the site clocks,
+not from a fourth copy here. Don't duplicate the slide notes either — if a line belongs to one
+slide, it belongs in `content.py`.
 
-> Status: **DRAFT — budgets untested.** Every minute figure below is a proposal until the dry
-> run (#13) replaces it with a real one. Presenter split is **proposed from task ownership —
-> Jess to confirm.**
+> Status: presenter split is **proposed from task ownership — Jess to confirm.**
 
 ---
 
@@ -101,70 +101,92 @@ In order. Decide *before* the day so neither of you has to improvise:
 
 ## Part B — Run sheet
 
-Budgets are proposals for the dry run to correct. Owner is who **leads**; the other presenter
-narrates or drives.
+The order of beats and who runs them. **Timing lives in the agenda and the site clocks, not
+here** — this sheet is the choreography, not the clock. Owner is who **leads**; the other
+presenter narrates or drives.
 
-### Morning 1 · 09:00–10:30 · 90 min · *Rob leads, Jess drives git*
+### Morning 1 · *Rob leads, Jess drives git*
 
-| Time | Beat | Notes |
-|---|---|---|
-| 09:00 | Welcome, who we are, what today is and isn't | 10 min. Set the promise: no clicking required. |
-| 09:10 | Why "as code" for data · run of the day · bring-your-own housekeeping | 10 min. Be explicit that watching is a respectable choice. |
-| 09:20 | Environment check | 10 min. Attendees run the toolchain check while you work the room. Hard stop — stragglers get sorted at the break. |
-| 09:30 | **The hardest part of IT** — the five lessons | 30 min. **No demo to hide behind: this is the easiest module in the day to overrun.** Rob's stories, Jess's counterpoints. |
-| 10:00 | Source control foundations + the live PR | 12 min. Branch → add `notes/fabcon.md` → PR → checks run, in the shape of [`demo/01-source-control.ps1`](../demo/01-source-control.ps1). One tiny new file; stay on the happy path. |
-| 10:12 | **The merge conflict** — [`demo/01b-merge-conflict.ps1`](../demo/01b-merge-conflict.ps1) | 13 min, **two laptops, presenter-only**. Rob pushes first, Jess hits the conflict. Say "nothing to type" before you start. Show `git merge --abort` *before* resolving. Closes the loop back to Lesson 3: two people were both reasonable, and someone has to choose in public. |
-| 10:25 | Plant plan-on-PR, send them to coffee | 5 min. "Back at 11:00." Say the time twice. |
+In order:
+
+1. Welcome, who we are, what today is and isn't. Set the promise: no clicking required.
+2. Why "as code" for data · run of the day · bring-your-own housekeeping. Be explicit that
+   watching is a respectable choice.
+3. Environment check — attendees run the toolchain check while you work the room. Hard stop;
+   stragglers get sorted at the break.
+4. **The hardest part of IT** — the five lessons. **No demo to hide behind: this is the easiest
+   module in the day to overrun.** Rob's stories, Jess's counterpoints.
+5. Source control foundations + the live PR — branch → add `notes/fabcon.md` → PR → checks run,
+   in the shape of [`demo/01-source-control.ps1`](../demo/01-source-control.ps1). One tiny new
+   file; stay on the happy path.
+6. **The merge conflict** — [`demo/01b-merge-conflict.ps1`](../demo/01b-merge-conflict.ps1),
+   **two laptops, presenter-only**. Rob pushes first, Jess hits the conflict. Say "nothing to
+   type" before you start. Show `git merge --abort` *before* resolving. Closes the loop back to
+   Lesson 3: two people were both reasonable, and someone has to choose in public.
+7. Plant plan-on-PR, send them to coffee. "Back at 11:00." Say the time twice.
 
 **Landing point:** every gate we build today is a people agreement wearing a YAML costume.
 **Handoff into Morning 2:** "Jess is going to make Azure build something for us, from a file."
 
-### Morning 2 · 11:00–12:15 · 75 min · *Jess leads, Rob narrates*
+### Morning 2 · *Jess leads, Rob narrates*
 
 **The highest-risk block in the day.** Two platforms, two live applies, and the bump demo.
 
-| Time | Beat | Notes |
-|---|---|---|
-| 11:00 | What we're about to provision | 5 min. |
-| 11:05 | Walk the Azure SQL module, then **dispatch `azure-sql-apply` (target: demo)** | 7 min. **Start the apply early and narrate over it** — ~4–5 min in UK South. |
-| 11:12 | Terraform in ninety seconds · state in CI (D5) | 13 min, over the top of the running apply. |
-| 11:25 | What we just built: `terraform output` → the portal once → `plan` again = no changes | 5 min. This is where the drift beat goes **if #29 gets built**; if it doesn't, cut the promise from the slide. |
-| 11:30 | Fabric SQL side by side — walk the module, dispatch `fabric-sql-apply` | 15 min. Capacity is pre-provisioned (`use_existing_capacity`), so only workspace + DB apply. Contrast the shapes out loud: *server → DB* vs *capacity → workspace → DB*. |
-| 11:45 | What's genuinely different, and the bill | 10 min. Honest about rough edges. First thing to compress. |
-| 11:55 | **The bump** ([`demo/02b-attendee-bump.ps1`](../demo/02b-attendee-bump.ps1)): `attendee_count` 10 → **the real room count** on a branch → PR → plan comment says *+N databases, +N logins, +N users* → merge → apply with `target: attendee`, then **move on** | 15 min. The most visceral IaC moment of the day — bump to the actual headcount, not an abstract +5. Endpoint pre-deployed at 10 by the morning checks so the plan reads a clean "+N". The DBs aren't needed until 14:10, so fire the apply and don't watch it. |
-| 12:10 | Recap, hard stop | 5 min. |
+In order:
 
-**If behind at 11:45:** drop the bill slide. **If behind at 11:55:** switch to the pre-made PR.
+1. What we're about to provision.
+2. Walk the Azure SQL module, then **dispatch `azure-sql-apply` (target: demo)**. **Start the
+   apply early and narrate over it** — it takes ~4–5 min in UK South.
+3. Terraform in ninety seconds · state in CI (D5), over the top of the running apply.
+4. What we just built: `terraform output` → the portal once → `plan` again = no changes. This is
+   where the drift beat goes **if #29 gets built**; if it doesn't, cut the promise from the slide.
+5. Fabric SQL side by side — walk the module, dispatch `fabric-sql-apply`. Capacity is
+   pre-provisioned (`use_existing_capacity`), so only workspace + DB apply. Contrast the shapes
+   out loud: *server → DB* vs *capacity → workspace → DB*.
+6. What's genuinely different, and the bill. Honest about rough edges. First thing to compress.
+7. **The bump** ([`demo/02b-attendee-bump.ps1`](../demo/02b-attendee-bump.ps1)): `attendee_count`
+   10 → **the real room count** on a branch → PR → plan comment says *+N databases, +N logins,
+   +N users* → merge → apply with `target: attendee`, then **move on**. The most visceral IaC
+   moment of the day — bump to the actual headcount, not an abstract +5. Endpoint pre-deployed at
+   10 by the morning checks so the plan reads a clean "+N". The DBs aren't needed until the
+   Afternoon 1 follow-along, so fire the apply and don't watch it.
+8. Recap, hard stop.
 
-### Morning 3 · 12:15–12:45 · 30 min · *Jess leads*
+**If behind by the bill slide:** drop it. **If behind by the bump:** switch to the pre-made PR.
+
+### Morning 3 · *Jess leads*
 
 Short, tight, and the only thing between the room and lunch. Do not overrun — you will not win.
 
-| Time | Beat | Notes |
-|---|---|---|
-| 12:15 | Two ways to put a schema in source control | 5 min. |
-| 12:20 | The football sample database + the ER diagram | 7 min. |
-| 12:27 | `dotnet build` → a DACPAC | 8 min. The schema is just code in git. |
-| 12:35 | CI's `database` job + T-SQL static analysis, zero findings | 7 min. Name the quality bar. |
-| 12:42 | Lunch. **"Back at 14:00."** | 3 min. |
+In order:
+
+1. Two ways to put a schema in source control.
+2. The football sample database + the ER diagram.
+3. `dotnet build` → a DACPAC. The schema is just code in git.
+4. CI's `database` job + T-SQL static analysis, zero findings. Name the quality bar.
+5. Lunch. **"Back at 14:00."**
 
 **No live deploy in this block.** This section makes the artefact; the afternoon ships it.
 
-### Afternoon 1 · 14:00–15:15 · 75 min · *Jess leads the pipeline, Rob leads the trap*
+### Afternoon 1 · *Jess leads the pipeline, Rob leads the trap*
 
 The post-lunch restart is the hardest slot of the day — open with something moving on screen,
 not with a slide. **This is now the whole database part 2 in one block: increments 0 through 3.**
 It is the demo-heaviest slot of the day and most of it is spent waiting on `sqlpackage`, so there
 is almost no slack — see the cut lever below before you start.
 
-| Time | Beat | Notes |
-|---|---|---|
-| 14:00 | Where we got to, what the afternoon does | 3 min. Straight into the terminal. |
-| 14:03 | **Increment 0** — publish the baseline, prove `ShirtNumber` holds real data | 7 min. The trap needs something to destroy. |
-| 14:10 | **Increment 1** — additive `vw_SquadAges` → DeployReport says *1 view to create, 0 data-loss operations* → publish | 12 min. Invite the follow-along here; this is the safe one. |
-| 14:22 | **Increment 2 — the trap** | 28 min. See below — the recovery is part of it now. |
-| 14:50 | **Increment 3** — retire the column safely: pre-deploy migration (Option A) or rename (Option B), then the approval gate | 22 min. Be straight that the gate is **documented, not wired** — a repo-plan limitation, not a design one. |
-| 15:12 | Land it, then break | 3 min. "Back at 15:45." |
+In order:
+
+1. Where we got to, what the afternoon does. Straight into the terminal.
+2. **Increment 0** — publish the baseline, prove `ShirtNumber` holds real data. The trap needs
+   something to destroy.
+3. **Increment 1** — additive `vw_SquadAges` → DeployReport says *1 view to create, 0 data-loss
+   operations* → publish. Invite the follow-along here; this is the safe one.
+4. **Increment 2 — the trap.** See below — the recovery is part of it now.
+5. **Increment 3** — retire the column safely: pre-deploy migration (Option A) or rename
+   (Option B), then the approval gate. Be straight that the gate is **documented, not wired** —
+   a repo-plan limitation, not a design one.
+6. Land it, then break. "Back at 15:45."
 
 **The trap, in order — do not rush it:**
 1. Show the data existing. Query the shirt numbers. Let them see rows.
@@ -179,22 +201,26 @@ is almost no slack — see the cut lever below before you start.
 
 Presenter-led throughout: it's easier to watch the trap than to hit it.
 
-**The cut lever, if you are behind at 14:50:** Increment 3 has two options that reach the same end
+**The cut lever, if you are behind by Increment 3:** it has two options that reach the same end
 state. Show **Option B (the rename)** only — it is the clean one and needs no override — and
-describe Option A rather than running it. If you are behind at 14:22, skip Increment 1's
-follow-along invitation and keep it presenter-paced. **Never cut** the Increment 2 trap or the
-silence after it.
+describe Option A rather than running it. If you are behind by Increment 1, skip its follow-along
+invitation and keep it presenter-paced. **Never cut** the Increment 2 trap or the silence after it.
 
-### Afternoon 2 · 15:45–17:00 · 75 min · *both, Rob closes*
+### Afternoon 2 · *both, Rob closes*
 
-Three beats: CI/CD, then the whole loop once, then the day's argument and Q&A.
+Three beats: CI/CD, then the whole loop once, then the day's argument and Q&A. In order:
 
-| Time | Beat | Notes |
-|---|---|---|
-| 15:45 | **CI/CD** — validate on every change, plan on a PR, apply on purpose, destroy on a schedule. Read the YAML first, watch a green tick second | 15 min. [`demo/04-cicd.ps1`](../demo/04-cicd.ps1). No secrets, not one. |
-| 16:00 | **The whole loop, end to end** — one number in Terraform → PR → plan → merge → apply from `main` → confirm in git **and** the database → **destroy it, really** | 30 min. [`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1). Nothing new is taught; the payoff is that the room recognises every step. Migrations/drift covered honestly in the same beat. |
-| 16:30 | **Who is allowed to drop a column?** · where everything lives, what to take home | 12 min. The callback to 09:30 — the day's argument closes here, not on a pipeline. Point at the [resources & contacts page](../docs/wrap-up/resources.md). |
-| 16:42 | **Q&A** | 18 min — this is the flex and it absorbs the day's slippage. Finish at 17:00, not after. |
+1. **CI/CD** — validate on every change, plan on a PR, apply on purpose, destroy on a schedule.
+   Read the YAML first, watch a green tick second. [`demo/04-cicd.ps1`](../demo/04-cicd.ps1). No
+   secrets, not one.
+2. **The whole loop, end to end** — one number in Terraform → PR → plan → merge → apply from
+   `main` → confirm in git **and** the database → **destroy it, really**.
+   [`demo/05-wrap-up.ps1`](../demo/05-wrap-up.ps1). Nothing new is taught; the payoff is that the
+   room recognises every step. Migrations/drift covered honestly in the same beat.
+3. **Who is allowed to drop a column?** · where everything lives, what to take home. The callback
+   to 09:30 — the day's argument closes here, not on a pipeline. Point at the
+   [resources & contacts page](../docs/wrap-up/resources.md).
+4. **Q&A** — the flex that absorbs the day's slippage. Finish at 17:00, not after.
 
 **The last thing they hear** should be the same thing as the first: the tooling was the easy
 half.
@@ -216,5 +242,7 @@ half.
 ## Part D — After
 
 Straight into [`../notes/LEARNINGS.md`](../notes/LEARNINGS.md) while it still stings: what ran
-long, what confused the room, which fallback you actually needed. Then update the budgets in
-this file — they're only a draft until a real room has tested them.
+long, what confused the room, which fallback you actually needed. Durations that ran long go
+back to the agenda ([`agenda.md`](agenda.md)) and the run-through notes
+([`../notes/demo-run-through.md`](../notes/demo-run-through.md)), where the clock is kept — not
+to this file.

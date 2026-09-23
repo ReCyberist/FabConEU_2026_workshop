@@ -1,8 +1,8 @@
 # Demo run-through notes
 
 Working notes from actually running the demos, in order, with a clock. Planning register —
-terse and honest. Real durations graduate to [`../agenda/speaker-guide.md`](../agenda/speaker-guide.md)
-once they have been measured twice; this is where the mess goes first.
+terse and honest. Real durations graduate to the agenda ([`../agenda/agenda.md`](../agenda/agenda.md),
+the single source for the clock) once they have been measured twice; this is where the mess goes first.
 
 **How to use it.** One section per demo, in run order. Record what *happened*, not what should
 have. A step that worked needs one line. A step that did not needs the error text, because that is
@@ -129,7 +129,7 @@ here when it is: `03-database.ps1` Part 2 (increments 0–2), `04-cicd.ps1`, `05
 
 ## Timings log
 
-Fill in on each run. Planned is from [`speaker-guide.md`](../agenda/speaker-guide.md).
+Fill in on each run. Planned is from [`agenda.md`](../agenda/agenda.md).
 
 | Date | Demo | Planned | Actual | Notes |
 |---|---|---|---|---|

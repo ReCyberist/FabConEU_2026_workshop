@@ -455,7 +455,7 @@ DECK = [
    "Morning 1 paying off. Then merge, dispatch azure-sql-apply with target: attendee, and MOVE ON — "
    "the databases aren't needed until ~14:10, so don't watch the apply. If behind, this is the first "
    "thing to fall back to a pre-made PR (speaker guide) — but still fire the apply so the afternoon "
-   "has databases. Timings: agenda/speaker-guide.md Morning 2, 11:55."),
+   "has databases. Timings: agenda/agenda.md Morning 2."),
 
 # ─────────────────────── 12:15 SQL PROJECTS ───────────────────────
 (SECTION, "Database as code — SQL projects",
