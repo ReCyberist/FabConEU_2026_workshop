@@ -17,5 +17,9 @@
   <ItemGroup>
     <Build Remove="Scripts\**\*.sql" />
     <PostDeploy Include="Scripts\PostDeployment\Seed.sql" />
+    <!-- Option B: the ShirtNumber -> SquadNumber rename intent travels with the project, so
+         SqlPackage emits sp_rename instead of drop-and-add. SDK-style projects do not pick a
+         .refactorlog up by name; it must be referenced explicitly. -->
+    <RefactorLog Include="FabConFootball.refactorlog" />
   </ItemGroup>
 </Project>
