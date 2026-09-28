@@ -14,8 +14,8 @@
 # knows the slides have stopped and the typing has started. The quip is the only place in
 # a demo slide humour belongs; the lines under it stay plain, because they tell people
 # whether to follow along or sit back.
-SECTION, CONTENT, DUAL, DARK, CMD, QUOTE, IMAGE, DEMO = (
-    "SECTION", "CONTENT", "DUAL", "DARK", "CMD", "QUOTE", "IMAGE", "DEMO")
+SECTION, CONTENT, DUAL, DARK, CMD, QUOTE, IMAGE, DEMO, PEOPLE, STACK, MAP = (
+    "SECTION", "CONTENT", "DUAL", "DARK", "CMD", "QUOTE", "IMAGE", "DEMO", "PEOPLE", "STACK", "MAP")
 
 # ─────────────────────────── THE WALK-IN SLIDE ───────────────────────────
 # Slide 1, and the only slide most of the room reads before we say a word. It is
@@ -124,8 +124,8 @@ DECK = [
     "PART 2 — DATABASE DEPLOYMENT",
     "Needs any SQL target you can reach — Azure SQL or Fabric SQL",
     "The two parts are independent — you can do part 2 without part 1",
-    "We have one shared endpoint as a best-effort target. It is UNSUPPORTED.",
-], "Be blunt about 'unsupported' — it means we will not troubleshoot it during the day. Nobody should be surprised at 15:30."),
+    "There is one shared endpoint as a best-effort target — connection details are on the Prerequisites page. It is UNSUPPORTED.",
+], "Be blunt about 'unsupported' — it means we will not troubleshoot it during the day. Nobody should be surprised at 15:30. Do not read the endpoint or its credentials out from the front — point people to the Prerequisites page on the attendee site, which is the only copy we maintain."),
 
 (DUAL, "Being good to each other", [
     "IN THE ROOM",
@@ -218,13 +218,14 @@ DECK = [
     "Write the pipeline YAML",
     "Explain the error message",
     "Do it again tomorrow, faster",
+    "Do it forever the same — no off days, no shortcuts, no ego",
 ], [
     "WHAT IT WILL NOT DO FOR YOU",
-    "Tell the DBA their manual process is the bottleneck",
-    "Decide who is allowed to drop a column",
-    "Absorb the blame when it goes wrong at 2am",
-    "Rebuild trust after it did",
-], "The right-hand column is the entire reason this module exists. None of it is a tooling problem."),
+    "See the pride wrapped up in someone's manual process",
+    "Feel the fear behind \"we've always done it this way\"",
+    "Absorb the blame at 2am — or soothe the ego bruised by morning",
+    "Rebuild the trust after it broke, and the person after that",
+], "The right-hand column is the entire reason this module exists. None of it is a tooling problem — every line is a feeling or an ego, and no machine touches those."),
 
 (IMAGE, "Lesson 1 — It was never about the tool", [
     "Nobody resists Terraform. They resist losing control.",
@@ -238,21 +239,7 @@ DECK = [
     "completely different conversation. Simple line art, no stock photography.",
     "Rob / Jess — put your own story here. The specific one beats the general point every time. The picture buys you the time to tell it."),
 
-(IMAGE, "Lesson 2 — \"Databases are different\"", [
-    "It's a feeling, with a grain of truth in it",
-    "The truth: state can't be rolled back by redeploying",
-    "The feeling: therefore nothing about them can be automated",
-    "Take the constraint seriously and the fear loses its cover story",
-],
-    "Two deployments compared, stacked. On top, a stateless application: the old version is removed, "
-    "a new one is deployed, and rolling back simply means deploying the previous one - nothing is "
-    "lost. Underneath, a database drawn as a container of rows: deploying a new version cannot bring "
-    "back rows that were thrown away, so there is no undo. Label the top 'roll back by redeploying' "
-    "and the bottom 'there is no undo'. The point is that the constraint is real engineering, not a "
-    "feeling.",
-    "This is the bridge to the whole afternoon — state-based deploys, data-loss gates, the DeployReport. Name that now and point at the bottom half of the picture when you do."),
-
-(IMAGE, "Lesson 3 — Review is where egos go to die, or grow", [
+(IMAGE, "Lesson 2 — Review is where egos go to die, or grow", [
     "A pull request is a person saying \"check my work\" in public",
     "Comment on the change, never the changer",
     "Approve fast. A PR sat for three days teaches people not to open one.",
@@ -264,7 +251,7 @@ DECK = [
     "consequences as diverging paths. Keep it calm and professional, not cartoonish.",
     "If you only get one lesson across today, this is a strong candidate. It is also the one that makes 15:30 work, and the one the merge-conflict demo at 10:00 pays off."),
 
-(IMAGE, "Lesson 4 — Blame is a deployment risk", [
+(IMAGE, "Lesson 3 — Blame is a deployment risk", [
     "In a blaming team, the safest move is to change nothing",
     "So changes get batched, and batched changes are the dangerous kind",
     "Psychological safety isn't a poster. It's a deployment frequency metric.",
@@ -276,7 +263,7 @@ DECK = [
     "glance, and label the outcome on each side.",
     "Link forward: the approval gate we build at 15:30 exists so no individual has to be the last line of defence."),
 
-(IMAGE, "Lesson 5 — Start where the pain is", [
+(IMAGE, "Lesson 4 — Start where the pain is", [
     "Don't open with \"we're going to transform the whole estate\"",
     "Open with the thing that ruined someone's weekend last month",
     "Credibility is spent, not granted — the first win is what buys it",
@@ -287,7 +274,7 @@ DECK = [
     "architecture diagram labelled 'can wait'. The point is that credibility is spent, not granted.",
     "Good place to invite the room in: what ruined YOUR weekend? Two or three answers, no more, then move."),
 
-(DUAL, "So — why the rest of today looks like it does", [
+(PEOPLE, "So — why the rest of today looks like it does", [
     "EVERY TECHNICAL CHOICE TODAY",
     "Plan on a PR, so change is visible before it's real",
     "Apply on purpose, so nothing surprises anyone",
@@ -308,24 +295,21 @@ DECK = [
     "10:00  ·  Where the team agreements become commands", None,
     "Twenty-five minutes, then five to plant plan-on-PR and send them to coffee at 10:30. Two demos in this slot: the branch-and-pull-request one, then the merge conflict. Most of the room knows git; few have put a database in it."),
 
-(DUAL, "Why databases arrived late to source control", [
-    "THE HONEST REASONS",
-    "The database was the deployed artefact AND the source of truth",
-    "Tooling assumed a live connection, not a file on disk",
-    "Everyone had a folder of numbered .sql files that mostly worked",
-], [
-    "WHAT CHANGED",
-    "The schema can be a project that builds, like any other code",
-    "The build produces an artefact — a DACPAC — you can version and ship",
-    "Which means a database change can finally be a diff",
-], "The 'folder of numbered scripts' line usually gets a laugh of recognition. Use it, then go to the demo — the repository itself is the rest of this slide."),
-
-(CONTENT, "What never goes in the repo", [
-    "Connection strings, passwords, subscription IDs, tenant IDs",
-    "Terraform state — it contains everything you just promised not to commit",
-    "*.tfvars — the example file is committed, your real one is not",
-    "The answer isn't a better .gitignore. It's not having the secret at all.",
-], "This sets up the OIDC story at 14:05. 'Not having the secret at all' is the punchline — say it, then prove it this afternoon."),
+(IMAGE, "Databases are different — which is why they arrived late", [
+    "It's a feeling, with a grain of truth in it",
+    "The truth: state can't be rolled back by redeploying",
+    "The feeling: therefore nothing about them can be automated",
+    "Take the constraint seriously and the fear loses its cover story",
+],
+    "Two deployments compared, stacked. On top, a stateless application: the old version is removed, "
+    "a new one is deployed, and rolling back simply means deploying the previous one - nothing is "
+    "lost. Underneath, a database drawn as a container of rows: deploying a new version cannot bring "
+    "back rows that were thrown away, so there is no undo. Label the top 'roll back by redeploying' "
+    "and the bottom 'there is no undo'. The point is that the constraint is real engineering, not a "
+    "feeling.",
+    "Moved here from the 09:30 lessons: it is the bridge into source control — state-based deploys, data-loss gates and the DeployReport all come from this one constraint. Point at the bottom half of the picture as you say it. "
+    "WHY DATABASES ARRIVED LATE TO SOURCE CONTROL (merged in from its own slide — say it over the picture, for now; the bullets can move up onto the slide later): the honest reasons — because, plainly, data is hard; the database was the deployed artefact AND the source of truth; tooling assumed a live connection, not a file on disk; everyone had a folder of numbered .sql files that mostly worked. What changed — the schema can be a project that builds like any other code; the build produces a DACPAC you can version and ship; so a database change can finally be a diff. The 'folder of numbered scripts' line usually gets a laugh of recognition — use it. "
+    "WHAT NEVER GOES IN THE REPO (it is on the Source control page in full): connection strings, passwords, subscription IDs, tenant IDs; Terraform state; and *.tfvars — the example is committed, your real one is not. The answer is not a better .gitignore. It is not having the secret at all — the OIDC story we prove at 14:05."),
 
 (DEMO, "Demo — branch, commit, pull request",
     "Nothing is clicked. Not even the pull request.", [
@@ -344,6 +328,7 @@ DECK = [
     "stopping at a conflict. Mark the conflict clearly as an expected event rather than a failure. "
     "Include a small inset showing what the conflict markers actually look like in the file, with the "
     "two competing versions labelled by author.",
+    "The merge-conflict demo runs straight off this slide, right after the branch-and-pull-request one — there is no separate slide for it now, so this note is its cue. "
     "Say the last bullet out loud — it is the whole reason this slide sits after the 09:30 module. "
     "WHAT THE DEMO SHOWS, in order: git status names the file and tells you both ways out; open it, "
     "choose, delete the markers, commit. Run `git merge --abort` BEFORE you resolve anything — a room "
@@ -351,14 +336,8 @@ DECK = [
     "rest of their career. Nothing is lost either way, and that is the point of a branch. "
     "WHAT IT ACTUALLY MEANS, said while you resolve it: two people solved the same problem "
     "differently and both were reasonable. Someone has to choose, in public, and say why. Comment on "
-    "the change, never the changer — that is Lesson 3, in a command. The team that resolves conflicts "
+    "the change, never the changer — that is Lesson 2, in a command. The team that resolves conflicts "
     "kindly is the team that branches at all."),
-
-(DEMO, "Demo — the merge conflict",
-    "Two presenters, one file, no winner.", [
-    "Rob and Jess both edit the same lines, from the same commit",
-    "Nothing to type for this one — it needs two laptops. Sit back.",
-], "demo/01b-merge-conflict.ps1 — presenter-only, about nine minutes, two laptops. Say the 'nothing to type' line out loud or half the room will try and fall behind. Let the red text land and stay quiet for two seconds."),
 
 (SECTION, "Break",
     "10:30  ·  Thirty minutes  ·  Back at 11:00", None,
@@ -374,43 +353,37 @@ DECK = [
     "A serverless database, so it costs pennies while it's idle",
     "A firewall rule declared in code, not added in a panic",
     "All of it destroyable in one command, which is the point",
+    "This is proof-of-concept scale — one apply, local state. Real life hardens it next.",
 ],
     "An Azure architecture diagram of exactly what this Terraform module creates: a resource group "
     "containing a logical SQL server and, inside it, a serverless database, with a firewall rule "
     "attached to the server. Label each resource with its CAF-style name - rg-fabcon26-test-uks, "
     "sql-fabcon26-test-uks, sqldb-football-test. Mark the server as Entra-only authentication and "
     "make it visually obvious that no password exists anywhere in the diagram.",
-    "Emphasise Entra-only: there is no admin password anywhere in this workshop, by design."),
+    "Emphasise Entra-only: there is no admin password anywhere in this workshop, by design. "
+    "Frame this as the proof-of-concept shape — one person, one apply, state on the laptop. It is the good bit AND exactly where real-life data environments start hardening it: remote state, CI, approvals (the next few slides). That sets up the 'good for a PoC, bad for real life' line coming up."),
 
 (DEMO, "Demo — Azure SQL from nothing",
-    "Four minutes of a spinner, and then a database. Genuinely the good bit.", [
+    "Four minutes of a spinner, then a database. Cue the Metallica; shake the wait off.", [
     "init, plan, apply — into a real Azure subscription",
     "Following along? Start yours now. We will talk over it.",
-], "demo/02-infrastructure.ps1 regions 01-10. Start the apply EARLY and narrate the next two slides over the top of it. Never start an apply and then go quiet. Fallback run open in the second window."),
+], "demo/02-infrastructure.ps1 regions 01-10. Start the apply EARLY and narrate the next two slides over the top of it. Never start an apply and then go quiet. Fallback run open in the second window. The quip nods to Rob's Metallica and Jess's Taylor Swift ('Shake It Off') — swap it for a football line if you'd rather."),
 
 (IMAGE, "Terraform in ninety seconds", [
     "init — providers and backend",
     "plan — what WOULD change, before anything does",
     "apply — do it, and record it",
     "destroy — undo it, on purpose",
+    "state — the shared memory all four read and write",
+    "",
+    "Local state: good for a PoC. Bad for a real-life data environment.",
 ],
     "The Terraform workflow as a loop: init, then plan, then apply, with destroy closing the circle "
     "back to nothing. Put state in the middle as the shared memory that all four steps read from and "
     "write to. Annotate plan as 'what would change' and apply as 'what did change'. One line beneath: "
     "lose the state and Terraform forgets what it owns.",
-    "plan/apply is the same shape as the DeployReport/publish pair we use for the database this afternoon. Plant that now — it is the single most reused idea in the day."),
-
-(DUAL, "State: the bit that bites in CI", [
-    "LOCAL STATE",
-    "A file on your laptop, fine for a one-shot lab",
-    "Not shared, not locked, not backed up",
-    "A GitHub runner is destroyed after every job, so plan and apply would share nothing",
-], [
-    "REMOTE STATE — WHAT WE RUN",
-    "Azure Storage, versioned and soft-delete enabled",
-    "Entra auth to the blob — no storage account keys",
-    "Its own resource group, so nightly destroy can never eat it",
-], "This is decision D5. The 'its own resource group' detail is a genuine scar — the nightly destroy would otherwise delete the state store. The last slide to narrate over a running apply."),
+    "plan/apply is the same shape as the DeployReport/publish pair we use for the database this afternoon. Plant that now — it is the single most reused idea in the day. "
+    "STATE, LOCAL vs REMOTE (folded in from its own slide, and this is decision D5). Local state is a file on your laptop: fine for a one-shot lab, but not shared, not locked, not backed up — and a GitHub runner is destroyed after every job, so plan and apply would share nothing. What we actually run is REMOTE state: Azure Storage, versioned and soft-delete enabled, with Entra auth to the blob (no storage-account keys), in its OWN resource group so the nightly destroy can never eat it. That last detail is a genuine scar — the nightly destroy would otherwise delete the state store. Point at the bottom line as you say it: local state is good for a PoC and bad for a real-life data environment."),
 
 # ─────────────────────── 11:30 FABRIC SQL ───────────────────────
 (SECTION, "Provisioning infrastructure as code — Fabric SQL",
@@ -438,7 +411,7 @@ DECK = [
     "A capacity bills while it exists, idle or not. F2 is the smallest. It is not free.",
 ], "The first two cost us real time — tell them the error message so they recognise it when it bites. The last bullet is the one that costs them money: say it twice, and say 'destroy it before you go to the party'. This is the first slide to drop if Morning 2 is running late."),
 
-(DEMO, "Demo — Fabric SQL from nothing",
+(STACK, "Demo — Fabric SQL from nothing",
     "Same three commands. Younger platform. Sharper edges.", [
     "capacity → workspace → database, and two providers to build it",
     "We have not run this one live end to end. You will see what we see.",
@@ -500,46 +473,29 @@ DECK = [
     "Explicit column lists — never SELECT *",
     "No MERGE — the correctness and locking gotchas aren't worth it",
     "Static analysis runs on every build, and CI fails on any finding. Zero, not 'few'.",
-], "Our moderator is Cláudio Silva, a performance-tuning expert, and he is sitting in the front row. Say so — it makes the point memorably. Break something on purpose if you have time and let the build fail in public."),
+    "How we do it: RunSqlCodeAnalysis in the .sqlproj builds the DACPAC and runs T-SQL static analysis; -warnaserror fails the build on any smell",
+], "Our moderator is Cláudio Silva, a performance-tuning expert, and he is sitting in the front row. Say so — it makes the point memorably. Break something on purpose if you have time and let the build fail in public. "
+   "How we do it, in one breath: RunSqlCodeAnalysis is on in the .sqlproj, so dotnet build compiles the schema to a DACPAC and runs T-SQL static analysis in the same step, and -warnaserror turns any smell into a failed build. The T-SQL design-problem rules are documented at https://learn.microsoft.com/en-us/sql/tools/sql-database-projects/concepts/sql-code-analysis/sql-code-analysis?view=sql-server-ver17&pivots=sq1-visual-studio#t-sql-design-problems — it is on the references slide at the end too."),
 
 (SECTION, "Lunch",
     "12:45  ·  Seventy-five minutes  ·  Back at 14:00", None,
-    "Say 14:00 twice. Destroy anything expensive before you go and eat — Fabric capacities especially. Lead by example."),
+    "Say 14:00 twice. Destroy anything expensive before you go and eat — Fabric capacities especially. Lead by example. "
+    "IMAGE PROMPT (a section break carries no placeholder box, so generate this and paste it full-bleed onto the slide behind the title): a bright, friendly conference lunch — a large, busy hall of attendees standing and sitting around round tables, plates and coffee in hand, mid-conversation, badges and lanyards on, daylight through big windows. The point it makes is networking over food, not the food itself: lots of people, relaxed, talking to each other. Warm and welcoming, not a stiff boardroom. No readable logos and no single face in sharp focus."),
 
-# ─────────────────────── 13:45 CI/CD 1 ───────────────────────
+# ─────────────────────── 14:00 CI/CD 1 (after the break) ───────────────────────
 (SECTION, "CI/CD part 1 — build and validate",
-    "13:45  ·  Making the pipeline have an opinion", None,
-    "Forty-five minutes. The goal is a red build, then a green one, on a real PR."),
+    "14:00  ·  After the break — making the pipeline have an opinion", None,
+    "Straight after lunch, back at 14:00. The goal is a red build, then a green one, on a real PR."),
 
 (CONTENT, "What CI checks on every push and PR", [
     "The SQL project builds — schema errors surface in seconds, not at deploy",
     "T-SQL static analysis runs, with warnings as errors",
+    "The docs site builds strictly, so a broken link fails the build",
     "terraform fmt and validate — formatting is not a matter of taste in a shared repo",
     "terraform plan on a pull request, read-only, with locking disabled",
-    "The docs site builds strictly, so a broken link fails the build",
-], "Run the PR live if you can. Watching the checks tick over is more persuasive than any slide."),
-
-(DUAL, "Plan on a PR. Apply on purpose.", [
-    "ON THE PULL REQUEST",
-    "Read-only: fmt, validate, plan",
-    "Runs automatically, on every push to the branch",
-    "The plan output is the review artefact",
-    "Nothing is created, so nothing can surprise you",
-], [
-    "ON THE APPLY",
-    "Manual dispatch from main — a human decides",
-    "Same code, same state, no new surprises",
-    "The deliberate act is the safety feature",
-    "This is the people lesson from 09:30, in YAML",
-], "Explicitly call back to the morning here. The room should feel the two halves of the day joining up."),
-
-(CONTENT, "No secrets. Not one.", [
-    "GitHub Actions authenticates to Azure with OIDC — a short-lived federated token",
-    "No client secret, no password, nothing to rotate or leak",
-    "The app registration trusts a specific repo and a specific branch or event",
-    "A PR run's identity is different from a main-branch run's identity — that's the point",
-    "Getting that subject string wrong cost us an afternoon. It's in our learnings log.",
-], "The AADSTS700213 story is a good one — the credential existed, but the subject was silently mangled by PowerShell string parsing."),
+], "Run the PR live if you can. Watching the checks tick over is more persuasive than any slide. The order follows ci.yml — SQL build + analysis, then docs, then terraform fmt + validate — and then the separate read-only plan workflow (azure-sql-plan.yml) posts its plan on the PR. "
+   "PLAN ON A PR, APPLY ON PURPOSE (folded in from its own slide): on the pull request everything is read-only — fmt, validate, plan — running automatically on every push, and the plan output IS the review artefact; nothing is created, so nothing can surprise you. The apply is a manual dispatch from main — a human decides — the same code against the same state, and that deliberate act is the safety feature. It is the 09:30 people lesson, in YAML. "
+   "NO SECRETS, NOT ONE: GitHub Actions signs in with OIDC (a short-lived federated token) and to SQL with Entra — no client secret, no password, nothing to rotate or leak. The app registration trusts a specific repo and a specific branch or event, so a PR run's identity is deliberately different from a main-branch run's. Getting that subject string wrong cost us an afternoon (AADSTS700213 — PowerShell string parsing silently mangled the subject); it is in the learnings log."),
 
 # ─────────────────────── 14:30 CI/CD 2 ───────────────────────
 (SECTION, "CI/CD part 2 — deploy infrastructure automatically",
@@ -606,80 +562,27 @@ DECK = [
     "You find out when someone asks where the shirt numbers went.",
 ], "Show the data existing before you deploy. The silence of the green tick is the whole lesson."),
 
-(CMD, "The database's plan", [
-    "# Never publish blind. Ask what WOULD happen first.",
-    "",
-    "sqlpackage /Action:DeployReport `",
-    "  /SourceFile:'bin/Release/FabConFootball.dacpac' `",
-    "  /Profile:'PublishProfiles/AzureSql.publish.xml' `",
-    "  /TargetServerName:$server /TargetDatabaseName:$db `",
-    "  /AccessToken:$token `",
-    "  /OutputPath:'deploy-report.xml'",
-    "",
-    "# Look for <Alert Name=\"DataIssue\"> — that's your weekend calling.",
-], "This is terraform plan for the database. Make that comparison explicitly — it's the sentence people will remember."),
+(IMAGE, "Migrations, drift and teardown — the rest of the map", [
+    "One schema, three tooling paths: SQL projects, Flyway, dbatools/dbops",
+    "Drift is your code vs someone's Tuesday — detect it on a schedule, fail loudly",
+    "Absorb good manual fixes back into code, then re-apply. Every time.",
+    "Teardown is code too, tested nightly — Fabric capacities especially",
+    "An environment you're afraid to delete is one you don't control",
+],
+    "Three parallel tracks feeding one football database — state-based SQL projects, migration-based "
+    "Flyway, and PowerShell-native dbatools/dbops — to show one schema, three honest tooling paths. "
+    "Beside it, a drift loop: a scheduled plan comparing code to the live database, flagging the "
+    "difference someone made by hand on a Tuesday, with an arrow that absorbs the fix back into code "
+    "and re-applies. And a teardown symbol returning the whole environment to nothing on a nightly "
+    "clock. Calm and diagrammatic, dark green and gold, no clip-art.",
+    "The module to compress if you're late — about eight minutes. THE ALTERNATIVES, HONESTLY: Flyway is migration-based, versioned scripts applied in order — excellent when data movement is the hard part; dbatools/dbops is PowerShell-native, scriptable, our own heritage so we can be honest about the edges. Both are in the repo, against the same schema — one schema, three paths, nothing theoretical. "
+    "DRIFT: it is what happened between your code and someone's Tuesday. Detect it by running plan on a schedule and failing loudly if it isn't empty, then decide — was the change wrong, or is the code out of date? Reverting good manual fixes is how you lose the room; absorb the fix into code and re-apply, every time (a people lesson hiding in an operations slide). "
+    "DESTROY IT, REALLY: everything built today comes down with one command — Fabric capacities especially, pause or destroy before you leave. The teardown path is code too and is tested nightly. An environment you're afraid to delete is one you don't control. Go and check your subscription tonight — please. Every workshop makes one surprised person and one surprising invoice."),
 
-(CONTENT, "Increment 3 — ship it safely anyway", [
-    "BlockOnPossibleDataLoss is on by default — let it stop you",
-    "Move the data first, in a pre-deploy script, then retire the column",
-    "Publish the deploy report as a build artefact, so the diff is reviewable",
-    "Put an approval gate in front of the destructive step",
-    "The change still ships. It just stops being an accident.",
-], "Land the day's thesis: automation isn't about removing humans, it's about putting them where they add judgement."),
-
-(DUAL, "Who is allowed to drop a column?", [
-    "THE TECHNICAL ANSWER",
-    "Whoever the environment protection rule names",
-    "Enforced by the pipeline, not by convention",
-    "Logged, timestamped, attached to a specific run",
-    "Reversible up to the moment they click approve",
-], [
-    "THE REAL ANSWER",
-    "Whoever the team has agreed should carry that decision",
-    "The pipeline just makes the agreement enforceable",
-    "And makes it a shared decision instead of one person's fault",
-    "That's the 09:30 talk again — this is what it was for",
-], "Close the loop that opened at 09:30. This is the callback that makes the whole day feel designed."),
-
-# ─────────────────────── 16:15 TOGETHER ───────────────────────
-(SECTION, "Migrations, drift and teardown",
-    "16:15  ·  The rest of the map", None,
-    "Thirty minutes, flexible. This is the module to trim if you're running late."),
-
-(DUAL, "The alternatives, honestly", [
-    "FLYWAY",
-    "Migration-based, versioned scripts, applied in order",
-    "Excellent when data movement is the hard part",
-    "Strong story for teams already living in that model",
-    "Working example in the repo, against the same schema",
-], [
-    "DBATOOLS / DBOPS",
-    "PowerShell-native, familiar to a lot of this room",
-    "Migration-based, scriptable, easy to embed anywhere",
-    "Our own heritage, so we can be honest about the edges",
-    "Also in the repo, also against the same schema",
-], "One schema, three tooling paths. That's the credibility play — nothing here is theoretical."),
-
-(CONTENT, "Drift, and what to actually do about it", [
-    "Drift is what happened between your code and someone's Tuesday",
-    "Detect it: run plan on a schedule and fail loudly if it isn't empty",
-    "Then decide — was the change wrong, or is the code out of date?",
-    "Reverting good manual fixes is how you lose the room",
-    "Absorb the fix into code, then re-apply. Every time.",
-], "The fourth bullet is a people lesson hiding in an operations slide. Worth naming as such."),
-
-(CONTENT, "Destroy it. Really.", [
-    "Everything you built today can be removed with one command",
-    "Fabric capacities in particular — pause or destroy before you leave",
-    "The teardown path is code too, and it gets tested nightly",
-    "An environment you're afraid to delete is an environment you don't control",
-    "Go and check your subscription tonight. Please.",
-], "Say it plainly. Every workshop generates at least one surprised person and one surprising invoice."),
-
-# ─────────────────────── 16:45 WRAP ───────────────────────
-(SECTION, "Wrap-up",
-    "16:45  ·  What to take home", None,
-    "Fifteen minutes including questions. Get them to the resources page before anyone starts packing."),
+# ─────────────────────── 16:30 WRAP + Q ───────────────────────
+(SECTION, "Wrap-up and questions",
+    "16:30  ·  What to take home — and your questions", None,
+    "Thirty minutes to the end, questions included. Get them to the resources page before anyone starts packing. Q&A is the flex that absorbs the day's slippage — finish at 17:00, not after."),
 
 (DUAL, "What you can take home today", [
     "THE CODE",
@@ -695,19 +598,74 @@ DECK = [
     "All of it public, all of it replayable at your own pace",
 ], "Give them the URL twice and put it on the next slide too. Nobody writes it down the first time."),
 
-(CONTENT, "Where everything lives", [
+(MAP, "Where everything lives", [
     "The site: the written steps for every module in today's agenda",
     "The repo: github.com/JessAndRob/FabConEU_2026_workshop",
     "Code bundles: downloadable per module, no copy-paste from slides",
     "Our learnings log: every gotcha we hit building this, with the fix",
     "Find us both here today — and on the internet forever after",
-], "Have the QR code on screen while you take questions. Don't take it down until the room is empty."),
+],
+    "A simple 'where everything lives' map: a large QR code at the centre pointing at the workshop "
+    "site, with labelled spokes running out to the four things behind it — the site (the written "
+    "steps for every module), the GitHub repo, the downloadable per-module code bundles, and the "
+    "learnings log. Clean and friendly, dark green and gold, no clip-art. It should read as 'scan "
+    "this and you have the whole day'.",
+    "Have the QR code on screen while you take questions. Don't take it down until the room is empty."),
 
-(QUOTE, "Thank you", [
+# ─────────────────────── REFERENCES ───────────────────────
+# Everything the day cites, gathered at the end. Readable labels on the slide; every URL in full
+# in the speaker notes (and on the site's Resources page). Two slides so nothing is crammed.
+(DUAL, "References — Microsoft Learn & Terraform", [
+    "MICROSOFT LEARN",
+    "SQL code analysis — the T-SQL design rules CI enforces",
+    "SDK-style SQL projects (Microsoft.Build.Sql)",
+    "SqlPackage — build, publish, DeployReport",
+    "SQL database in Fabric — overview & limitations",
+    "SqlPackage against Fabric SQL",
+    "GitHub Actions → Azure with OIDC (passwordless)",
+    "Cloud Adoption Framework — resource naming",
+], [
+    "TERRAFORM PROVIDERS",
+    "hashicorp/azurerm — Azure SQL + the Fabric capacity",
+    "microsoft/fabric — Fabric workspace + SQL database",
+    "",
+    "EVERY LINK IN FULL",
+    "In these speaker notes, and on the site:",
+    "jessandrob.github.io/FabConEU_2026_workshop → Resources",
+], "Full URLs, in the order above. "
+   "SQL code analysis: https://learn.microsoft.com/en-us/sql/tools/sql-database-projects/concepts/sql-code-analysis/sql-code-analysis?view=sql-server-ver17&pivots=sq1-visual-studio#t-sql-design-problems . "
+   "SDK-style SQL projects: https://learn.microsoft.com/sql/tools/sql-database-projects/sql-database-projects . "
+   "SqlPackage: https://learn.microsoft.com/sql/tools/sqlpackage/sqlpackage . "
+   "Fabric SQL overview: https://learn.microsoft.com/fabric/database/sql/overview ; limitations: https://learn.microsoft.com/fabric/database/sql/limitations ; SqlPackage on Fabric: https://learn.microsoft.com/fabric/database/sql/sqlpackage . "
+   "GitHub Actions OIDC to Azure: https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect . "
+   "CAF resource naming: https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming . "
+   "azurerm provider: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs ; microsoft/fabric provider: https://registry.terraform.io/providers/microsoft/fabric/latest/docs ."),
+
+(DUAL, "References — us, the tools, the code", [
+    "FIND US",
+    "Jess Pomfret — jesspomfret.com",
+    "Rob Sewell — blog.robsewell.com",
+    "dbatools — dbatools.io",
+    "dbachecks — dbachecks.io",
+], [
+    "THE CODE",
+    "Repo — github.com/JessAndRob/FabConEU_2026_workshop",
+    "Site — jessandrob.github.io/FabConEU_2026_workshop",
+    "Code bundles — downloadable per module",
+    "Learnings log — every gotcha we hit, with the fix",
+], "Full URLs: https://jesspomfret.com · https://blog.robsewell.com · https://dbatools.io · https://dbachecks.io · https://github.com/JessAndRob/FabConEU_2026_workshop · https://jessandrob.github.io/FabConEU_2026_workshop . dbatools and dbachecks are Rob's to maintain and Jess contributes to both; 'dbatools in a Month of Lunches' is Jess's book if anyone asks."),
+
+(IMAGE, "Thank you", [
     "You gave us a whole day. We hope it saves you several.",
     "Deploy the infrastructure as code.",
     "Deploy the database as code.",
     "And be kind to the humans in the change window.",
     "Questions — and then please rate the session",
-], "Then hand over to the rating slide. Stay at the front — the best conversations happen in the ten minutes after."),
+],
+    "A warm closing send-off, not a diagram: Barcelona at golden hour (a hint of the Sagrada "
+    "Família or the skyline) with a friendly, celebratory feel that ties together the day's "
+    "flavour — a nod to football, to Taylor Swift and Metallica, and to 'be kind to the humans'. "
+    "It should read as a thank-you and a goodbye. Dark green and gold accents to match the deck; "
+    "no bullet points and no screenshots.",
+    "Then hand over to the rating slide. Stay at the front — the best conversations happen in the ten minutes after."),
 ]

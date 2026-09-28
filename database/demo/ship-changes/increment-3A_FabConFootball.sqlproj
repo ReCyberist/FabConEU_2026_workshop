@@ -10,8 +10,8 @@
     <!-- Run T-SQL static code analysis on every build so smells surface early
          (build with -warnaserror in CI to make any finding fail the pipeline). -->
     <RunSqlCodeAnalysis>True</RunSqlCodeAnalysis>
+    <ProjectGuid>{00000000-0000-0000-0000-000000000000}</ProjectGuid>
   </PropertyGroup>
-
   <!-- The pre-deployment migration and post-deployment seed are data/DML, not schema:
        exclude them from the build model and run them around the schema change. -->
   <ItemGroup>

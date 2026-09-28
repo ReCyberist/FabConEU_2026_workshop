@@ -44,7 +44,10 @@ to real files rather than pasting large blocks.
 
 ### Keep secrets out
 
-The golden rule: **never commit a secret, a connection string, or a subscription id.**
+The golden rule: **never commit a secret, a connection string, or a subscription id.** Nor a
+password, a tenant id, your Terraform **state** (it contains everything you just promised not to
+commit), or your real `*.tfvars` (only the `*.tfvars.example` is tracked). And the answer is not a
+better `.gitignore` — it is **not having the secret at all.**
 
 The whole workshop is **passwordless**. GitHub Actions authenticates to Azure with **OIDC**
 (short-lived tokens, nothing stored) and to SQL with **Microsoft Entra** (no SQL logins). There is

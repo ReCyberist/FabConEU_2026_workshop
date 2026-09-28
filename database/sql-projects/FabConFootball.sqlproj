@@ -10,8 +10,8 @@
     <!-- Run T-SQL static code analysis on every build so smells surface early
          (build with -warnaserror in CI to make any finding fail the pipeline). -->
     <RunSqlCodeAnalysis>True</RunSqlCodeAnalysis>
+    <ProjectGuid>{00000000-0000-0000-0000-000000000000}</ProjectGuid>
   </PropertyGroup>
-
   <!-- The post-deployment seed is data, not schema: exclude it from the build model and
        run it after publish. -->
   <ItemGroup>

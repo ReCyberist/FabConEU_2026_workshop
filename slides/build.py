@@ -11,7 +11,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.oxml.ns import qn
 
 from content import (
-    DECK, SECTION, CONTENT, DUAL, DARK, CMD, QUOTE, IMAGE, DEMO,
+    DECK, SECTION, CONTENT, DUAL, DARK, CMD, QUOTE, IMAGE, DEMO, PEOPLE, STACK, MAP,
     WALK_IN_TITLE, WALK_IN_URL, WALK_IN_LINES, WALK_IN_NOTES, WALK_IN_IMAGES,
     URL_STRIPS,
 )
@@ -160,6 +160,154 @@ def url_strip(slide, lead, url):
         run.font.bold = bold
         run.font.color.rgb = GREEN
         _no_bullet(p)
+
+
+def text_box(slide, x, y, w, h, text, size=15, colour=GREEN, bold=False,
+             align=PP_ALIGN.LEFT, fill_colour=None, line_colour=None, radius=False):
+    shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if radius else MSO_SHAPE.RECTANGLE
+    box = slide.shapes.add_shape(shape_type, x, y, w, h)
+    if fill_colour is None:
+        box.fill.background()
+    else:
+        box.fill.solid()
+        box.fill.fore_color.rgb = fill_colour
+    if line_colour is None:
+        box.line.fill.background()
+    else:
+        box.line.color.rgb = line_colour
+        box.line.width = Pt(1.25)
+    tf = box.text_frame
+    tf.clear()
+    tf.word_wrap = True
+    tf.margin_left = tf.margin_right = Inches(0.16)
+    tf.margin_top = tf.margin_bottom = Inches(0.1)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf.paragraphs[0]
+    p.alignment = align
+    run = p.add_run()
+    run.text = text
+    run.font.size = Pt(size)
+    run.font.bold = bold
+    run.font.color.rgb = colour
+    _no_bullet(p)
+    return box
+
+
+def person_icon(slide, x, y, scale, colour):
+    head = slide.shapes.add_shape(MSO_SHAPE.OVAL, x + scale * 0.27, y, scale * 0.28, scale * 0.28)
+    head.fill.solid()
+    head.fill.fore_color.rgb = colour
+    head.line.fill.background()
+    body = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, x, y + scale * 0.3, scale * 0.82, scale * 0.62)
+    body.fill.solid()
+    body.fill.fore_color.rgb = colour
+    body.line.fill.background()
+
+
+def add_people_slide(slide, title, left, right):
+    ph = by_idx(slide)
+    set_title(ph[0], title)
+    ph[11]._element.getparent().remove(ph[11]._element)
+
+    panel_fill = RGBColor(0xF4, 0xF6, 0xF5)
+    card_fill = WHITE
+    text_box(slide, Inches(0.82), Inches(1.72), Inches(5.65), Inches(0.42), left[0],
+             size=15, colour=GREEN, bold=True, fill_colour=RGBColor(0xE7, 0xEF, 0xEC),
+             line_colour=GREEN, radius=True)
+    text_box(slide, Inches(6.82), Inches(1.72), Inches(5.65), Inches(0.42), right[0],
+             size=15, colour=GREEN, bold=True, fill_colour=RGBColor(0xF4, 0xED, 0xD8),
+             line_colour=GOLD, radius=True)
+    for index, statement in enumerate(left[1:]):
+        text_box(slide, Inches(0.82), Inches(2.35 + index * 0.82), Inches(5.65), Inches(0.63), statement,
+                 size=14, colour=GREEN, fill_colour=card_fill, line_colour=RGBColor(0xC8, 0xD7, 0xD2), radius=True)
+    for index, statement in enumerate(right[1:]):
+        y = Inches(2.35 + index * 0.82)
+        text_box(slide, Inches(6.82), y, Inches(5.65), Inches(0.63), statement,
+                 size=14, colour=GREEN, fill_colour=card_fill, line_colour=RGBColor(0xD8, 0xC9, 0x92), radius=True)
+        person_icon(slide, Inches(11.95), y + Inches(0.13), Inches(0.34), GOLD)
+        slide.shapes[-2].left = Inches(11.95)
+        slide.shapes[-2].top = y + Inches(0.13)
+        slide.shapes[-1].left = Inches(11.95)
+        slide.shapes[-1].top = y + Inches(0.13) + Inches(0.1)
+
+
+def add_stack_slide(slide, title, quip, lines):
+    title_shape = next(sh for sh in slide.shapes if sh.has_text_frame and sh.text_frame.text.strip() == "Section title")
+    set_title(title_shape, title)
+    tf = by_idx(slide)[10].text_frame
+    tf.clear()
+    tf.word_wrap = True
+    for index, (text, size, colour, bold) in enumerate(
+        [(title, 36, WHITE, True), (quip, 20, GOLD, False)]
+        + [(line, 15, WHITE, False) for line in lines]
+    ):
+        p = tf.paragraphs[0] if index == 0 else tf.add_paragraph()
+        p.alignment = PP_ALIGN.LEFT
+        run = p.add_run()
+        run.text = text
+        run.font.size = Pt(size)
+        run.font.bold = bold
+        run.font.color.rgb = colour
+        _no_bullet(p)
+
+    stages = [("1  CAPACITY", "the billable engine", GOLD),
+              ("2  WORKSPACE", "the team boundary", WHITE),
+              ("3  SQL DATABASE", "the thing we use", RGBColor(0x9C, 0xD8, 0xC8))]
+    for index, (label, caption, colour) in enumerate(stages):
+        x = Inches(0.85 + index * 4.15)
+        text_box(slide, x, Inches(4.85), Inches(3.35), Inches(0.78), label,
+                 size=18, colour=GREEN, bold=True, align=PP_ALIGN.CENTER,
+                 fill_colour=colour, line_colour=colour, radius=True)
+        text_box(slide, x, Inches(5.72), Inches(3.35), Inches(0.48), caption,
+                 size=12, colour=WHITE, align=PP_ALIGN.CENTER)
+        if index < 2:
+            arrow = slide.shapes.add_shape(MSO_SHAPE.CHEVRON, Inches(4.35 + index * 4.15), Inches(5.04), Inches(0.55), Inches(0.38))
+            arrow.fill.solid()
+            arrow.fill.fore_color.rgb = GOLD
+            arrow.line.fill.background()
+
+
+def add_map_slide(slide, title, bullets, prompt):
+    ph = by_idx(slide)
+    set_title(ph[0], title)
+    ph[11]._element.getparent().remove(ph[11]._element)
+    center_x, center_y = Inches(5.18), Inches(3.22)
+    hub = slide.shapes.add_shape(MSO_SHAPE.OVAL, center_x, center_y, Inches(3.0), Inches(1.7))
+    hub.fill.solid()
+    hub.fill.fore_color.rgb = GREEN
+    hub.line.color.rgb = GOLD
+    hub.line.width = Pt(2)
+    tf = hub.text_frame
+    tf.clear()
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    for index, (text, size, colour, bold) in enumerate((
+        ("START HERE", 18, WHITE, True),
+        ("jessandrob.github.io/", 11, GOLD, False),
+        ("FabConEU_2026_workshop", 11, GOLD, False),
+    )):
+        p = tf.paragraphs[0] if index == 0 else tf.add_paragraph()
+        p.alignment = PP_ALIGN.CENTER
+        run = p.add_run()
+        run.text = text
+        run.font.size = Pt(size)
+        run.font.bold = bold
+        run.font.color.rgb = colour
+        _no_bullet(p)
+    destinations = [
+        (Inches(0.85), Inches(2.08), "THE SITE", "steps you can run"),
+        (Inches(9.18), Inches(2.08), "THE REPO", "source and history"),
+        (Inches(0.85), Inches(5.15), "CODE BUNDLES", "download per module"),
+        (Inches(9.18), Inches(5.15), "LEARNINGS LOG", "gotchas and fixes"),
+    ]
+    for x, y, label, caption in destinations:
+        text_box(slide, x, y, Inches(3.15), Inches(0.72), label, size=16, colour=GREEN, bold=True,
+                 fill_colour=WHITE, line_colour=GOLD, radius=True)
+        text_box(slide, x, y + Inches(0.76), Inches(3.15), Inches(0.42), caption,
+                 size=12, colour=GREEN, align=PP_ALIGN.CENTER)
+        connector = slide.shapes.add_connector(1, x + Inches(1.58), y + Inches(0.36), center_x + Inches(1.5), center_y + Inches(0.85))
+        connector.line.color.rgb = RGBColor(0xBC, 0xA0, 0x45)
+        connector.line.width = Pt(1.5)
 
 
 def retext(shape, lines):
@@ -338,6 +486,22 @@ for entry in DECK:
             r.text = line if line else " "
             r.font.size = Pt(26)
             _no_bullet(p)
+
+    elif kind == PEOPLE:
+        _, title, left, right, notes = entry
+        s = slides.add_slide(L_CONTENT)
+        add_people_slide(s, title, left, right)
+
+    elif kind == STACK:
+        _, title, quip, lines, notes = entry
+        s = slides.add_slide(L_SECTION)
+        s.shapes._spTree.append(copy.deepcopy(section_title_xml))
+        add_stack_slide(s, title, quip, lines)
+
+    elif kind == MAP:
+        _, title, bullets, prompt, notes = entry
+        s = slides.add_slide(L_CONTENT)
+        add_map_slide(s, title, bullets, prompt)
 
     elif kind == DEMO:
         _, title, quip, lines, notes = entry
