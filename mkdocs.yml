@@ -66,64 +66,61 @@ markdown_extensions:
 #      — that overlay inherits this config, clears exclude_docs and supplies the full nav.
 #   👉 TO REVEAL THE FULL SITE: delete the `exclude_docs` block below AND un-comment the
 #      real nav entries (they mirror mkdocs.local.yml). That one PR is the reveal.
-exclude_docs: |
-  database/sample-database.md
-  setup/welcome.md
-  foundations/hardest-part-of-it.md
-  foundations/source-control.md
-  foundations/demo.md
-  infra/azure-sql.md
-  infra/fabric-sql.md
-  infra/demo.md
-  database/sql-projects.md
-  database/demo.md
-  lunch.md
-  cicd/build-validate.md
-  cicd/deploy-infra.md
-  cicd/ship-database-changes.md
-  cicd/demo.md
-  wrap-up/migrations-drift-teardown.md
-  wrap-up/demo.md
-  wrap-up/resources.md
-  reference/other-tooling.md
-  reference/run-the-site-locally.md
+#exclude_docs: |
+#  database/sample-database.md
+#  setup/welcome.md
+#  foundations/hardest-part-of-it.md
+#  foundations/source-control.md
+#  foundations/demo.md
+#  infra/azure-sql.md
+#  infra/fabric-sql.md
+#  infra/demo.md
+#  database/sql-projects.md
+#  database/demo.md
+#  lunch.md
+#  cicd/build-validate.md
+#  cicd/deploy-infra.md
+#  cicd/ship-database-changes.md
+#  cicd/demo.md
+#  wrap-up/migrations-drift-teardown.md
+#  wrap-up/demo.md
+#  wrap-up/resources.md
+#  reference/other-tooling.md
+#  reference/run-the-site-locally.md
 # ────────────────────────────────────────────────────────────────────────────────
 
 # Navigation — the full site tree lives here but stays COMMENTED until reveal.
+
+# Full navigation (mirrors the commented tree in mkdocs.yml).
 nav:
   - Home: index.md
   - Getting started:
+      - Welcome & how the day works: setup/welcome.md
       - Prerequisites: setup/prerequisites.md
+  - Foundations:
+      - The hardest part of IT: foundations/hardest-part-of-it.md
+      - Source control for databases: foundations/source-control.md
+      - Demo: foundations/demo.md
+  - Infrastructure as code:
+      - Azure SQL (Terraform): infra/azure-sql.md
+      - Fabric SQL (Terraform): infra/fabric-sql.md
+      - Demo: infra/demo.md
+  - Database as code:
+      - The sample database: database/sample-database.md
+      - SQL projects: database/sql-projects.md
+      - Demo: database/demo.md
+  - Lunch: lunch.md
+  - CI/CD:
+      - Build & validate: cicd/build-validate.md
+      - Deploy infrastructure: cicd/deploy-infra.md
+      - Ship database changes: cicd/ship-database-changes.md
+      - Demo: cicd/demo.md
+  - Wrap up:
+      - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
+      - Demo: wrap-up/demo.md
+      - Resources & next steps: wrap-up/resources.md
+  - Reference:
+      - Other tooling: reference/other-tooling.md
+      - Run this site on your own laptop: reference/run-the-site-locally.md
   - Contact: contact.md
-  # --- Held until reveal: delete remaining exclude_docs entries AND uncomment below ---
-  # On reveal, `Welcome & how the day works` moves ABOVE `Prerequisites` in the
-  # `Getting started` section above — Welcome sets up the day and ends by sending
-  # the reader to Prerequisites, so it has to come first.
-  # - Getting started:
-  #     - Welcome & how the day works: setup/welcome.md
-  #     - Prerequisites: setup/prerequisites.md
-  # - Foundations:
-  #     - The hardest part of IT: foundations/hardest-part-of-it.md
-  #     - Source control for databases: foundations/source-control.md
-  #     - Demo: foundations/demo.md
-  # - Infrastructure as code:
-  #     - Azure SQL (Terraform): infra/azure-sql.md
-  #     - Fabric SQL (Terraform): infra/fabric-sql.md
-  #     - Demo: infra/demo.md
-  # - Database as code:
-  #     - The sample database: database/sample-database.md
-  #     - SQL projects: database/sql-projects.md
-  #     - Demo: database/demo.md
-  # - Lunch: lunch.md
-  # - CI/CD:
-  #     - Build & validate: cicd/build-validate.md
-  #     - Deploy infrastructure: cicd/deploy-infra.md
-  #     - Ship database changes: cicd/ship-database-changes.md
-  #     - Demo: cicd/demo.md
-  # - Wrap up:
-  #     - Migrations, drift & teardown: wrap-up/migrations-drift-teardown.md
-  #     - Demo: wrap-up/demo.md
-  #     - Resources & next steps: wrap-up/resources.md
-  # - Reference:
-  #     - Other tooling: reference/other-tooling.md
-  #     - Run this site on your own laptop: reference/run-the-site-locally.md
+
