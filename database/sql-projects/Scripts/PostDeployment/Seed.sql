@@ -117,8 +117,8 @@ SET IDENTITY_INSERT [football].[Referee] OFF;
 -- Player
 -------------------------------------------------------------------------------
 SET IDENTITY_INSERT [football].[Player] ON;
-INSERT INTO [football].[Player] ([PlayerId], [TeamId], [FirstName], [LastName], [Position], [ShirtNumber], [DateOfBirth])
-SELECT v.[PlayerId], v.[TeamId], v.[FirstName], v.[LastName], v.[Position], v.[ShirtNumber], v.[DateOfBirth]
+INSERT INTO [football].[Player] ([PlayerId], [TeamId], [FirstName], [LastName], [Position], [SquadNumber], [DateOfBirth])
+SELECT v.[PlayerId], v.[TeamId], v.[FirstName], v.[LastName], v.[Position], v.[SquadNumber], v.[DateOfBirth]
 FROM (VALUES
     -- Arsenal Men (Team 1)
     ( 1,  1, N'Bukayo',   N'Saka',       'FW',  7, '2001-09-05'),
@@ -140,7 +140,7 @@ FROM (VALUES
     (14,  7, N'Sam',      N'Kerr',       'FW', 20, '1993-09-10'),
     (15,  7, N'Millie',   N'Bright',     'DF',  4, '1993-08-21'),
     (16,  7, N'Hannah',   N'Hampton',    'GK',  1, '2000-11-16')
-) AS v ([PlayerId], [TeamId], [FirstName], [LastName], [Position], [ShirtNumber], [DateOfBirth])
+) AS v ([PlayerId], [TeamId], [FirstName], [LastName], [Position], [SquadNumber], [DateOfBirth])
 WHERE NOT EXISTS (SELECT 1 FROM [football].[Player] AS p WHERE p.[PlayerId] = v.[PlayerId]);
 SET IDENTITY_INSERT [football].[Player] OFF;
 
@@ -192,4 +192,23 @@ FROM (VALUES
 ) AS v ([GoalId], [FixtureId], [PlayerId], [TeamId], [Minute], [IsPenalty], [IsOwnGoal])
 WHERE NOT EXISTS (SELECT 1 FROM [football].[Goal] AS g WHERE g.[GoalId] = v.[GoalId]);
 SET IDENTITY_INSERT [football].[Goal] OFF;
+GO
+
+-------------------------------------------------------------------------------
+-- Increment 3 backfill: land the preserved shirt numbers in [SquadNumber].
+-- Runs after the schema change created [SquadNumber]. The staging table exists only when
+-- the Option A pre-deployment migration ran; the guard keeps this seed valid for a fresh
+-- deploy (nothing to backfill) and for Option B (rename), where no staging table is made.
+-------------------------------------------------------------------------------
+IF OBJECT_ID('football.ShirtNumberBackfill', 'U') IS NOT NULL
+BEGIN
+    UPDATE p
+    SET p.[SquadNumber] = b.[ShirtNumber]
+    FROM [football].[Player] AS p
+    INNER JOIN [football].[ShirtNumberBackfill] AS b
+        ON b.[PlayerId] = p.[PlayerId]
+    WHERE p.[SquadNumber] IS NULL;
+
+    DROP TABLE [football].[ShirtNumberBackfill];
+END;
 GO
