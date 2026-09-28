@@ -199,7 +199,7 @@ Increment 0 through Increment 3 — runs here, before the **15:15 break**. This 
 
     ```powershell
     $attendee = "07"   # your attendee number from the workshop handout
-    $server   = "sql-fabcon26-shared-uks-h4ytvr.database.windows.net"
+    $server   = "sql-fabcon26-shared-uks-m2oohd.database.windows.net"
     $db       = "sqldb-attendee$attendee"
     $profile  = "PublishProfiles/AzureSql.publish.xml"
     ```
@@ -279,7 +279,7 @@ Increment 0 through Increment 3 — runs here, before the **15:15 break**. This 
         Example output from a shared attendee database run:
 
         ```text
-        Generating report for database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-h4ytvr.database.windows.net'.
+        Generating report for database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-m2oohd.database.windows.net'.
         Successfully generated report to file C:\GitHub\FabConEU_2026_workshop\database\sql-projects\deploy-report-increment-0.xml.
         Time elapsed 0:02:07.54
         ```
@@ -328,7 +328,7 @@ Increment 0 through Increment 3 — runs here, before the **15:15 break**. This 
         Example output from a shared attendee database run:
 
         ```text
-        Publishing to database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-h4ytvr.database.windows.net'.
+        Publishing to database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-m2oohd.database.windows.net'.
         Initializing deployment (Start)
         Initializing deployment (Complete)
         Analyzing deployment plan (Start)
@@ -456,7 +456,7 @@ Increment 0 through Increment 3 — runs here, before the **15:15 break**. This 
         Example output from a shared attendee database run:
 
         ```text
-        Generating report for database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-h4ytvr.database.windows.net'.
+        Generating report for database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-m2oohd.database.windows.net'.
         Successfully generated report to file C:\GitHub\FabConEU_2026_workshop\database\sql-projects\deploy-report.xml.
         Time elapsed 0:02:07.84
         ```
@@ -488,7 +488,7 @@ Increment 0 through Increment 3 — runs here, before the **15:15 break**. This 
         Example output from a shared attendee database run:
 
         ```text
-        Publishing to database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-h4ytvr.database.windows.net'.
+        Publishing to database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-m2oohd.database.windows.net'.
         Initializing deployment (Start)
         Initializing deployment (Complete)
         Analyzing deployment plan (Start)
@@ -625,7 +625,7 @@ Increment 0 through Increment 3 — runs here, before the **15:15 break**. This 
         Example deploy-report output from a shared attendee database run:
 
         ```text
-        Generating report for database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-h4ytvr.database.windows.net'.
+        Generating report for database 'sqldb-attendee07' on server 'sql-fabcon26-shared-uks-m2oohd.database.windows.net'.
         *** The column [football].[Player].[ShirtNumber] is being dropped, data loss could occur.
         Successfully generated report to file C:\GitHub\FabConEU_2026_workshop\database\sql-projects\deploy-report.xml.
         Time elapsed 0:01:57.74
